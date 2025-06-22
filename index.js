@@ -5,6 +5,10 @@
     var y = 150;
     var coinx = Math.random() * (600-50);
 	var coiny = Math.random() * (400-50);
+    var bomx = Math.random() * (600-70);;
+    var bomy = 0;
+    let bombActivated = false;
+    let gameOver = false;
     let coinVisible = true;
     let coinTimer = null;
     
@@ -17,6 +21,7 @@
     let down = document.getElementById('down');
     let left = document.getElementById('left');
     let right = document.getElementById('right');
+    const restartButton = document.getElementById("restart");
 
     up.onmousedown = function() { dir = 4;}
     down.onmousedown = function() { dir = 3;}
@@ -69,9 +74,11 @@
 
     const playerImg = new Image();
     const coinImg = new Image();
+    const bombImg = new Image();
 
     playerImg.src = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS2oP3lWLmezhBAmuHvAwuaqRv6xVX0eApt7A&s'; // replace with your actual file path
     coinImg.src = 'https://www.partysuppliesindia.com/cdn/shop/products/1_36_9f92dde3-d77d-4459-a21f-63744a94c836.jpg?v=1735574298&width=1500';
+    bombImg.src = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSrhGLUu7GF58R8WurYsZXGRwPSg1aER4LGrw&s';
 
     const bgMusic = new Audio('background.mp3');
     const coinSound = new Audio('foodeat.mp3');
@@ -82,6 +89,21 @@
         document.body.addEventListener('click', () => bgMusic.play(), { once: true });
     });
 
+    restartButton.onclick = () => {
+        score = 0;
+        x = 250;
+        y = 150;
+        coinx = Math.random() * (600 - 70);
+        coiny = Math.random() * (400 - 70);
+        bomx = 0;
+        bomy = 0;
+        bombActivated = false;
+        gameOver = false;
+        restartButton.style.display = "none";
+        t = Date.now();
+        draw();
+    };
+
     function draw() {
         var timePassed = (Date.now() - t) / 1000;
         t = Date.now();
@@ -91,6 +113,38 @@
         context.font = '25px Arial';
         context.fillStyle = 'black';
         context.fillText("Score: " + score, 20, 30);
+
+        // Activate bomb only when score reaches 5 or more
+        if (score >= 5) {
+            if (!bombActivated) {
+                bomx = Math.random() * (600 - 70);
+                bomy = -100;
+                bombActivated = true;
+            }
+
+            context.drawImage(bombImg, bomx, bomy, 70, 70);
+            bomy += 3;
+
+            if (bomy >= 600) {
+                bomx = Math.random() * (600 - 70);
+                bomy = -100;
+            }
+
+            if (
+                bomx <= x + 100 && x <= bomx + 70 &&
+                bomy <= y + 100 && y <= bomy + 70
+            ) {
+                score = 0;
+                bombActivated = false;
+                gameOver = true;
+                restartButton.style.display = "block";
+            }
+        } else {
+            // If score is less than 5, turn off bomb
+            bombActivated = false;
+        }
+
+
 
         // context.beginPath();
         // context.rect(x, y, 100, 100);
@@ -140,8 +194,23 @@
             coiny = Math.random() * (400 - 70);
         }
 
+        // if(bomx <= x+100 && x <= bomx+70 && bomy <= y+100 && y <= bomy+70){
+        //     score = 0;
+        // }
+         // Game Over Screen
+        if (gameOver) {
+            context.fillStyle = "rgba(0, 0, 0, 0.7)";
+            context.fillRect(0, 0, 600, 400);
+            context.fillStyle = "white";
+            context.font = "90px Arial";
+            context.textAlign = "center";
+            context.fillText("Game Over", 300, 200);
+            return;
+        }
+
         window.requestAnimationFrame(draw);
     }
+  
     playerImg.onload = coinImg.onload = () => {
                 draw();
             };
