@@ -71,6 +71,13 @@
         }
     });
 
+    document.querySelectorAll('.control-button').forEach(btn => {
+        btn.addEventListener('touchstart', e => {
+            e.preventDefault(); // stops text selection and focus
+            // your control logic here
+        });
+    });
+
 
     const playerImg = new Image();
     const coinImg = new Image();
