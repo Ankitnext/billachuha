@@ -5,10 +5,39 @@
     <style>
         canvas { background: #f0f0f0; display: block; margin: auto; }
         #restart { display: none; margin: 10px auto; display: block; padding: 10px; font-size: 16px; }
+
+        #joystick-base {
+    position: absolute;
+    bottom: 60px;
+    left: 60px;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: rgba(0, 122, 255, 0.3); /* translucent blue */
+    touch-action: none;
+    z-index: 10;
+}
+
+#joystick-knob {
+    position: absolute;
+    bottom: 110px;
+    left: 110px;
+    width: 40px;
+    height: 40px;
+    margin: -20px 0 0 -20px;
+    border-radius: 50%;
+    background: rgba(0, 122, 255, 0.9); /* bold blue center */
+    touch-action: none;
+    z-index: 11;
+}
+
     </style>
 </head>
 <body>
 <canvas id="canvas" width="600" height="400"></canvas>
+<div id="joystick-base"></div>
+<div id="joystick-knob"></div>
+
 <button id="restart">Restart</button>
 
 <script>
