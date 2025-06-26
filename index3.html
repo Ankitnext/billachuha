@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Dual Joystick Shooter</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: #f0f0f0;
+      touch-action: none;
+    }
+    canvas {
+      display: block;
+    }
+    #restart {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 20px;
+      font-size: 18px;
+      display: none;
+      z-index: 20;
+    }
+    .joystick-base {
+      position: absolute;
+      width: 300px;
+      height: 300px;
+      border-radius: 50%;
+      background: rgba(0, 122, 255, 0.2);
+      touch-action: none;
+    }
+    .joystick-knob {
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: rgba(0, 122, 255, 0.9);
+      margin: -40px 0 0 -40px;
+      touch-action: none;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <button id="restart">Restart</button>
+   <button onclick="window.location.href='index.html'">Game 1</button>
+    <button onclick="window.location.href='index2.html'">Game 2</button>
+    <button onclick="window.location.href='index3.html'">Game 3</button>
+
+  <!-- Movement joystick -->
+  <div id="move-base" class="joystick-base" style="bottom: 50px; left: 50px;"></div>
+  <div id="move-knob" class="joystick-knob" style="bottom: 200px; left: 200px;"></div>
+
+  <!-- Aim joystick -->
+  <div id="aim-base" class="joystick-base" style="bottom: 50px; right: 50px;"></div>
+  <div id="aim-knob" class="joystick-knob" style="bottom: 200px; right: 200px;"></div>
+
+  <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+
+    let W = canvas.width, H = canvas.height;
+    let x = W / 2, y = H / 2, vx = 0, vy = 0;
+    let aimAngle = 0, aimVector = { x: 1, y: 0 };
+    const acceleration = 3000, friction = 0.9, bulletSpeed = 600;
+    const bullets = [];
+    let lastBulletTime = 0;
+    let coinx = Math.random() * (W - 70), coiny = Math.random() * (H - 70);
+    let bomx = Math.random() * (W - 70), bomy = -100;
+    let score = 0, gameOver = false, bombActive = false;
+    let t = Date.now();
+
+    const playerImg = new Image(), coinImg = new Image(), bombImg = new Image();
+    playerImg.src = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS2oP3lWLmezhBAmuHvAwuaqRv6xVX0eApt7A&s';
+    coinImg.src = 'https://www.partysuppliesindia.com/cdn/shop/products/1_36_9f92dde3-d77d-4459-a21f-63744a94c836.jpg?v=1735574298&width=1500';
+    bombImg.src = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSrhGLUu7GF58R8WurYsZXGRwPSg1aER4LGrw&s';
+
+    const restartButton = document.getElementById("restart");
+    restartButton.onclick = () => {
+      x = W / 2; y = H / 2; vx = vy = 0;
+      bullets.length = 0;
+      coinx = Math.random() * (W - 70);
+      coiny = Math.random() * (H - 70);
+      bomx = Math.random() * (W - 70);
+      bomy = -100;
+      score = 0;
+      gameOver = false;
+      bombActive = false;
+      restartButton.style.display = "none";
+      draw();
+    };
+
+    function setupJoystick(baseId, knobId, onMove) {
+      const base = document.getElementById(baseId);
+      const knob = document.getElementById(knobId);
+      let activeId = null;
+
+      base.addEventListener("touchstart", e => {
+        activeId = e.changedTouches[0].identifier;
+      }, { passive: false });
+
+      base.addEventListener("touchmove", e => {
+        for (const touch of e.changedTouches) {
+          if (touch.identifier === activeId) {
+            const rect = base.getBoundingClientRect();
+            const dx = touch.clientX - (rect.left + 150);
+            const dy = touch.clientY - (rect.top + 150);
+            const mag = Math.min(Math.hypot(dx, dy), 120);
+            const angle = Math.atan2(dy, dx);
+            const clampedX = Math.cos(angle) * mag;
+            const clampedY = Math.sin(angle) * mag;
+            knob.style.left = (rect.left + 150 + clampedX) + 'px';
+            knob.style.top = (rect.top + 150 + clampedY) + 'px';
+            onMove(clampedX / 120, clampedY / 120);
+          }
+        }
+      }, { passive: false });
+
+      base.addEventListener("touchend", e => {
+        for (const touch of e.changedTouches) {
+          if (touch.identifier === activeId) {
+            activeId = null;
+            const rect = base.getBoundingClientRect();
+            knob.style.left = (rect.left + 150) + 'px';
+            knob.style.top = (rect.top + 150) + 'px';
+            onMove(0, 0);
+          }
+        }
+      });
+    }
+
+    setupJoystick("move-base", "move-knob", (dx, dy) => {
+      vx = dx * acceleration * 0.05;
+      vy = dy * acceleration * 0.05;
+    });
+
+    setupJoystick("aim-base", "aim-knob", (dx, dy) => {
+      if (dx !== 0 || dy !== 0) {
+        aimVector = { x: dx, y: dy };
+        aimAngle = Math.atan2(dy, dx);
+      }
+    });
+
+    function update(dt) {
+      vx *= friction;
+      vy *= friction;
+      x = Math.max(0, Math.min(W - 100, x + vx * dt));
+      y = Math.max(0, Math.min(H - 100, y + vy * dt));
+
+      if (Date.now() - lastBulletTime > 150) {
+        bullets.push({
+          x: x + 50, y: y + 50,
+          vx: aimVector.x * bulletSpeed,
+          vy: aimVector.y * bulletSpeed
+        });
+        lastBulletTime = Date.now();
+      }
+
+      for (let i = bullets.length - 1; i >= 0; i--) {
+        bullets[i].x += bullets[i].vx * dt;
+        bullets[i].y += bullets[i].vy * dt;
+        if (bullets[i].x < 0 || bullets[i].x > W || bullets[i].y < 0 || bullets[i].y > H)
+          bullets.splice(i, 1);
+      }
+
+      bullets.forEach((b, i) => {
+        if (b.x >= coinx && b.x <= coinx + 70 && b.y >= coiny && b.y <= coiny + 70) {
+          score++;
+          bullets.splice(i, 1);
+          coinx = Math.random() * (W - 70);
+          coiny = Math.random() * (H - 70);
+        }
+      });
+
+      if (score >= 5) {
+        if (!bombActive) {
+          bomx = Math.random() * (W - 70);
+          bomy = -100;
+          bombActive = true;
+        }
+        bomy += 150 * dt;
+        if (bomy > H) {
+          bomy = -100;
+          bomx = Math.random() * (W - 70);
+        }
+        if (bomx <= x + 100 && x <= bomx + 70 && bomy <= y + 100 && y <= bomy + 70) {
+          gameOver = true;
+          restartButton.style.display = "block";
+        }
+      }
+    }
+
+    function draw() {
+      const dt = (Date.now() - t) / 1000;
+      t = Date.now();
+      update(dt);
+
+            ctx.clearRect(0, 0, W, H);
+      ctx.font = "24px Arial";
+      ctx.fillStyle = "black";
+      ctx.fillText("Score: " + score, 20, 30);
+      ctx.drawImage(coinImg, coinx, coiny, 70, 70);
+
+      if (bombActive) {
+        ctx.drawImage(bombImg, bomx, bomy, 70, 70);
+      }
+
+      // Draw player with rotation
+      ctx.save();
+      ctx.translate(x + 50, y + 50);
+      ctx.rotate(aimAngle);
+      ctx.drawImage(playerImg, -50, -50, 100, 100);
+      ctx.restore();
+
+      // Draw bullets
+      ctx.fillStyle = "red";
+      bullets.forEach(b => ctx.fillRect(b.x - 5, b.y - 5, 10, 10));
+
+      if (gameOver) {
+        ctx.fillStyle = "rgba(0,0,0,0.6)";
+        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = "white";
+        ctx.font = "60px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("Game Over", W / 2, H / 2);
+        return;
+      }
+
+      requestAnimationFrame(draw);
+    }
+
+    playerImg.onload = () => {
+      resizeCanvas();
+      t = Date.now();
+      draw();
+    };
+  </script>
+</body>
+</html>
