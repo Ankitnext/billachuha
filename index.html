@@ -1,47 +1,54 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>360 Shooter</title>
-    <style>
-        canvas { background: #f0f0f0; display: block; margin: auto; }
-        #restart { display: none; margin: 10px auto; display: block; padding: 10px; font-size: 16px; }
-
-        #joystick-base {
-    position: absolute;
-    bottom: 60px;
-    left: 60px;
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    background: rgba(0, 122, 255, 0.3); /* translucent blue */
-    touch-action: none;
-    z-index: 10;
-}
-
-#joystick-knob {
-    position: absolute;
-    bottom: 110px;
-    left: 110px;
-    width: 40px;
-    height: 40px;
-    margin: -20px 0 0 -20px;
-    border-radius: 50%;
-    background: rgba(0, 122, 255, 0.9); /* bold blue center */
-    touch-action: none;
-    z-index: 11;
-}
-
-    </style>
+  <title>360 Shooter with Touch Joystick</title>
+  <style>
+    canvas {
+      background: #f0f0f0;
+      display: block;
+      margin: auto;
+      touch-action: none;
+    }
+    #restart {
+      display: none;
+      margin: 10px auto;
+      display: block;
+      padding: 10px;
+      font-size: 16px;
+    }
+    #joystick-base {
+      position: absolute;
+      bottom: 60px;
+      left: 60px;
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: rgba(0, 122, 255, 0.3); /* translucent blue */
+      touch-action: none;
+      z-index: 10;
+    }
+    #joystick-knob {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      margin: -20px 0 0 -20px;
+      border-radius: 50%;
+      background: rgba(0, 122, 255, 0.9); /* bold blue */
+      touch-action: none;
+      z-index: 11;
+      left: 110px;
+      top: calc(100vh - 110px);
+    }
+  </style>
 </head>
 <body>
-<canvas id="canvas" width="600" height="400"></canvas>
-<div id="joystick-base"></div>
-<div id="joystick-knob"></div>
+  <canvas id="canvas" width="600" height="400"></canvas>
+  <button id="restart">Restart</button>
+  <div id="joystick-base"></div>
+  <div id="joystick-knob"></div>
 
-<button id="restart">Restart</button>
-
-<script>
-window.onload = function () {
+  <script>
+  window.onload = function () {
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
 
@@ -62,18 +69,56 @@ window.onload = function () {
     document.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
 
     canvas.addEventListener("mousemove", e => {
-        const rect = canvas.getBoundingClientRect();
-        const dx = e.clientX - rect.left - (x + 50);
-        const dy = e.clientY - rect.top - (y + 50);
-        aimAngle = Math.atan2(dy, dx);
+      const rect = canvas.getBoundingClientRect();
+      const dx = e.clientX - rect.left - (x + 50);
+      const dy = e.clientY - rect.top - (y + 50);
+      aimAngle = Math.atan2(dy, dx);
     });
 
     canvas.addEventListener("touchmove", e => {
+      if (e.touches.length > 1) {
         const rect = canvas.getBoundingClientRect();
-        const touch = e.touches[0];
+        const touch = e.touches[1]; // second finger for aiming
         const dx = touch.clientX - rect.left - (x + 50);
         const dy = touch.clientY - rect.top - (y + 50);
         aimAngle = Math.atan2(dy, dx);
+      }
+    });
+
+    const base = document.getElementById("joystick-base");
+    const knob = document.getElementById("joystick-knob");
+    let joystickTouchId = null;
+
+    base.addEventListener("touchstart", e => {
+      joystickTouchId = e.changedTouches[0].identifier;
+    }, { passive: false });
+
+    base.addEventListener("touchmove", e => {
+      for (let touch of e.changedTouches) {
+        if (touch.identifier === joystickTouchId) {
+          const dx = touch.clientX - base.offsetLeft - 50;
+          const dy = touch.clientY - base.offsetTop - 50;
+          const mag = Math.sqrt(dx * dx + dy * dy);
+          const limit = 40;
+          const clampedX = (dx / mag) * Math.min(mag, limit);
+          const clampedY = (dy / mag) * Math.min(mag, limit);
+          knob.style.left = (base.offsetLeft + 50 + clampedX) + 'px';
+          knob.style.top = (base.offsetTop + 50 + clampedY) + 'px';
+          vx = (clampedX / limit) * acceleration * 0.05;
+          vy = (clampedY / limit) * acceleration * 0.05;
+        }
+      }
+    }, { passive: false });
+
+    base.addEventListener("touchend", e => {
+      for (let touch of e.changedTouches) {
+        if (touch.identifier === joystickTouchId) {
+          joystickTouchId = null;
+          knob.style.left = base.offsetLeft + 50 + 'px';
+          knob.style.top = base.offsetTop + 50 + 'px';
+          vx = vy = 0;
+        }
+      }
     });
 
     const playerImg = new Image();
@@ -85,135 +130,126 @@ window.onload = function () {
 
     const restartButton = document.getElementById("restart");
     restartButton.onclick = () => {
-        score = 0;
-        x = 250; y = 150;
-        vx = vy = 0;
-        bullets.length = 0;
-        coinx = Math.random() * (600 - 70);
-        coiny = Math.random() * (400 - 70);
-        bomx = Math.random() * (600 - 70);
-        bomy = -100;
-        gameOver = false;
-        bombActive = false;
-        restartButton.style.display = "none";
-        draw();
+      score = 0;
+      x = 250; y = 150;
+      vx = vy = 0;
+      bullets.length = 0;
+      coinx = Math.random() * (600 - 70);
+      coiny = Math.random() * (400 - 70);
+      bomx = Math.random() * (600 - 70);
+      bomy = -100;
+      gameOver = false;
+      bombActive = false;
+      restartButton.style.display = "none";
+      draw();
     };
 
     function update(dt) {
-        // Movement
-        if (keys["w"] || keys["arrowup"]) vy -= acceleration * dt;
-        if (keys["s"] || keys["arrowdown"]) vy += acceleration * dt;
-        if (keys["a"] || keys["arrowleft"]) vx -= acceleration * dt;
-        if (keys["d"] || keys["arrowright"]) vx += acceleration * dt;
+      if (keys["w"] || keys["arrowup"]) vy -= acceleration * dt;
+      if (keys["s"] || keys["arrowdown"]) vy += acceleration * dt;
+      if (keys["a"] || keys["arrowleft"]) vx -= acceleration * dt;
+      if (keys["d"] || keys["arrowright"]) vx += acceleration * dt;
 
-        vx *= friction;
-        vy *= friction;
-        x += vx * dt;
-        y += vy * dt;
+      vx *= friction;
+      vy *= friction;
+      x += vx * dt;
+      y += vy * dt;
 
-        x = Math.max(0, Math.min(600 - 100, x));
-        y = Math.max(0, Math.min(400 - 100, y));
+      x = Math.max(0, Math.min(600 - 100, x));
+      y = Math.max(0, Math.min(400 - 100, y));
 
-        // Fire bullets
-        const now = Date.now();
-        if (now - lastBulletTime > 150) {
-            const bx = x + 50;
-            const by = y + 50;
-            const bvx = Math.cos(aimAngle) * bulletSpeed;
-            const bvy = Math.sin(aimAngle) * bulletSpeed;
-            bullets.push({ x: bx, y: by, vx: bvx, vy: bvy });
-            lastBulletTime = now;
+      const now = Date.now();
+      if (now - lastBulletTime > 150) {
+        const bx = x + 50;
+        const by = y + 50;
+        const bvx = Math.cos(aimAngle) * bulletSpeed;
+        const bvy = Math.sin(aimAngle) * bulletSpeed;
+        bullets.push({ x: bx, y: by, vx: bvx, vy: bvy });
+        lastBulletTime = now;
+      }
+
+      for (let i = bullets.length - 1; i >= 0; i--) {
+        bullets[i].x += bullets[i].vx * dt;
+        bullets[i].y += bullets[i].vy * dt;
+        if (
+          bullets[i].x < 0 || bullets[i].x > 600 ||
+          bullets[i].y < 0 || bullets[i].y > 400
+        ) bullets.splice(i, 1);
+      }
+
+      bullets.forEach((b, i) => {
+        if (
+          b.x >= coinx && b.x <= coinx + 70 &&
+          b.y >= coiny && b.y <= coiny + 70
+        ) {
+          score++;
+          bullets.splice(i, 1);
+          coinx = Math.random() * (600 - 70);
+          coiny = Math.random() * (400 - 70);
+        }
+      });
+
+      if (score >= 5) {
+        if (!bombActive) {
+          bomx = Math.random() * (600 - 70);
+          bomy = -100;
+          bombActive = true;
+        }
+        bomy += 150 * dt;
+        if (bomy > 400) {
+          bomy = -100;
+          bomx = Math.random() * (600 - 70);
         }
 
-        // Update bullets
-        for (let i = bullets.length - 1; i >= 0; i--) {
-            bullets[i].x += bullets[i].vx * dt;
-            bullets[i].y += bullets[i].vy * dt;
-            // Remove offscreen bullets
-            if (
-                bullets[i].x < 0 || bullets[i].x > 600 ||
-                bullets[i].y < 0 || bullets[i].y > 400
-            ) bullets.splice(i, 1);
+        if (
+          bomx <= x + 100 && x <= bomx + 70 &&
+          bomy <= y + 100 && y <= bomy + 70
+        ) {
+          gameOver = true;
+          restartButton.style.display = "block";
         }
-
-        // Check bullet-coin collision
-        bullets.forEach((b, i) => {
-            if (
-                b.x >= coinx && b.x <= coinx + 70 &&
-                b.y >= coiny && b.y <= coiny + 70
-            ) {
-                score++;
-                bullets.splice(i, 1);
-                coinx = Math.random() * (600 - 70);
-                coiny = Math.random() * (400 - 70);
-            }
-        });
-
-        // Bomb logic
-        if (score >= 5) {
-            if (!bombActive) {
-                bomx = Math.random() * (600 - 70);
-                bomy = -100;
-                bombActive = true;
-            }
-            bomy += 150 * dt;
-            if (bomy > 400) {
-                bomy = -100;
-                bomx = Math.random() * (600 - 70);
-            }
-
-            if (
-                bomx <= x + 100 && x <= bomx + 70 &&
-                bomy <= y + 100 && y <= bomy + 70
-            ) {
-                gameOver = true;
-                restartButton.style.display = "block";
-            }
-        }
+      }
     }
 
     function draw() {
-        const dt = (Date.now() - t) / 1000;
-        t = Date.now();
-        update(dt);
+      const dt = (Date.now() - t) / 1000;
+      t = Date.now();
+      update(dt);
 
-        ctx.clearRect(0, 0, 600, 400);
-        ctx.font = "24px Arial";
-        ctx.fillStyle = "black";
-        ctx.fillText("Score: " + score, 20, 30);
+      ctx.clearRect(0, 0, 600, 400);
+      ctx.font = "24px Arial";
+      ctx.fillStyle = "black";
+      ctx.fillText("Score: " + score, 20, 30);
 
-        // Draw coin & bomb
-        ctx.drawImage(coinImg, coinx, coiny, 70, 70);
-        if (bombActive) {
-            ctx.drawImage(bombImg, bomx, bomy, 70, 70);
-        }
+      ctx.drawImage(coinImg, coinx, coiny, 70, 70);
+      if (bombActive) ctx.drawImage(bombImg, bomx, bomy, 70, 70);
 
-        // Player
-        ctx.save();
-        ctx.translate(x + 50, y + 50);
-        ctx.rotate(aimAngle);
-        ctx.drawImage(playerImg, -50, -50, 100, 100);
-        ctx.restore();
+      // Rotate player to aim
+      ctx.save();
+      ctx.translate(x + 50, y + 50);
+      ctx.rotate(aimAngle);
+      ctx.drawImage(playerImg, -50, -50, 100, 100);
+      ctx.restore();
 
-        // Bullets
-        ctx.fillStyle = "red";
-        bullets.forEach(b => ctx.fillRect(b.x - 5, b.y - 5, 10, 10));
+      // Draw bullets
+      ctx.fillStyle = "red";
+      bullets.forEach(b => ctx.fillRect(b.x - 5, b.y - 5, 10, 10));
 
-        if (gameOver) {
-            ctx.fillStyle = "rgba(0,0,0,0.6)";
-            ctx.fillRect(0, 0, 600, 400);
-            ctx.fillStyle = "white";
-            ctx.font = "60px Arial";
-            ctx.textAlign = "center";
-            ctx.fillText("Game Over", 300, 200);
-            return;
-        }
+      if (gameOver) {
+        ctx.fillStyle = "rgba(0,0,0,0.6)";
+        ctx.fillRect(0, 0, 600, 400);
+        ctx.fillStyle = "white";
+        ctx.font = "60px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("Game Over", 300, 200);
+        return;
+      }
 
-        requestAnimationFrame(draw);
+      requestAnimationFrame(draw);
     }
 
     playerImg.onload = draw;
-};
-</script>
+  };
+  </script>
 </body>
 </html>
