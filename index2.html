@@ -8,6 +8,10 @@
       margin: 0;
       padding: 0;
       user-select: none;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
     }
 
     /* Center container, allow full-width up to 600px */
@@ -71,6 +75,13 @@
   </style>
 </head>
 <body>
+    <div><h1>CATCH THE JERRY</h1></div>
+    <div><h3>LEVEL 2 UNLOCK at Score = 5</h3></div>
+    <div style="display:flex; justify-content: center;">
+        <button onclick="window.location.href='index.html'">Arrow keys</button>
+        <button onclick="window.location.href='index2.html'">Joystick</button>
+        <button onclick="window.location.href='index3.html'">Joystick + keys</button>
+    </div>
   <div id="game-container">
     <canvas id="canvas" width="600" height="400"></canvas>
     <button id="restart">Restart</button>
