@@ -10,6 +10,10 @@
       overflow: hidden;
       background: #f0f0f0;
       touch-action: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
     canvas {
       display: block;
@@ -46,13 +50,21 @@
   </style>
 </head>
 <body>
-  <canvas id="canvas"></canvas>
-  <button id="restart">Restart</button>
-  <div style="display:flex; justify-content: center; position: absolute; bottom: 10px; width:100%;">
+   <!-- <div style="display:flex; justify-content: center; position: absolute; bottom: 10px; width:100%;">
     <button onclick="window.location.href='index.html'">Game 1</button>
     <button onclick="window.location.href='index2.html'">Game 2</button>
     <button onclick="window.location.href='index3.html'">Game 3</button>
-  </div>
+  </div> -->
+  <div><h1>CATCH THE JERRY</h1></div>
+    <div><h3>LEVEL 2 UNLOCK at Score = 5</h3></div>
+    <div style="display:flex; justify-content: center;">
+        <button onclick="window.location.href='index.html'">Arrow keys</button>
+        <button onclick="window.location.href='index2.html'">Joystick</button>
+        <button onclick="window.location.href='index3.html'">Joystick + keys</button>
+    </div>
+  <canvas id="canvas"></canvas>
+  <button id="restart">Restart</button>
+ 
 
   <!-- Movement joystick -->
   <div id="move-base"  class="joystick-base" style="bottom: 50px; left: 50px;"></div>
