@@ -119,7 +119,10 @@
         
         context.font = '25px Arial';
         context.fillStyle = 'black';
-        context.fillText("Score: " + score, 20, 30);
+        context.textAlign = 'center';
+        context.fillText("Score: " + score, canvas.width / 2, 30);
+        context.textAlign = 'start';
+
 
         // Activate bomb only when score reaches 5 or more
         if (score >= 5) {
