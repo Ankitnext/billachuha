@@ -1,87 +1,94 @@
-/* overall page + canvas styling */
 body {
-  margin: 0;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: #f4f4f4;
-  font-family: sans-serif;
-  user-select: none;
-}
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
 
-#canvas {
-  width: 100%;
-  max-width: 600px;
-  height: auto;
-  background: #eef;
-  border: none;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
+        -webkit-user-select: none;
+        -ms-user-select: none;
+         user-select: none;
+    }
 
-/* D-pad wrapper below the canvas */
-.controls {
-  display: grid;
-  grid-template-areas:
-    ". up ."
-    "left . right"
-    ". down .";
-  grid-gap: 10px;
+    #canvas {
+        width: 90vw;
+        max-width: 600px;
+        height: auto;
+        border: 1px solid black;
+        display: block;
+    }
+
+    .controls {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 10px;
+    }
+
+    .row {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    button {
+        width: 15vw;
+        max-width: 60px;
+        height: 40px;
+        font-size: 1.2em;
+        margin: 5px;
+    }
+
+    #restart {
+  display: inline-block;
   margin-top: 20px;
-}
-
-/* common button look */
-.control-button {
-  width: 60px;
-  height: 60px;
-  border: none;
-  border-radius: 8px;
-  background: #fff;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
-  font-size: 1.5em;
-  color: #333;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s, box-shadow 0.2s;
-  cursor: pointer;
-}
-
-.control-button:active {
-  background: #e0e0e0;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
-}
-
-/* place each arrow into the grid */
-.control-button.up    { grid-area: up; }
-.control-button.down  { grid-area: down; }
-.control-button.left  { grid-area: left; }
-.control-button.right { grid-area: right; }
-
-/* Restart button under the controls */
-#restart {
-  margin-top: 20px;
-  padding: 12px 24px;
+  padding: 10px 30px;
+  min-width: 140px;
+  text-align: center;
   font-size: 1.1em;
+  line-height: 1;
   background: #ff4d4f;
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-  transition: background 0.2s;
+  transition: background 0.2s, transform 0.1s;
 }
 
 #restart:hover {
   background: #d9363e;
 }
 
-/* shrink controls on small screens */
-@media (max-width: 480px) {
-  .control-button {
-    width: 50px;
-    height: 50px;
-    font-size: 1.2em;
-  }
+#restart:active {
+  transform: translateY(1px);
 }
+/* wrap your three “nav” buttons in a container */
+.nav-container {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 20px 0;
+}
+
+/* cancel the generic button sizing just inside .nav-container */
+.nav-container button {
+  flex: 0 0 auto;               /* don’t shrink or grow */
+  width: auto  !important;      /* let the text set the width */
+  max-width: none !important;   /* remove the old 60px cap */
+  min-width: 80px;              /* optional floor width */
+  padding: 8px 16px;            /* comfy hit area */
+  white-space: nowrap;          /* keep label on one line */
+  box-sizing: border-box;
+}
+
+
+    @media (max-width: 480px) {
+        button {
+            width: 20vw;
+            height: 35px;
+            font-size: 1em;
+        }
+    }
