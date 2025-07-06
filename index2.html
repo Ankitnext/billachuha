@@ -5,64 +5,87 @@
   <title>Canvas Game with Joystick</title>
 
   <style>
-    body, html {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      position: relative;
-      user-select: none;
-      touch-action: none;
-    }
+   /* make body full-width, remove default margins */
+body, html {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  user-select: none;
+}
 
-    canvas {
-      display: block;
-      background: #eef;
-    }
+/* center and limit game area to 600px */
+#game-area {
+  width: 100%;
+  max-width: 600px;
+  margin: 20px auto;
+  position: relative;
+}
 
-    #restart {
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      padding: 10px 20px;
-      font-size: 18px;
-      display: none;
-      z-index: 10;
-    }
+/* full-width canvas */
+#game-area canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: #eef;
+}
 
-    /* Joystick base */
-    #joystick-container {
-      position: absolute;
-      bottom: 20px;
-      left: 20px;
-      width: 240px;
-      height: 240px;
-      border-radius: 50%;
-      background: rgba(0, 0, 0, 0.25);
-      touch-action: none;
-      overflow: hidden;
-      z-index: 5;
-    }
+/* restart button centered over canvas */
+#restart {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  display: none;
+  padding: 10px 20px;
+  font-size: 18px;
+  z-index: 10;
+}
 
-    /* Joystick thumb */
-    #joystick-thumb {
-      position: absolute;
-      width: 80px;
-      height: 80px;
-      background: rgba(0, 0, 0, 0.5);
-      border-radius: 50%;
-      top: calc(50% - 40px);
-      left: calc(50% - 40px);
-      transition: top 0.1s, left 0.1s;
-    }
+/* joystick wrapper centers the control below the canvas */
+#joystick-wrapper {
+  width: 100%;
+  max-width: 600px;
+  margin: 10px auto;
+  text-align: center;
+}
+
+/* joystick base: inline-block, no absolute positioning */
+#joystick-container {
+  display: inline-block;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.25);
+  touch-action: none;
+  position: relative;
+  overflow: hidden;
+}
+
+/* thumb remains absolutely positioned within its base */
+#joystick-thumb {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  left: calc(50% - 40px);
+  top:  calc(50% - 40px);
+  transition: top 0.1s, left 0.1s;
+}
+
   </style>
 </head>
 
 <body>
-  <canvas id="canvas" width="600" height="400"></canvas>
-  <button id="restart">Restart</button>
+  <div id="game-area">
+    <canvas id="canvas" width="600" height="400"></canvas>
+    <button id="restart">Restart</button>
+  </div>
 
-  <div id="joystick-container">
-    <div id="joystick-thumb"></div>
+  <!-- Joystick goes here, below the canvas -->
+  <div id="joystick-wrapper">
+    <div id="joystick-container">
+      <div id="joystick-thumb"></div>
+    </div>
   </div>
 
   <script>
