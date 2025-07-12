@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Super Jerry – Double-Jump & High Leap</title>
+  <style>
+    html, body {
+      margin:0; padding:0;
+      user-select:none;
+      display:flex; flex-direction:column;
+      align-items:center;
+      background:#eef;
+    }
+    #game-container {
+      position:relative;
+      width:800px; height:600px;
+      border:4px solid #333;
+      overflow:hidden;
+      background:#87ceeb;
+      margin:20px auto;
+    }
+    #canvas {
+      width:800px; height:600px; display:block;
+    }
+    #restart {
+      position:absolute; top:50%; left:50%;
+      transform:translate(-50%,-50%);
+      padding:10px 20px; font-size:18px;
+      display:none; z-index:10;
+    }
+    #controls {
+      width:800px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:10px;
+    }
+    #joystick-container {
+      width:240px; height:240px;
+      border-radius:50%;
+      background:rgba(0,0,0,0.25);
+      touch-action:none;
+      position:relative;
+    }
+    #joystick-thumb {
+      position:absolute;
+      width:80px; height:80px;
+      border-radius:50%;
+      background:rgba(0,0,0,0.5);
+      left:calc(50% - 40px);
+      top:calc(50% - 40px);
+      transition:left .1s, top .1s;
+    }
+    #fire-button {
+      width:80px; height:80px;
+      border-radius:50%;
+      background:rgba(0,0,255,0.6);
+      color:white; font-size:14px;
+      border:none; touch-action:none;
+    }
+  </style>
+</head>
+<body>
+  <h1>SUPER JERRY RUNNER</h1>
+  <h3>Now with High Double-Jump!</h3>
+
+  <div id="game-container">
+    <canvas id="canvas" width="800" height="600"></canvas>
+    <button id="restart">Restart</button>
+  </div>
+
+  <div id="controls">
+    <div id="joystick-container"><div id="joystick-thumb"></div></div>
+    <button id="fire-button">FIRE</button>
+  </div>
+
+  <script>
+  window.onload = () => {
+    const canvas     = document.getElementById("canvas"),
+          ctx        = canvas.getContext("2d"),
+          restartBtn = document.getElementById("restart"),
+          fireBtn    = document.getElementById("fire-button"),
+          base       = document.getElementById("joystick-container"),
+          thumb      = document.getElementById("joystick-thumb");
+
+    // VIEWPORT & WORLD
+    const viewW = 800, viewH = 600;
+    const worldW = 5000, worldH = viewH;
+    const groundH = 50, groundY = worldH - groundH;
+
+    // PLAYER
+    const playerSize = 50;
+    let x = 100, y = groundY - playerSize;
+    let vx = 0, vy = 0;
+    let grounded = false, jumpsRemaining = 2, gameOver = false;
+
+    // PHYSICS
+    const accel             = 2000;
+    const gravity           = 2000;
+    const jumpVelocity      = 700;   // higher jump
+    const joyBoost          = 1.5;
+    const runMultiplier     = 1.8;
+    const horizontalFric    = 0.85;   // only x-damping
+    const verticalFric      = 1.0;    // no vertical friction
+
+    // COINS
+    const coinSize = 35, coins = [], numCoins = 10;
+
+    // OBSTACLES (bombs)
+    const obstacleSize  = coinSize;
+    const groundObs     = [], numGroundObs = 8;
+    const fallingObs    = [], numFallingObs = 8;
+
+    // BULLETS
+    const bullets      = [];
+    const bulletSpeed  = 1000;
+    const bulletSize   = 8;
+
+    // SCORE
+    let score = 0;
+
+    // INPUT
+    const keys = {};
+    document.addEventListener("keydown", e => {
+      keys[e.key.toLowerCase()] = true;
+      if ((e.key === "w" || e.key === "ArrowUp") && jumpsRemaining > 0) {
+        vy = -jumpVelocity;
+        jumpsRemaining--;
+        grounded = false;
+      }
+      if (e.code === "Space") shootBullet();
+    });
+    document.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
+
+    // JOYSTICK
+    let joyX = 0, joyY = 0;
+    const stickR = 120, thumbR = 40, maxDisp = stickR - thumbR;
+    base.addEventListener("touchstart", e=>e.preventDefault(), {passive:false});
+    base.addEventListener("touchmove",  e=>{
+      const t = e.touches[0], r = base.getBoundingClientRect();
+      let dx = t.clientX - (r.left + stickR),
+          dy = t.clientY - (r.top  + stickR),
+          d  = Math.hypot(dx, dy);
+      if (d>maxDisp){ dx=dx/d*maxDisp; dy=dy/d*maxDisp; }
+      thumb.style.left = `${stickR + dx - thumbR}px`;
+      thumb.style.top  = `${stickR + dy - thumbR}px`;
+      joyX = dx/maxDisp; joyY = dy/maxDisp;
+      e.preventDefault();
+    }, {passive:false});
+    base.addEventListener("touchend", handleEnd);
+    base.addEventListener("touchcancel", handleEnd);
+    function handleEnd(){
+      thumb.style.left = "calc(50% - 40px)";
+      thumb.style.top  = "calc(50% - 40px)";
+      joyX = joyY = 0;
+    }
+
+    // FIRE BUTTON
+    fireBtn.addEventListener("touchstart", e=>{e.preventDefault(); shootBullet()});
+    fireBtn.addEventListener("mousedown", e=>{e.preventDefault(); shootBullet()});
+
+    function shootBullet(){
+      let nearest, md=Infinity;
+      const px = x+playerSize/2, py = y+playerSize/2;
+      [...groundObs, ...fallingObs].forEach(ob=>{
+        const ox = ob.x + (ob.size||obstacleSize)/2;
+        const oy = ob.y + (ob.size||obstacleSize)/2;
+        const d2 = (ox-px)**2 + (oy-py)**2;
+        if (d2 < md){ md=d2; nearest=ob; }
+      });
+      let angle = 0;
+      if (nearest){
+        const ox = nearest.x + (nearest.size||obstacleSize)/2;
+        const oy = nearest.y + (nearest.size||obstacleSize)/2;
+        angle = Math.atan2(oy-py, ox-px);
+      }
+      bullets.push({
+        x:px, y:py,
+        vx:Math.cos(angle)*bulletSpeed,
+        vy:Math.sin(angle)*bulletSpeed
+      });
+    }
+
+    // RESTART
+    restartBtn.onclick = resetGame;
+    function resetGame(){
+      x=100; y=groundY-playerSize;
+      vx=vy=0;
+      grounded=true;
+      jumpsRemaining=2;
+      gameOver=false;
+      score=0;
+      bullets.length=0;
+      initEntities();
+      restartBtn.style.display="none";
+      lastTime=Date.now();
+      requestAnimationFrame(draw);
+    }
+
+    // INIT ALL COINS & OBSTACLES
+    function initEntities(){
+      coins.length=groundObs.length=fallingObs.length=0;
+      for(let i=0;i<numCoins;i++){
+        coins.push({
+          x:rand(300, worldW - coinSize -200),
+          y:groundY - coinSize - rand(0,80)
+        });
+      }
+      for(let i=0;i<numGroundObs;i++){
+        groundObs.push({
+          x:rand(500, worldW - obstacleSize -200),
+          y:groundY - obstacleSize,
+          hp:5
+        });
+      }
+      for(let i=0;i<numFallingObs;i++){
+        const size=rand(30,60);
+        fallingObs.push({
+          x:rand(300, worldW-300),
+          y:-size,
+          vy:rand(200,400),
+          size, hp:3
+        });
+      }
+    }
+
+    // HELPERS
+    function rand(min,max){ return Math.random()*(max-min)+min; }
+    function clamp(v,lo,hi){ return v<lo?lo:v>hi?hi:v; }
+    function overlap(x1,y1,w1,h1,x2,y2,w2,h2){
+      return x1<=x2+w2 && x2<=x1+w1 && y1<=y2+h2 && y2<=y1+h1;
+    }
+
+    // MAIN LOOP
+    let lastTime = Date.now();
+    function draw(){
+      const now = Date.now(), dt=(now-lastTime)/1000;
+      lastTime=now;
+
+      // HORIZONTAL
+      let ax = 0;
+      if (keys["d"] || keys["arrowright"]) ax += accel*runMultiplier;
+      if (keys["a"] || keys["arrowleft"])  ax -= accel*runMultiplier;
+      ax += joyX*accel*joyBoost*runMultiplier;
+      vx += ax*dt;
+      vx *= horizontalFric;
+
+      // VERTICAL (jump/fast-fall/gravity)
+      if (joyY < -0.5 && jumpsRemaining>0){
+        vy = -jumpVelocity;
+        jumpsRemaining--;
+        grounded=false;
+      }
+      if (joyY > 0.5 && !grounded){
+        vy += gravity*dt*1.5;
+      }
+      vy += gravity*dt;
+      vy *= verticalFric;
+
+      // POSITION & WRAP
+      x += vx*dt; y += vy*dt;
+      if (x + playerSize >= worldW) x = 0;
+      else if (x <= 0)              x = worldW - playerSize;
+
+      // GROUND COLLISION & reset jumps
+      if (y + playerSize >= groundY){
+        y = groundY - playerSize;
+        vy = 0;
+        grounded = true;
+        jumpsRemaining = 2;    // reset double-jump
+      }
+
+      // CAMERA
+      const camX = clamp(x + playerSize/2 - viewW/2, 0, worldW - viewW);
+
+      // CLEAR
+      ctx.clearRect(0,0,viewW,viewH);
+
+      // DRAW WORLD
+      ctx.save();
+      ctx.translate(-camX,0);
+
+      // GROUND
+      ctx.fillStyle="#654321";
+      ctx.fillRect(0, groundY, worldW, groundH);
+
+      // COINS
+      coins.forEach(c=>{
+        ctx.drawImage(coinImg,c.x,c.y,coinSize,coinSize);
+        if (overlap(c.x,c.y,coinSize,coinSize, x,y,playerSize,playerSize)){
+          score++;
+          c.x = rand(camX+viewW,worldW-coinSize);
+          c.y = groundY-coinSize-rand(0,80);
+        }
+      });
+
+      // GROUND BOMBS
+      groundObs.forEach((ob,oi)=>{
+        ctx.drawImage(bombImg,ob.x,ob.y,obstacleSize,obstacleSize);
+      });
+
+      // FALLING BOMBS
+      fallingObs.forEach((fo,fi)=>{
+        fo.y += fo.vy*dt;
+        ctx.drawImage(bombImg, fo.x, fo.y, fo.size, fo.size);
+        if (fo.y > worldH+fo.size){
+          fallingObs[fi] = {
+            x:rand(300,worldW-300),
+            y:-fo.size,
+            vy:fo.vy,size:fo.size,hp:3
+          };
+        }
+      });
+
+      // BULLETS & COLLISIONS
+      ctx.fillStyle="yellow";
+      for(let bi=bullets.length-1; bi>=0; bi--){
+        const b=bullets[bi];
+        b.x+=b.vx*dt; b.y+=b.vy*dt;
+        ctx.beginPath();
+        ctx.arc(b.x,b.y,bulletSize,0,2*Math.PI);
+        ctx.fill();
+
+        // off-screen?
+        if (b.x<camX-50||b.x>camX+viewW+50||b.y<-50||b.y>viewH+50){
+          bullets.splice(bi,1); continue;
+        }
+
+        // vs ground bombs
+        groundObs.forEach((ob,oi)=>{
+          if (overlap(b.x-bulletSize,b.y-bulletSize,bulletSize*2,bulletSize*2,
+                      ob.x,ob.y,obstacleSize,obstacleSize)){
+            ob.hp--;
+            bullets.splice(bi,1);
+            if (ob.hp<=0) groundObs.splice(oi,1);
+          }
+        });
+        // vs falling bombs
+        fallingObs.forEach((fo,fi)=>{
+          if (overlap(b.x-bulletSize,b.y-bulletSize,bulletSize*2,bulletSize*2,
+                      fo.x,fo.y,fo.size,fo.size)){
+            fo.hp--;
+            bullets.splice(bi,1);
+            if (fo.hp<=0) fallingObs.splice(fi,1);
+          }
+        });
+      }
+
+      // PLAYER
+      ctx.drawImage(playerImg,x,y,playerSize,playerSize);
+      ctx.restore();
+
+      // UI
+      ctx.fillStyle="black";
+      ctx.font="25px Arial";
+      ctx.textAlign="left";
+      ctx.fillText("Score: "+score,10,30);
+
+      if (!gameOver) requestAnimationFrame(draw);
+    }
+
+    // LOAD & START
+    const playerImg = new Image(),
+          coinImg   = new Image(),
+          bombImg   = new Image();
+    playerImg.src = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS2oP3lWLmezhBAmuHvAwuaqRv6xVX0eApt7A&s';
+    coinImg.src   = 'https://www.partysuppliesindia.com/cdn/shop/products/1_36_9f92dde3-d77d-4459-a21f-63744a94c836.jpg?v=1735574298&width=1500';
+    bombImg.src   = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSrhGLUu7GF58R8WurYsZXGRwPSg1aER4LGrw&s';
+    playerImg.onload = () => {
+      coinImg.onload = () => {
+        bombImg.onload = () => {
+          initEntities();
+          lastTime = Date.now();
+          draw();
+        };
+      };
+    };
+  };
+  </script>
+</body>
+</html>

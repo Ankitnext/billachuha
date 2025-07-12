@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Catch The Jerry – Double-V Directional Arrow</title>
+  <style>
+    html, body {
+      margin: 0; padding: 0;
+      user-select: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: #eef;
+    }
+    #game-container {
+      position: relative;
+      width: 800px; height: 600px;
+      border: 4px solid #333;
+      overflow: hidden;
+      background: #ddf;
+      margin: 20px auto;
+    }
+    #canvas {
+      display: block;
+      width: 800px; height: 600px;
+    }
+    #restart {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 10px 20px;
+      font-size: 18px;
+      display: none;
+      z-index: 10;
+    }
+    #joystick-wrapper {
+      width: 800px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    #joystick-container {
+      display: inline-block;
+      width: 240px; height: 240px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.25);
+      touch-action: none;
+      position: relative;
+    }
+    #joystick-thumb {
+      position: absolute;
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.5);
+      left: calc(50% - 40px);
+      top:  calc(50% - 40px);
+      transition: left 0.1s, top 0.1s;
+    }
+  </style>
+</head>
+<body>
+  <h1>CATCH THE JERRY</h1>
+  <h3>LEVEL 2 UNLOCK at Score = 5</h3>
+  <div style="display:flex; gap:10px; margin-bottom:10px;">
+    <button onclick="location.href='index.html'">Arrow keys</button>
+    <button onclick="location.href='index2.html'">Joystick</button>
+    <button onclick="location.href='index3.html'">Joystick + keys</button>
+  </div>
+
+  <div id="game-container">
+    <canvas id="canvas" width="800" height="600"></canvas>
+    <button id="restart">Restart</button>
+  </div>
+
+  <div id="joystick-wrapper">
+    <div id="joystick-container">
+      <div id="joystick-thumb"></div>
+    </div>
+  </div>
+
+  <script>
+  window.onload = function() {
+    const canvas     = document.getElementById("canvas");
+    const ctx        = canvas.getContext("2d");
+    const restartBtn = document.getElementById("restart");
+
+    // World & viewport
+    const worldW = 12000, worldH = 8000;
+    const viewW  = canvas.width, viewH = canvas.height;
+
+    // Sprite sizes
+    const playerSize  = 50;
+    const coinSize    = 35;
+    const minBombSize = 20, maxBombSize = 60;
+
+    // Player state
+    let x  = worldW/2 - playerSize/2;
+    let y  = worldH/2 - playerSize/2;
+    let vx = 0, vy = 0;
+
+    // Physics & state
+    const acceleration = 2200, friction = 0.9;
+    let score = 0, gameOver = false;
+    let lastTime = Date.now();
+
+    // Coins
+    const coins = [];
+    for (let i = 0; i < 7; i++) {
+      coins.push({ x: rand(0, worldW - coinSize),
+                   y: rand(0, worldH - coinSize) });
+    }
+
+    // Bombs
+    const bombs = [];
+    function spawnBomb() {
+      const size = rand(minBombSize, maxBombSize);
+      const edge = Math.floor(rand(0, 4));
+      let bx, by, speed = rand(150, 350), vxb, vyb;
+
+      switch(edge) {
+        case 0: // top
+          bx = rand(0, worldW); by = -size;
+          vxb = rand(-speed/2, speed/2); vyb =  speed;
+          break;
+        case 1: // bottom
+          bx = rand(0, worldW); by = worldH + size;
+          vxb = rand(-speed/2, speed/2); vyb = -speed;
+          break;
+        case 2: // left
+          bx = -size; by = rand(0, worldH);
+          vxb =  speed; vyb = rand(-speed/2, speed/2);
+          break;
+        default: // right
+          bx = worldW + size; by = rand(0, worldH);
+          vxb = -speed; vyb = rand(-speed/2, speed/2);
+      }
+      return { x: bx, y: by, vx: vxb, vy: vyb, size };
+    }
+    for (let i = 0; i < 12; i++) bombs.push(spawnBomb());
+
+    // Assets
+    const playerImg = new Image(),
+          coinImg   = new Image(),
+          bombImg   = new Image();
+    playerImg.src = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS2oP3lWLmezhBAmuHvAwuaqRv6xVX0eApt7A&s';
+    coinImg.src   = 'https://www.partysuppliesindia.com/cdn/shop/products/1_36_9f92dde3-d77d-4459-a21f-63744a94c836.jpg?v=1735574298&width=1500';
+    bombImg.src   = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSrhGLUu7GF58R8WurYsZXGRwPSg1aER4LGrw&s';
+
+    const bgMusic   = new Audio('background.mp3');
+    const coinSound = new Audio('foodeat.mp3');
+    bgMusic.loop = true; bgMusic.volume = 0.2;
+    bgMusic.play().catch(() =>
+      document.body.addEventListener('click', ()=> bgMusic.play(), { once:true })
+    );
+
+    // Input
+    const keys = {};
+    document.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
+    document.addEventListener("keyup",   e => keys[e.key.toLowerCase()] = false);
+
+    // Joystick
+    let joyX = 0, joyY = 0;
+    const base    = document.getElementById("joystick-container");
+    const thumb   = document.getElementById("joystick-thumb");
+    const stickR  = 120, thumbR = 40, maxDisp = stickR - thumbR;
+    const joyBoost= 2.5;
+
+    function handleStart(e){ e.preventDefault(); }
+    function handleMove(e) {
+      const t = e.touches[0], r = base.getBoundingClientRect();
+      let dx = t.clientX - (r.left + stickR),
+          dy = t.clientY - (r.top  + stickR),
+          d  = Math.hypot(dx, dy);
+      if (d > maxDisp) { dx = dx/d*maxDisp; dy = dy/d*maxDisp; }
+      thumb.style.left = `${stickR + dx - thumbR}px`;
+      thumb.style.top  = `${stickR + dy - thumbR}px`;
+      joyX = dx / maxDisp; joyY = dy / maxDisp;
+    }
+    function handleEnd(){
+      thumb.style.left = "calc(50% - 40px)";
+      thumb.style.top  = "calc(50% - 40px)";
+      joyX = joyY = 0;
+    }
+    base.addEventListener("touchstart",  handleStart,  { passive:false });
+    base.addEventListener("touchmove",   handleMove,   { passive:false });
+    base.addEventListener("touchend",    handleEnd);
+    base.addEventListener("touchcancel", handleEnd);
+
+    // Restart
+    restartBtn.onclick = () => {
+      score = 0;
+      x = worldW/2 - playerSize/2;
+      y = worldH/2 - playerSize/2;
+      vx = vy = 0;
+      coins.forEach(c => {
+        c.x = rand(0, worldW - coinSize);
+        c.y = rand(0, worldH - coinSize);
+      });
+      for (let i = 0; i < bombs.length; i++) bombs[i] = spawnBomb();
+      gameOver = false;
+      restartBtn.style.display = "none";
+      lastTime = Date.now();
+      requestAnimationFrame(draw);
+    };
+
+    // Movement update
+    function update(dt) {
+      if (keys["d"]||keys["arrowright"]) vx += acceleration*dt;
+      if (keys["a"]||keys["arrowleft"])  vx -= acceleration*dt;
+      if (keys["s"]||keys["arrowdown"])  vy += acceleration*dt;
+      if (keys["w"]||keys["arrowup"])    vy -= acceleration*dt;
+      vx += joyX*acceleration*dt*joyBoost;
+      vy += joyY*acceleration*dt*joyBoost;
+      vx *= friction; vy *= friction;
+      x += vx*dt; y += vy*dt;
+      x = clamp(x, 0, worldW - playerSize);
+      y = clamp(y, 0, worldH - playerSize);
+    }
+
+    // Draw rotated double-V arrow pointing at nearest coin
+    function drawArrowToNearestCoin() {
+      if (!coins.length) return;
+      // find nearest coin
+      let nearest = coins[0], md = Infinity;
+      const px = x + playerSize/2, py = y + playerSize/2;
+      coins.forEach(c => {
+        const dx = (c.x + coinSize/2) - px;
+        const dy = (c.y + coinSize/2) - py;
+        const d2 = dx*dx + dy*dy;
+        if (d2 < md) { md = d2; nearest = c; }
+      });
+      const cx = nearest.x + coinSize/2, cy = nearest.y + coinSize/2;
+      const angle = Math.atan2(cy - py, cx - px);
+
+      ctx.save();
+      ctx.translate(px, py);
+      ctx.rotate(angle);
+      ctx.beginPath();
+      // smaller V (closer in)
+      ctx.moveTo(20, -6);
+      ctx.lineTo(30,   0);
+      ctx.lineTo(20,  6);
+      // larger V (further out)
+      ctx.moveTo(40, -10);
+      ctx.lineTo(50,   0);
+      ctx.lineTo(40,  10);
+      ctx.strokeStyle = "red";
+      ctx.lineWidth   = 4;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Main draw loop
+    function draw() {
+      const now = Date.now();
+      const dt  = (now - lastTime)/1000;
+      lastTime = now;
+      if (!gameOver) update(dt);
+
+      // center camera on player
+      const camX = clamp(x + playerSize/2 - viewW/2, 0, worldW - viewW);
+      const camY = clamp(y + playerSize/2 - viewH/2, 0, worldH - viewH);
+
+      // clear
+      ctx.clearRect(0, 0, viewW, viewH);
+
+      // world (with camera transform)
+      ctx.save();
+      ctx.translate(-camX, -camY);
+      ctx.fillStyle = "#ddf";
+      ctx.fillRect(0, 0, worldW, worldH);
+
+      // draw coins & collect
+      coins.forEach(c => {
+        ctx.drawImage(coinImg, c.x, c.y, coinSize, coinSize);
+        if (overlap(c.x,c.y,coinSize,coinSize, x,y,playerSize,playerSize)) {
+          score++;
+          coinSound.currentTime = 0;
+          coinSound.play();
+          setTimeout(()=>{
+            coinSound.pause();
+            coinSound.currentTime = 0;
+          }, 3000);
+          c.x = rand(0, worldW - coinSize);
+          c.y = rand(0, worldH - coinSize);
+        }
+      });
+
+      // bombs & collisions
+      bombs.forEach((b,i) => {
+        ctx.drawImage(bombImg, b.x, b.y, b.size, b.size);
+        b.x += b.vx * dt;
+        b.y += b.vy * dt;
+        if (b.x < -b.size*2 || b.x > worldW + b.size*2 ||
+            b.y < -b.size*2 || b.y > worldH + b.size*2) {
+          bombs[i] = spawnBomb();
+        }
+        if (overlap(b.x,b.y,b.size,b.size, x,y,playerSize,playerSize)) {
+          gameOver = true;
+          restartBtn.style.display = "block";
+        }
+      });
+
+      // player & arrow
+      ctx.drawImage(playerImg, x, y, playerSize, playerSize);
+      drawArrowToNearestCoin();
+      ctx.restore();
+
+      // UI: score
+      ctx.fillStyle = "black";
+      ctx.font      = "25px Arial";
+      ctx.textAlign = "center";
+      ctx.fillText("Score: " + score, viewW/2, 30);
+
+      if (!gameOver) {
+        requestAnimationFrame(draw);
+      } else {
+        // overlay
+        ctx.fillStyle = "rgba(0,0,0,0.7)";
+        ctx.fillRect(0, 0, viewW, viewH);
+        ctx.fillStyle = "white";
+        ctx.font = "80px Arial";
+        ctx.fillText("Game Over", viewW/2, viewH/2);
+      }
+    }
+
+    // Helpers
+    function rand(min, max)    { return Math.random()*(max-min) + min; }
+    function clamp(v, lo, hi)  { return v<lo ? lo : v>hi ? hi : v; }
+    function overlap(x1,y1,w1,h1, x2,y2,w2,h2) {
+      return x1 <= x2+w2 && x2 <= x1+w1 &&
+             y1 <= y2+h2 && y2 <= y1+h1;
+    }
+
+    playerImg.onload = () => draw();
+  };
+  </script>
+</body>
+</html>
