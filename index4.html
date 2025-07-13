@@ -79,263 +79,390 @@
       <div id="joystick-thumb"></div>
     </div>
   </div>
+<script>
+window.onload = function() {
+  const canvas     = document.getElementById("canvas");
+  const ctx        = canvas.getContext("2d");
+  const restartBtn = document.getElementById("restart");
 
-  <script>
-  window.onload = function() {
-    const canvas     = document.getElementById("canvas");
-    const ctx        = canvas.getContext("2d");
-    const restartBtn = document.getElementById("restart");
+  // World & viewport
+  const worldW = 12000, worldH = 8000;
+  const viewW  = canvas.width, viewH = canvas.height;
 
-    // World & viewport
-    const worldW = 12000, worldH = 8000;
-    const viewW  = canvas.width, viewH = canvas.height;
+  // Sizes
+  const playerSize = 50;
+  const coinSize   = 35;
+  const bombMin    = 20, bombMax = 60;
+  const healthSize = 30;
 
-    // Sprite sizes
-    const playerSize  = 50;
-    const coinSize    = 35;
-    const minBombSize = 20, maxBombSize = 60;
+  // Player state & health
+  let x = worldW/2 - playerSize/2;
+  let y = worldH/2 - playerSize/2;
+  let z = 0;
+  let vx=0, vy=0, vz=0, rotation=0;
+  let health = 100;
 
-    // Player state
-    let x  = worldW/2 - playerSize/2;
-    let y  = worldH/2 - playerSize/2;
-    let vx = 0, vy = 0;
+  // Coin & health pickups
+  let coin           = spawnCoinInView();
+  let healthPickups  = [ spawnHealthPickup(), spawnHealthPickup() ];
 
-    // Physics & state
-    const acceleration = 2200, friction = 0.9;
-    let score = 0, gameOver = false;
-    let lastTime = Date.now();
+  // Bomb containers & timer
+  let coinBombs      = [];
+  let worldBombs     = [];
+  let staticBombs    = [];
+  let chasingBombs   = [];
+  let coinBombTimer  = 0;
+  const coinBombInterval = 2; // seconds
 
-    // Coins
-    const coins = [];
-    for (let i = 0; i < 7; i++) {
-      coins.push({ x: rand(0, worldW - coinSize),
-                   y: rand(0, worldH - coinSize) });
+  // Physics & constants
+  const accel       = 1500;
+  const frictionG   = 0.9;
+  const frictionA   = 0.995;
+  const gravity     = 3000;
+  const jumpZ       = 800;
+  const jumpXY      = 400;
+  const spinSpeed   = Math.PI * 4;
+  const chaseSpeed  = 120;    // px/s
+  const dtDamage    = 25;     // % per second from chasing bomb
+
+  let score    = 0;
+  let gameOver = false;
+  let lastTime = Date.now();
+
+  // Assets
+  const playerImg = new Image();
+  const coinImg   = new Image();
+  playerImg.src = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS2oP3lWLmezhBAmuHvAwuaqRv6xVX0eApt7A&s';
+  coinImg.src   = 'https://www.partysuppliesindia.com/cdn/shop/products/1_36_9f92dde3-d77d-4459-a21f-63744a94c836.jpg?v=1735574298&width=1500';
+  const bgMusic   = new Audio('background.mp3');
+  const coinSound = new Audio('foodeat.mp3');
+  bgMusic.loop   = true; bgMusic.volume = 0.2;
+  bgMusic.play().catch(()=> {
+    document.body.addEventListener('click', ()=> bgMusic.play(), { once:true });
+  });
+
+  // Input
+  const keys = {};
+  document.addEventListener('keydown', e=>{
+    const k=e.key.toLowerCase(); keys[k]=true;
+    if((k===' '||k==='space')&&z===0){
+      vz=jumpZ;
+      let dx=vx, dy=vy, m=Math.hypot(dx,dy);
+      if(m<1){ dx=0; dy=-1; } else { dx/=m; dy/=m; }
+      vx+=dx*jumpXY; vy+=dy*jumpXY;
     }
+  });
+  document.addEventListener('keyup', e=>{
+    keys[e.key.toLowerCase()] = false;
+  });
 
-    // Bombs
-    const bombs = [];
-    function spawnBomb() {
-      const size = rand(minBombSize, maxBombSize);
-      const edge = Math.floor(rand(0, 4));
-      let bx, by, speed = rand(150, 350), vxb, vyb;
+  // Joystick (mobile)
+  let joyX=0, joyY=0;
+  const base   = document.getElementById("joystick-container");
+  const thumb  = document.getElementById("joystick-thumb");
+  const stickR = 120, thumbR=40, maxDisp=stickR-thumbR, joyBoost=2.5;
+  function handleStart(e){ e.preventDefault(); }
+  function handleMove(e){
+    const t=e.touches[0], r=base.getBoundingClientRect();
+    let dx=t.clientX-(r.left+stickR),
+        dy=t.clientY-(r.top +stickR),
+        d=Math.hypot(dx,dy);
+    if(d>maxDisp){ dx=dx/d*maxDisp; dy=dy/d*maxDisp; }
+    thumb.style.left = `${stickR+dx-thumbR}px`;
+    thumb.style.top  = `${stickR+dy-thumbR}px`;
+    joyX=dx/maxDisp; joyY=dy/maxDisp;
+  }
+  function handleEnd(){
+    thumb.style.left = "calc(50% - 40px)";
+    thumb.style.top  = "calc(50% - 40px)";
+    joyX=joyY=0;
+  }
+  base.addEventListener("touchstart",  handleStart, { passive:false });
+  base.addEventListener("touchmove",   handleMove,  { passive:false });
+  base.addEventListener("touchend",    handleEnd);
+  base.addEventListener("touchcancel", handleEnd);
 
-      switch(edge) {
-        case 0: // top
-          bx = rand(0, worldW); by = -size;
-          vxb = rand(-speed/2, speed/2); vyb =  speed;
-          break;
-        case 1: // bottom
-          bx = rand(0, worldW); by = worldH + size;
-          vxb = rand(-speed/2, speed/2); vyb = -speed;
-          break;
-        case 2: // left
-          bx = -size; by = rand(0, worldH);
-          vxb =  speed; vyb = rand(-speed/2, speed/2);
-          break;
-        default: // right
-          bx = worldW + size; by = rand(0, worldH);
-          vxb = -speed; vyb = rand(-speed/2, speed/2);
-      }
-      return { x: bx, y: by, vx: vxb, vy: vyb, size };
-    }
-    for (let i = 0; i < 12; i++) bombs.push(spawnBomb());
+  // Initialize bombs
+  for(let i=0;i<8;i++) worldBombs.push(spawnWorldBomb());
+  for(let i=0;i<5;i++) staticBombs.push(spawnStaticBomb());
+  for(let i=0;i<2;i++) chasingBombs.push(spawnChasingBomb());
 
-    // Assets
-    const playerImg = new Image(),
-          coinImg   = new Image(),
-          bombImg   = new Image();
-    playerImg.src = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS2oP3lWLmezhBAmuHvAwuaqRv6xVX0eApt7A&s';
-    coinImg.src   = 'https://www.partysuppliesindia.com/cdn/shop/products/1_36_9f92dde3-d77d-4459-a21f-63744a94c836.jpg?v=1735574298&width=1500';
-    bombImg.src   = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSrhGLUu7GF58R8WurYsZXGRwPSg1aER4LGrw&s';
-
-    const bgMusic   = new Audio('background.mp3');
-    const coinSound = new Audio('foodeat.mp3');
-    bgMusic.loop = true; bgMusic.volume = 0.2;
-    bgMusic.play().catch(() =>
-      document.body.addEventListener('click', ()=> bgMusic.play(), { once:true })
-    );
-
-    // Input
-    const keys = {};
-    document.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
-    document.addEventListener("keyup",   e => keys[e.key.toLowerCase()] = false);
-
-    // Joystick
-    let joyX = 0, joyY = 0;
-    const base    = document.getElementById("joystick-container");
-    const thumb   = document.getElementById("joystick-thumb");
-    const stickR  = 120, thumbR = 40, maxDisp = stickR - thumbR;
-    const joyBoost= 2.5;
-
-    function handleStart(e){ e.preventDefault(); }
-    function handleMove(e) {
-      const t = e.touches[0], r = base.getBoundingClientRect();
-      let dx = t.clientX - (r.left + stickR),
-          dy = t.clientY - (r.top  + stickR),
-          d  = Math.hypot(dx, dy);
-      if (d > maxDisp) { dx = dx/d*maxDisp; dy = dy/d*maxDisp; }
-      thumb.style.left = `${stickR + dx - thumbR}px`;
-      thumb.style.top  = `${stickR + dy - thumbR}px`;
-      joyX = dx / maxDisp; joyY = dy / maxDisp;
-    }
-    function handleEnd(){
-      thumb.style.left = "calc(50% - 40px)";
-      thumb.style.top  = "calc(50% - 40px)";
-      joyX = joyY = 0;
-    }
-    base.addEventListener("touchstart",  handleStart,  { passive:false });
-    base.addEventListener("touchmove",   handleMove,   { passive:false });
-    base.addEventListener("touchend",    handleEnd);
-    base.addEventListener("touchcancel", handleEnd);
-
-    // Restart
-    restartBtn.onclick = () => {
-      score = 0;
-      x = worldW/2 - playerSize/2;
-      y = worldH/2 - playerSize/2;
-      vx = vy = 0;
-      coins.forEach(c => {
-        c.x = rand(0, worldW - coinSize);
-        c.y = rand(0, worldH - coinSize);
-      });
-      for (let i = 0; i < bombs.length; i++) bombs[i] = spawnBomb();
-      gameOver = false;
-      restartBtn.style.display = "none";
-      lastTime = Date.now();
-      requestAnimationFrame(draw);
-    };
-
-    // Movement update
-    function update(dt) {
-      if (keys["d"]||keys["arrowright"]) vx += acceleration*dt;
-      if (keys["a"]||keys["arrowleft"])  vx -= acceleration*dt;
-      if (keys["s"]||keys["arrowdown"])  vy += acceleration*dt;
-      if (keys["w"]||keys["arrowup"])    vy -= acceleration*dt;
-      vx += joyX*acceleration*dt*joyBoost;
-      vy += joyY*acceleration*dt*joyBoost;
-      vx *= friction; vy *= friction;
-      x += vx*dt; y += vy*dt;
-      x = clamp(x, 0, worldW - playerSize);
-      y = clamp(y, 0, worldH - playerSize);
-    }
-
-    // Draw rotated double-V arrow pointing at nearest coin
-    function drawArrowToNearestCoin() {
-      if (!coins.length) return;
-      // find nearest coin
-      let nearest = coins[0], md = Infinity;
-      const px = x + playerSize/2, py = y + playerSize/2;
-      coins.forEach(c => {
-        const dx = (c.x + coinSize/2) - px;
-        const dy = (c.y + coinSize/2) - py;
-        const d2 = dx*dx + dy*dy;
-        if (d2 < md) { md = d2; nearest = c; }
-      });
-      const cx = nearest.x + coinSize/2, cy = nearest.y + coinSize/2;
-      const angle = Math.atan2(cy - py, cx - px);
-
-      ctx.save();
-      ctx.translate(px, py);
-      ctx.rotate(angle);
-      ctx.beginPath();
-      // smaller V (closer in)
-      ctx.moveTo(20, -6);
-      ctx.lineTo(30,   0);
-      ctx.lineTo(20,  6);
-      // larger V (further out)
-      ctx.moveTo(40, -10);
-      ctx.lineTo(50,   0);
-      ctx.lineTo(40,  10);
-      ctx.strokeStyle = "red";
-      ctx.lineWidth   = 4;
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    // Main draw loop
-    function draw() {
-      const now = Date.now();
-      const dt  = (now - lastTime)/1000;
-      lastTime = now;
-      if (!gameOver) update(dt);
-
-      // center camera on player
-      const camX = clamp(x + playerSize/2 - viewW/2, 0, worldW - viewW);
-      const camY = clamp(y + playerSize/2 - viewH/2, 0, worldH - viewH);
-
-      // clear
-      ctx.clearRect(0, 0, viewW, viewH);
-
-      // world (with camera transform)
-      ctx.save();
-      ctx.translate(-camX, -camY);
-      ctx.fillStyle = "#ddf";
-      ctx.fillRect(0, 0, worldW, worldH);
-
-      // draw coins & collect
-      coins.forEach(c => {
-        ctx.drawImage(coinImg, c.x, c.y, coinSize, coinSize);
-        if (overlap(c.x,c.y,coinSize,coinSize, x,y,playerSize,playerSize)) {
-          score++;
-          coinSound.currentTime = 0;
-          coinSound.play();
-          setTimeout(()=>{
-            coinSound.pause();
-            coinSound.currentTime = 0;
-          }, 3000);
-          c.x = rand(0, worldW - coinSize);
-          c.y = rand(0, worldH - coinSize);
-        }
-      });
-
-      // bombs & collisions
-      bombs.forEach((b,i) => {
-        ctx.drawImage(bombImg, b.x, b.y, b.size, b.size);
-        b.x += b.vx * dt;
-        b.y += b.vy * dt;
-        if (b.x < -b.size*2 || b.x > worldW + b.size*2 ||
-            b.y < -b.size*2 || b.y > worldH + b.size*2) {
-          bombs[i] = spawnBomb();
-        }
-        if (overlap(b.x,b.y,b.size,b.size, x,y,playerSize,playerSize)) {
-          gameOver = true;
-          restartBtn.style.display = "block";
-        }
-      });
-
-      // player & arrow
-      ctx.drawImage(playerImg, x, y, playerSize, playerSize);
-      drawArrowToNearestCoin();
-      ctx.restore();
-
-      // UI: score
-      ctx.fillStyle = "black";
-      ctx.font      = "25px Arial";
-      ctx.textAlign = "center";
-      ctx.fillText("Score: " + score, viewW/2, 30);
-
-      if (!gameOver) {
-        requestAnimationFrame(draw);
-      } else {
-        // overlay
-        ctx.fillStyle = "rgba(0,0,0,0.7)";
-        ctx.fillRect(0, 0, viewW, viewH);
-        ctx.fillStyle = "white";
-        ctx.font = "80px Arial";
-        ctx.fillText("Game Over", viewW/2, viewH/2);
-      }
-    }
-
-    // Helpers
-    function rand(min, max)    { return Math.random()*(max-min) + min; }
-    function clamp(v, lo, hi)  { return v<lo ? lo : v>hi ? hi : v; }
-    function overlap(x1,y1,w1,h1, x2,y2,w2,h2) {
-      return x1 <= x2+w2 && x2 <= x1+w1 &&
-             y1 <= y2+h2 && y2 <= y1+h1;
-    }
-
-    playerImg.onload = () => draw();
+  // Restart
+  restartBtn.onclick = ()=>{
+    x=worldW/2-playerSize/2;
+    y=worldH/2-playerSize/2;
+    z=vx=vy=vz=rotation=0;
+    health=100; score=0; gameOver=false;
+    coin=spawnCoinInView();
+    coinBombs=[]; coinBombTimer=0;
+    worldBombs=[]; staticBombs=[]; chasingBombs=[];
+    for(let i=0;i<8;i++) worldBombs.push(spawnWorldBomb());
+    for(let i=0;i<5;i++) staticBombs.push(spawnStaticBomb());
+    for(let i=0;i<2;i++) chasingBombs.push(spawnChasingBomb());
+    healthPickups=[spawnHealthPickup(),spawnHealthPickup()];
+    restartBtn.style.display='none';
+    lastTime=Date.now();
+    requestAnimationFrame(draw);
   };
-  </script>
+
+  function draw(){
+    const now=Date.now();
+    let dt=(now-lastTime)/1000;
+    lastTime=now;
+    if(!gameOver){
+      update(dt);
+      coinBombTimer+=dt;
+      if(coinBombTimer>=coinBombInterval){
+        coinBombTimer-=coinBombInterval;
+        coinBombs.push(spawnCoinBomb());
+      }
+    }
+
+    const camX=clamp(x+playerSize/2-viewW/2,0,worldW-viewW),
+          camY=clamp(y+playerSize/2-viewH/2,0,worldH-viewH);
+
+    ctx.clearRect(0,0,viewW,viewH);
+    ctx.save(); ctx.translate(-camX,-camY);
+
+    // Background & grid
+    ctx.fillStyle='#ddf';
+    ctx.fillRect(0,0,worldW,worldH);
+    drawGrid();
+
+    // Coin (resets health to 100% on pickup)
+    updateCoin(dt);
+    ctx.drawImage(coinImg,coin.x,coin.y,coinSize,coinSize);
+    if(z===0 && overlap(coin.x,coin.y,coinSize,coinSize, x,y,playerSize,playerSize)){
+      score++; coinSound.currentTime=0; coinSound.play();
+      coin=spawnCoinInView(camX,camY);
+      health=100;
+    }
+
+    // World bombs (type3: purple)
+    worldBombs.forEach(b=>{
+      b.x+=b.vx*dt; b.y+=b.vy*dt;
+      if(b.x<-b.size*2||b.x>worldW+b.size*2||b.y<-b.size*2||b.y>worldH+b.size*2){
+        Object.assign(b,spawnWorldBomb());
+      }
+      ctx.fillStyle='purple';
+      ctx.beginPath();
+      ctx.arc(b.x+b.size/2,b.y+b.size/2,b.size/2,0,Math.PI*2);
+      ctx.fill();
+      if(z===0 && overlap(b.x,b.y,b.size,b.size, x,y,playerSize,playerSize)){
+        applyDamage(75);
+      }
+    });
+
+    // Static bombs (type4: red)
+    staticBombs.forEach(sb=>{
+      ctx.fillStyle='red';
+      ctx.beginPath();
+      ctx.arc(sb.x+sb.size/2,sb.y+sb.size/2,sb.size/2,0,Math.PI*2);
+      ctx.fill();
+      if(z===0 && overlap(sb.x,sb.y,sb.size,sb.size, x,y,playerSize,playerSize)){
+        applyDamage(100);
+      }
+    });
+
+    // Chasing bombs (type5: blue)
+    chasingBombs.forEach(cb=>{
+      const px=x+playerSize/2, py=y+playerSize/2;
+      let dx=px-(cb.x+cb.size/2), dy=py-(cb.y+cb.size/2), m=Math.hypot(dx,dy);
+      if(m>0){ dx/=m; dy/=m; }
+      cb.x+=dx*chaseSpeed*dt; cb.y+=dy*chaseSpeed*dt;
+      ctx.fillStyle='blue';
+      ctx.beginPath();
+      ctx.arc(cb.x+cb.size/2,cb.y+cb.size/2,cb.size/2,0,Math.PI*2);
+      ctx.fill();
+      if(overlap(cb.x,cb.y,cb.size,cb.size, x,y,playerSize,playerSize)){
+        applyDamage(dtDamage*dt);
+      }
+    });
+
+    // Coin‐thrown bombs (type1: orange, type2: yellow)
+    coinBombs.forEach((cb,i)=>{
+      cb.x+=cb.vx*dt; cb.y+=cb.vy*dt;
+      const col=cb.type===1?'orange':'yellow';
+      ctx.fillStyle=col;
+      ctx.beginPath();
+      ctx.arc(cb.x+cb.size/2,cb.y+cb.size/2,cb.size/2,0,Math.PI*2);
+      ctx.fill();
+      if(cb.x<-cb.size*2||cb.x>worldW+cb.size*2||cb.y<-cb.size*2||cb.y>worldH+cb.size*2){
+        coinBombs.splice(i,1);
+      } else if(z===0 && overlap(cb.x,cb.y,cb.size,cb.size, x,y,playerSize,playerSize)){
+        applyDamage(cb.type===1?50:100);
+        coinBombs.splice(i,1);
+      }
+    });
+
+    // Health pickups (solid green)
+    healthPickups.forEach((hp,i)=>{
+      ctx.fillStyle='green';
+      ctx.fillRect(hp.x,hp.y,healthSize,healthSize);
+      ctx.strokeStyle='darkgreen';
+      ctx.strokeRect(hp.x,hp.y,healthSize,healthSize);
+      if(overlap(hp.x,hp.y,healthSize,healthSize, x,y,playerSize,playerSize)){
+        health=100;
+        healthPickups[i]=spawnHealthPickup();
+      }
+    });
+
+    drawShadow();
+
+    // Player
+    ctx.save();
+    ctx.translate(x+playerSize/2, y-z+playerSize/2);
+    ctx.rotate(rotation);
+    ctx.drawImage(playerImg,-playerSize/2,-playerSize/2,playerSize,playerSize);
+    ctx.restore();
+
+    drawArrowToNearestCoin();
+
+    ctx.restore();
+
+    // UI: Score
+    ctx.fillStyle='black';
+    ctx.font='25px Arial'; ctx.textAlign='center';
+    ctx.fillText('Score: '+score, viewW/2, 30);
+
+    // UI: Health bar (50% width, below score)
+    const barW=viewW*0.5, barH=15;
+    const barX=(viewW-barW)/2, barY=50;
+    ctx.fillStyle='#555';
+    ctx.fillRect(barX,barY,barW,barH);
+    ctx.fillStyle=health<30?'red':'lime';
+    ctx.fillRect(barX,barY,barW*(health/100),barH);
+    ctx.strokeStyle='#000';
+    ctx.strokeRect(barX,barY,barW,barH);
+
+    if(!gameOver) requestAnimationFrame(draw);
+    else {
+      ctx.fillStyle='rgba(0,0,0,0.7)';
+      ctx.fillRect(0,0,viewW,viewH);
+      ctx.fillStyle='white';
+      ctx.font='80px Arial';
+      ctx.fillText('Game Over',viewW/2,viewH/2);
+    }
+  }
+
+  function applyDamage(d){
+    health-=d;
+    if(health<=0){
+      health=0; gameOver=true;
+      restartBtn.style.display='block';
+    }
+  }
+
+  function update(dt){
+    if(keys['d']||keys['arrowright']) vx+=accel*dt;
+    if(keys['a']||keys['arrowleft'])  vx-=accel*dt;
+    if(keys['s']||keys['arrowdown'])  vy+=accel*dt;
+    if(keys['w']||keys['arrowup'])    vy-=accel*dt;
+    vx+=joyX*accel*dt*joyBoost; vy+=joyY*accel*dt*joyBoost;
+    const f=z>0?frictionA:frictionG;
+    vx*=f; vy*=f;
+    x=clamp(x+vx*dt,0,worldW-playerSize);
+    y=clamp(y+vy*dt,0,worldH-playerSize);
+    vz-=gravity*dt; z+=vz*dt;
+    if(z<0){ z=0; vz=0; rotation=0; }
+    if(z>0) rotation+=spinSpeed*dt;
+  }
+
+  function updateCoin(dt){
+    coin.x+=coin.vx*dt; coin.y+=coin.vy*dt;
+    if(coin.x<0||coin.x>worldW-coinSize) coin.vx*=-1;
+    if(coin.y<0||coin.y>worldH-coinSize) coin.vy*=-1;
+  }
+
+  function drawGrid(){
+    const g=200;
+    ctx.strokeStyle='#555'; ctx.lineWidth=1; ctx.beginPath();
+    for(let i=0;i<=worldW;i+=g){ ctx.moveTo(i,0);ctx.lineTo(i,worldH); }
+    for(let j=0;j<=worldH;j+=g){ ctx.moveTo(0,j);ctx.lineTo(worldW,j); }
+    ctx.stroke();
+    ctx.fillStyle='#555'; ctx.font='12px Arial';
+    for(let i=0;i<=worldW;i+=g) ctx.fillText(i,i+4,12);
+    for(let j=0;j<=worldH;j+=g) ctx.fillText(j,4,j-4);
+  }
+
+  function drawShadow(){
+    const sx=x+playerSize/2, sy=y+playerSize+4;
+    const ss=1-Math.min(z/jumpZ,0.8);
+    ctx.save();
+    ctx.fillStyle='rgba(0,0,0,0.25)';
+    ctx.beginPath();
+    ctx.ellipse(sx,sy,(playerSize/2)*ss,10*ss,0,0,Math.PI*2);
+    ctx.fill(); ctx.restore();
+  }
+
+  function spawnCoinInView(camX=(worldW-viewW)/2,camY=(worldH-viewH)/2){
+    const cx=camX+rand(0,viewW-coinSize),
+          cy=camY+rand(0,viewH-coinSize),
+          sp=rand(60,120), ang=rand(0,Math.PI*2);
+    return { x:cx, y:cy, vx:Math.cos(ang)*sp, vy:Math.sin(ang)*sp };
+  }
+
+  function spawnCoinBomb(){
+    const type=Math.random()<0.5?1:2,
+          size=rand(bombMin,bombMax),
+          ang=rand(0,Math.PI*2),
+          spd=rand(200,400);
+    return {
+      type,size,
+      x:coin.x+coinSize/2-size/2,
+      y:coin.y+coinSize/2-size/2,
+      vx:Math.cos(ang)*spd, vy:Math.sin(ang)*spd
+    };
+  }
+
+  function spawnWorldBomb(){
+    const size=rand(bombMin,bombMax), edge=Math.floor(rand(0,4)), spd=rand(150,350);
+    let bx,by,vxb,vyb;
+    switch(edge){
+      case 0: bx=rand(0,worldW);by=-size;vxb=rand(-spd/2,spd/2);vyb=spd;break;
+      case 1: bx=rand(0,worldW);by=worldH+size;vxb=rand(-spd/2,spd/2);vyb=-spd;break;
+      case 2: bx=-size;by=rand(0,worldH);vxb=spd;vyb=rand(-spd/2,spd/2);break;
+      default:bx=worldW+size;by=rand(0,worldH);vxb=-spd;vyb=rand(-spd/2,spd/2);
+    }
+    return { x:bx,y:by,vx:vxb,vy:vyb,size };
+  }
+
+  function spawnStaticBomb(){
+    const size=rand(50,120), x0=rand(0,worldW-size), y0=rand(0,worldH-size);
+    return { x:x0, y:y0, size };
+  }
+
+  function spawnChasingBomb(){
+    const size=rand(bombMin,bombMax), x0=rand(0,worldW-size), y0=rand(0,worldH-size);
+    return { x:x0, y:y0, size };
+  }
+
+  function spawnHealthPickup(){
+    const x0=rand(0,worldW-healthSize), y0=rand(0,worldH-healthSize);
+    return { x:x0, y:y0 };
+  }
+
+  function drawArrowToNearestCoin(){
+    const px=x+playerSize/2, py=y+playerSize/2;
+    const cx=coin.x+coinSize/2, cy=coin.y+coinSize/2;
+    const a=Math.atan2(cy-py,cx-px);
+    ctx.save(); ctx.translate(px,py); ctx.rotate(a);
+    ctx.beginPath();
+    ctx.moveTo(20,-6);ctx.lineTo(30,0);ctx.lineTo(20,6);
+    ctx.moveTo(40,-10);ctx.lineTo(50,0);ctx.lineTo(40,10);
+    ctx.strokeStyle='red';ctx.lineWidth=4;ctx.stroke();ctx.restore();
+  }
+
+  // Utils
+  function rand(min,max){ return Math.random()*(max-min)+min; }
+  function clamp(v,lo,hi){ return v<lo?lo:v>hi?hi:v; }
+  function overlap(x1,y1,w1,h1,x2,y2,w2,h2){
+    return x1<=x2+w2 && x2<=x1+w1 && y1<=y2+h2 && y2<=y1+h1;
+  }
+
+  playerImg.onload = () => draw();
+};
+</script>
+
 </body>
 </html>
