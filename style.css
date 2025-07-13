@@ -1,46 +1,45 @@
 body {
-        margin: 0;
-        padding: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
 
-        -webkit-user-select: none;
-        -ms-user-select: none;
-         user-select: none;
-    }
+#canvas {
+  width: 90vw;
+  max-width: 600px;
+  height: auto;
+  border: 1px solid black;
+  display: block;
+}
 
-    #canvas {
-        width: 90vw;
-        max-width: 600px;
-        height: auto;
-        border: 1px solid black;
-        display: block;
-    }
+.controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 10px;
+}
 
-    .controls {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        margin-top: 10px;
-    }
+.row {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
 
-    .row {
-        display: flex;
-        justify-content: center;
-        gap: 10px;
-    }
+button {
+  width: 15vw;
+  max-width: 60px;
+  height: 40px;
+  font-size: 1.2em;
+  margin: 5px;
+}
 
-    button {
-        width: 15vw;
-        max-width: 60px;
-        height: 40px;
-        font-size: 1.2em;
-        margin: 5px;
-    }
-
-    #restart {
+#restart {
   display: inline-block;
   margin-top: 20px;
   padding: 10px 30px;
@@ -64,31 +63,32 @@ body {
 #restart:active {
   transform: translateY(1px);
 }
-/* wrap your three “nav” buttons in a container */
+
+/* Navigation Buttons Container */
 .nav-container {
   display: flex;
   justify-content: center;
-  gap: 10px;
+  gap: 6px;                    /* Reduced gap */
   flex-wrap: wrap;
-  margin: 20px 0;
+  margin: 16px 0;              /* Slightly smaller margin */
 }
 
-/* cancel the generic button sizing just inside .nav-container */
 .nav-container button {
-  flex: 0 0 auto;               /* don’t shrink or grow */
-  width: auto  !important;      /* let the text set the width */
-  max-width: none !important;   /* remove the old 60px cap */
-  min-width: 80px;              /* optional floor width */
-  padding: 8px 16px;            /* comfy hit area */
-  white-space: nowrap;          /* keep label on one line */
+  flex: 0 0 auto;
+  width: auto !important;
+  max-width: none !important;
+  min-width: 70px;             /* Slightly reduced */
+  padding: 6px 14px;           /* Compact button size */
+  white-space: nowrap;
+  font-size: 0.95em;
   box-sizing: border-box;
 }
 
-
-    @media (max-width: 480px) {
-        button {
-            width: 20vw;
-            height: 35px;
-            font-size: 1em;
-        }
-    }
+/* Mobile adjustments */
+@media (max-width: 480px) {
+  button {
+    width: 20vw;
+    height: 35px;
+    font-size: 1em;
+  }
+}
