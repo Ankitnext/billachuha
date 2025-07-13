@@ -74,11 +74,36 @@
     <button id="restart">Restart</button>
   </div>
 
-  <div id="joystick-wrapper">
-    <div id="joystick-container">
-      <div id="joystick-thumb"></div>
-    </div>
+  <!-- Joystick fixed on bottom-left -->
+<div id="joystick-container"
+     style="position: fixed; bottom: 80px; left: 40px;
+            width: 240px; height: 240px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.25);
+            touch-action: none;
+            z-index: 1000;">
+  <div id="joystick-thumb"
+       style="position: absolute;
+              width: 80px; height: 80px;
+              border-radius: 50%;
+              background: rgba(0,0,0,0.5);
+              left: calc(50% - 40px);
+              top:  calc(50% - 40px);
+              transition: left 0.1s, top 0.1s;">
   </div>
+</div>
+
+<!-- Jump button fixed on bottom-right -->
+<button id="jumpBtn"
+        style="position: fixed; bottom: 80px; right: 40px;
+               padding: 20px 30px; font-size: 20px;
+               background: limegreen; border: none; border-radius: 10px;
+               color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+               z-index: 1000;">
+  JUMP
+</button>
+
+
 <script>
 window.onload = function() {
   const canvas     = document.getElementById("canvas");
@@ -155,6 +180,18 @@ window.onload = function() {
   document.addEventListener('keyup', e=>{
     keys[e.key.toLowerCase()] = false;
   });
+
+  document.getElementById("jumpBtn").addEventListener("touchstart", e => {
+  e.preventDefault();
+  if (z === 0) {
+    vz = jumpZ;
+    let dx = vx, dy = vy, m = Math.hypot(dx, dy);
+    if (m < 1) { dx = 0; dy = -1; } else { dx /= m; dy /= m; }
+    vx += dx * jumpXY;
+    vy += dy * jumpXY;
+  }
+}, { passive: false });
+
 
   // Joystick (mobile)
   let joyX=0, joyY=0;
