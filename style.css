@@ -68,9 +68,9 @@ body {
 .nav-container {
   display: flex;
   justify-content: center;
-  gap: 10px;
+  gap: 1px;
   flex-wrap: wrap;
-  margin: 20px 0;
+  margin: 2px 0;
 }
 
 /* cancel the generic button sizing just inside .nav-container */
