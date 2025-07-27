@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sprite Animation Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #f0f4f8;
+            padding: 1rem;
+        }
+        canvas {
+            background-color: #ffffff;
+            border: 2px solid #cbd5e1;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 100%;
+            height: auto; /* Maintain aspect ratio */
+        }
+        button {
+            @apply px-6 py-3 mt-4 mx-2 rounded-lg font-semibold text-white transition-all duration-200 ease-in-out;
+            background: linear-gradient(145deg, #60a5fa, #3b82f6); /* Blue gradient */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: none;
+        }
+        button:hover {
+            background: linear-gradient(145deg, #3b82f6, #2563eb);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        }
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-4">Player Animation</h1>
+    <canvas id="gameCanvas" width="400" height="200"></canvas>
+    <div class="flex flex-wrap justify-center mt-4">
+        <button id="runButton">Run Animation</button>
+        <button id="jumpButton">Jump Animation</button>
+    </div>
+
+    <script>
+        // Get the canvas element and its 2D rendering context
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // --- Animation State Variables ---
+        let currentAnimationName = 'run'; // Stores the name of the currently active animation
+        let currentFrameIndex = 0;      // Current frame within the active animation
+        let frameTimer = 0;             // Timer to control frame rate
+        const animationSpeed = 5;       // Lower value means faster animation (frames per gameLoop tick)
+
+        // --- Player Properties ---
+        const player = {
+            x: 50,
+            y: canvas.height - 50, // Start player slightly above the bottom edge
+            width: 30,
+            height: 40,
+            color: '#ef4444' // Tailwind red-500
+        };
+
+        // --- Define Animation Frames ---
+        // Each array represents a sequence of frames.
+        // Each frame is a function that takes the context (ctx) and player object,
+        // and draws the player in that specific pose.
+        const playerAnimations = {
+            run: [
+                // Run Frame 1: Legs slightly forward/backward
+                (ctx, p) => {
+                    ctx.fillRect(p.x, p.y, p.width, p.height); // Body
+                    ctx.fillRect(p.x + p.width / 4, p.y + p.height, 5, 15); // Left leg back
+                    ctx.fillRect(p.x + p.width - 5 - p.width / 4, p.y + p.height, 5, 15); // Right leg forward
+                },
+                // Run Frame 2: Legs more extended
+                (ctx, p) => {
+                    ctx.fillRect(p.x, p.y, p.width, p.height); // Body
+                    ctx.fillRect(p.x, p.y + p.height, 5, 15); // Left leg way back
+                    ctx.fillRect(p.x + p.width - 5, p.y + p.height, 5, 15); // Right leg way forward
+                },
+                // Run Frame 3: Legs returning to neutral
+                (ctx, p) => {
+                    ctx.fillRect(p.x, p.y, p.width, p.height); // Body
+                    ctx.fillRect(p.x + p.width / 4, p.y + p.height, 5, 15); // Left leg forward
+                    ctx.fillRect(p.x + p.width - 5 - p.width / 4, p.y + p.height, 5, 15); // Right leg back
+                },
+                // Run Frame 4: Legs more extended (opposite of frame 2)
+                (ctx, p) => {
+                    ctx.fillRect(p.x, p.y, p.width, p.height); // Body
+                    ctx.fillRect(p.x + p.width - 5, p.y + p.height, 5, 15); // Left leg way forward
+                    ctx.fillRect(p.x, p.y + p.height, 5, 15); // Right leg way back
+                }
+            ],
+            jump: [
+                // Jump Frame 1: Crouch (take-off)
+                (ctx, p) => {
+                    ctx.fillRect(p.x, p.y + 10, p.width, p.height - 10); // Body slightly compressed
+                    ctx.fillRect(p.x + p.width / 4, p.y + p.height, 5, 10); // Legs bent
+                    ctx.fillRect(p.x + p.width - 5 - p.width / 4, p.y + p.height, 5, 10);
+                },
+                // Jump Frame 2: Ascending (mid-air)
+                (ctx, p) => {
+                    ctx.fillRect(p.x, p.y - 20, p.width, p.height); // Body higher
+                    ctx.fillRect(p.x + p.width / 4, p.y + p.height - 20, 5, 10); // Legs slightly bent upwards
+                    ctx.fillRect(p.x + p.width - 5 - p.width / 4, p.y + p.height - 20, 5, 10);
+                },
+                // Jump Frame 3: Peak/Descending (mid-air)
+                (ctx, p) => {
+                    ctx.fillRect(p.x, p.y - 30, p.width, p.height); // Body at max height
+                    ctx.fillRect(p.x + p.width / 4, p.y + p.height - 30, 5, 10); // Legs tucked slightly
+                    ctx.fillRect(p.x + p.width - 5 - p.width / 4, p.y + p.height - 30, 5, 10);
+                },
+                // Jump Frame 4: Landing (back to ground level, slightly crouched)
+                (ctx, p) => {
+                    ctx.fillRect(p.x, p.y + 5, p.width, p.height - 5); // Body slightly compressed on landing
+                    ctx.fillRect(p.x + p.width / 4, p.y + p.height, 5, 10); // Legs bent again
+                    ctx.fillRect(p.x + p.width - 5 - p.width / 4, p.y + p.height, 5, 10);
+                }
+            ]
+        };
+
+        // --- Game Loop Functions ---
+
+        /**
+         * Clears the canvas and draws the current frame of the player.
+         */
+        function draw() {
+            // Clear the entire canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Set drawing color for the player
+            ctx.fillStyle = player.color;
+
+            // Get the current animation frames based on the currentAnimationName
+            const currentAnimation = playerAnimations[currentAnimationName];
+
+            // Get the drawing function for the current frame
+            const drawFrame = currentAnimation[currentFrameIndex];
+
+            // Call the drawing function to render the player's current frame
+            drawFrame(ctx, player);
+        }
+
+        /**
+         * Updates the animation state, progressing through frames.
+         */
+        function update() {
+            frameTimer++;
+
+            // If enough time has passed (controlled by animationSpeed), move to the next frame
+            if (frameTimer % animationSpeed === 0) {
+                currentFrameIndex++;
+
+                // Loop back to the first frame if we've reached the end of the animation
+                const currentAnimationLength = playerAnimations[currentAnimationName].length;
+                if (currentFrameIndex >= currentAnimationLength) {
+                    currentFrameIndex = 0;
+                }
+            }
+        }
+
+        /**
+         * The main game loop function.
+         * It updates the game state and then redraws the canvas.
+         * Uses requestAnimationFrame for smooth animation.
+         */
+        function gameLoop() {
+            update(); // Update animation frame
+            draw();   // Draw the updated state
+            requestAnimationFrame(gameLoop); // Request next frame
+        }
+
+        // --- Event Listeners for Buttons ---
+        document.getElementById('runButton').addEventListener('click', () => {
+            if (currentAnimationName !== 'run') {
+                currentAnimationName = 'run';
+                currentFrameIndex = 0; // Reset frame when changing animation
+                frameTimer = 0;      // Reset timer
+            }
+        });
+
+        document.getElementById('jumpButton').addEventListener('click', () => {
+            if (currentAnimationName !== 'jump') {
+                currentAnimationName = 'jump';
+                currentFrameIndex = 0; // Reset frame when changing animation
+                frameTimer = 0;      // Reset timer
+            }
+        });
+
+        // Start the animation loop when the window loads
+        window.onload = function () {
+            gameLoop();
+        };
+    </script>
+</body>
+</html>

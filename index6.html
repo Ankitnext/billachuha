@@ -1,319 +1,547 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Super Jerry – Double-Jump & Moving Stairs</title>
-  <style>
-    html, body {
-      margin:0; padding:0;
-      user-select:none;
-      display:flex; flex-direction:column;
-      align-items:center;
-      background:#eef;
-    }
-    #game-container {
-      position:relative;
-      width:800px; height:600px;
-      border:4px solid #333;
-      overflow:hidden;
-      background:#87ceeb;
-      margin:20px auto;
-    }
-    #canvas {
-      width:800px; height:600px; display:block;
-    }
-    #restart {
-      position:absolute; top:50%; left:50%;
-      transform:translate(-50%,-50%);
-      padding:10px 20px; font-size:18px;
-      display:none; z-index:10;
-    }
-    #controls {
-      width:800px;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      margin-bottom:10px;
-    }
-    #joystick-container {
-      width:240px; height:240px;
-      border-radius:50%;
-      background:rgba(0,0,0,0.25);
-      touch-action:none;
-      position:relative;
-    }
-    #joystick-thumb {
-      position:absolute;
-      width:80px; height:80px;
-      border-radius:50%;
-      background:rgba(0,0,0,0.5);
-      left:calc(50% - 40px);
-      top:calc(50% - 40px);
-      transition:left .1s, top .1s;
-    }
-    #fire-button {
-      width:80px; height:80px;
-      border-radius:50%;
-      background:rgba(0,0,255,0.6);
-      color:white; font-size:14px;
-      border:none; touch-action:none;
-    }
-  </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Super Jerry – Infinite Climb Jump</title>
+    <style>
+        /* --- Basic Setup & Body Layout (FIXED) --- */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden; /* Prevent scrolling on the whole page */
+            font-family: sans-serif;
+            background: #eef;
+            user-select: none;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        /* --- Typography & Header --- */
+        h1, h3 {
+            margin: 5px 0;
+            text-align: center;
+            color: #333;
+            flex-shrink: 0;
+        }
+        
+        /* --- Button Container --- */
+        .buttons-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .buttons-container button {
+            padding: 8px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f0f0f0;
+        }
+        .buttons-container button:hover {
+            background-color: #e0e0e0;
+        }
+
+        /* --- Game & Canvas Container (FIXED) --- */
+        #game-container {
+            position: relative;
+            width: 100%;
+            flex-grow: 1; /* Allow the container to fill available vertical space */
+            min-height: 0; /* Critical for allowing the container to shrink in a flex column */
+            max-width: 400px;
+            border: 4px solid #333;
+            overflow: hidden;
+            background: #87ceeb;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #canvas {
+            display: block;
+            border: 2px solid #555;
+            box-sizing: border-box;
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        #restart {
+            position:absolute; top:50%; left:50%;
+            transform:translate(-50%,-50%);
+            padding:10px 20px; font-size:18px;
+            display:none; z-index:10;
+            cursor: pointer;
+        }
+
+        /* --- On-Screen Controls --- */
+        #controls {
+            width: 100%;
+            max-width: 400px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin-top: 10px;
+            flex-shrink: 0;
+            padding: 5px 0;
+        }
+
+        #joystick-container {
+            width: 120px; height: 120px;
+            border-radius:50%;
+            background:rgba(0,0,0,0.25);
+            touch-action:none;
+            position:relative;
+            flex-shrink: 0;
+        }
+
+        #joystick-thumb {
+            position:absolute;
+            width:40px; height:40px;
+            border-radius:50%;
+            background:rgba(0,0,0,0.5);
+            left:calc(50% - 20px);
+            top:calc(50% - 20px);
+        }
+
+        #fire-button {
+            width:60px; height:60px;
+            border-radius:50%;
+            background:rgba(0,0,255,0.6);
+            color:white; font-size:12px;
+            border:none; touch-action:none;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+    </style>
 </head>
 <body>
-  <h1>SUPER JERRY RUNNER</h1>
-  <h3>Now with Moving Stairs, Coins & Shooting!</h3>
-  <div style="display:flex; gap:10px; margin-bottom:10px;">
-    <button onclick="window.location.href='index.html'">Arrow keys</button>
-    <button onclick="window.location.href='index2.html'">Joystick</button>
-    <button onclick="window.location.href='index3.html'">Joystick + Fire</button>
-    <button onclick="window.location.href='index4.html'">Long Stage</button>
-    <button onclick="window.location.href='index5.html'">Jump + Fire</button>
-    <button onclick="window.location.href='index6.html'">Jump + Stairs</button>
-    <button onclick="window.location.href='index7.html'">Snake + Mario</button>
-  </div>
-  <div id="game-container">
-    <canvas id="canvas" width="800" height="600"></canvas>
-    <button id="restart">Restart</button>
-  </div>
-  <div id="controls">
-    <div id="joystick-container"><div id="joystick-thumb"></div></div>
-    <button id="fire-button">FIRE</button>
-  </div>
-  <script>
-    window.onload = () => {
-      const canvas = document.getElementById("canvas"),
-            ctx = canvas.getContext("2d"),
-            restartBtn = document.getElementById("restart"),
-            fireBtn = document.getElementById("fire-button"),
-            base = document.getElementById("joystick-container"),
-            thumb = document.getElementById("joystick-thumb");
+    <h1>SUPER JERRY CLIMBER</h1>
+    <h3>Climb as high as you can!</h3>
+    <div class="buttons-container">
+        <button onclick="window.location.href='index.html'">Arrow keys</button>
+        <button onclick="window.location.href='index2.html'">Joystick</button>
+        <button onclick="window.location.href='index3.html'">Joystick + Fire</button>
+        <button onclick="window.location.href='index4.html'">Long Stage</button>
+        <button onclick="window.location.href='index5.html'">Jump + Fire</button>
+        <button onclick="window.location.href='index6.html'">Jump + Stairs</button>
+        <button onclick="window.location.href='index7.html'">Snake + Mario</button>
+    </div>
+    <div id="game-container">
+        <canvas id="canvas"></canvas>
+        <button id="restart">Restart</button>
+    </div>
+    <div id="controls">
+        <div id="joystick-container"><div id="joystick-thumb"></div></div>
+        <button id="fire-button">FIRE</button>
+    </div>
+    <script>
+        window.onload = () => {
+            const canvas = document.getElementById("canvas"),
+                ctx = canvas.getContext("2d"),
+                restartBtn = document.getElementById("restart"),
+                fireBtn = document.getElementById("fire-button"),
+                base = document.getElementById("joystick-container"),
+                thumb = document.getElementById("joystick-thumb");
 
-      const viewW = 800, viewH = 600;
-      const worldW = 5000, worldH = viewH;
-      const groundH = 50, groundY = worldH - groundH;
+            const REF_VIEW_W = 400;
+            const REF_VIEW_H = 600;
 
-      const playerSize = 50;
-      let x = 100, y = groundY - playerSize;
-      let vx = 0, vy = 0;
-      let grounded = false, jumpsRemaining = 2, gameOver = false;
+            let viewW = REF_VIEW_W;
+            let viewH = REF_VIEW_H;
 
-      const accel = 2000;
-      const gravity = 2000;
-      const jumpVelocity = 750;
-      const joyBoost = 1.5;
-      const runMultiplier = 1.8;
-      const horizontalFric = 0.85;
-      const verticalFric = 1.0;
+            const playerSize = 50;
+            let x, y;
+            let vx = 0, vy = 0;
+            let grounded = false, jumpsRemaining = 2, gameOver = false;
 
-      const coinSize = 35, coins = [], numCoins = 10;
-      const obstacleSize = coinSize;
-      const groundObs = [], numGroundObs = 8;
-      const fallingObs = [], numFallingObs = 8;
-      const stairs = [], stairW = 120, stairH = 20, numStairs = 4;
+            const accel = 2000;
+            const gravity = 2000;
+            const jumpVelocity = 750;
+            const joyBoost = 1.5;
+            const runMultiplier = 1.8;
+            const horizontalFric = 0.85;
+            const verticalFric = 1.0;
 
-      const bullets = [];
-      const bulletSpeed = 1000;
-      const bulletSize = 8;
+            const coinSize = 35;
+            const coins = [];
+            const stairs = [];
+            const stairW = 100;
+            const stairH = 20;
 
-      let score = 0;
-      const keys = {};
+            const bullets = [];
+            const bulletSpeed = 1000;
+            const bulletSize = 8;
 
-      document.addEventListener("keydown", e => {
-        keys[e.key.toLowerCase()] = true;
-        if ((e.key === "w" || e.key === "ArrowUp") && jumpsRemaining > 0) {
-          vy = -jumpVelocity;
-          jumpsRemaining--;
-          grounded = false;
-        }
-        if (e.code === "Space") shootBullet();
-      });
+            let score = 0;
+            let camY = 0;
+            let highestYReached;
 
-      document.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
+            const keys = {};
 
-      let joyX = 0, joyY = 0;
-      const stickR = 120, thumbR = 40, maxDisp = stickR - thumbR;
-      base.addEventListener("touchstart", e => e.preventDefault(), { passive: false });
-      base.addEventListener("touchmove", e => {
-        const t = e.touches[0], r = base.getBoundingClientRect();
-        let dx = t.clientX - (r.left + stickR),
-            dy = t.clientY - (r.top + stickR),
-            d = Math.hypot(dx, dy);
-        if (d > maxDisp) { dx = dx / d * maxDisp; dy = dy / d * maxDisp; }
-        thumb.style.left = `${stickR + dx - thumbR}px`;
-        thumb.style.top = `${stickR + dy - thumbR}px`;
-        joyX = dx / maxDisp; joyY = dy / maxDisp;
-        e.preventDefault();
-      }, { passive: false });
+            const MAX_JUMP_HEIGHT = (jumpVelocity * jumpVelocity) / (2 * gravity);
 
-      base.addEventListener("touchend", handleEnd);
-      base.addEventListener("touchcancel", handleEnd);
+            document.addEventListener("keydown", e => {
+                keys[e.key.toLowerCase()] = true;
+                if ((e.key === "w" || e.key === "arrowup") && jumpsRemaining > 0) {
+                    vy = -jumpVelocity;
+                    jumpsRemaining--;
+                    grounded = false;
+                }
+                if (e.code === "Space") shootBullet();
+            });
 
-      function handleEnd() {
-        thumb.style.left = "calc(50% - 40px)";
-        thumb.style.top = "calc(50% - 40px)";
-        joyX = joyY = 0;
-      }
+            document.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
 
-      fireBtn.addEventListener("touchstart", e => { e.preventDefault(); shootBullet(); });
-      fireBtn.addEventListener("mousedown", e => { e.preventDefault(); shootBullet(); });
+            let joyX = 0, joyY = 0;
 
-      function shootBullet() {
-        let nearest, md = Infinity;
-        const px = x + playerSize / 2, py = y + playerSize / 2;
-        [...groundObs, ...fallingObs].forEach(ob => {
-          const ox = ob.x + (ob.size || obstacleSize) / 2;
-          const oy = ob.y + (ob.size || obstacleSize) / 2;
-          const d2 = (ox - px) ** 2 + (oy - py) ** 2;
-          if (d2 < md) { md = d2; nearest = ob; }
-        });
-        let angle = 0;
-        if (nearest) {
-          const ox = nearest.x + (nearest.size || obstacleSize) / 2;
-          const oy = nearest.y + (nearest.size || obstacleSize) / 2;
-          angle = Math.atan2(oy - py, ox - px);
-        }
-        bullets.push({ x: px, y: py, vx: Math.cos(angle) * bulletSpeed, vy: Math.sin(angle) * bulletSpeed });
-      }
+            base.addEventListener("touchstart", e => e.preventDefault(), { passive: false });
+            base.addEventListener("touchmove", e => {
+                const t = e.touches[0], r = base.getBoundingClientRect();
+                const currentStickR = base.offsetWidth / 2;
+                const currentThumbR = thumb.offsetWidth / 2;
+                const currentMaxDisp = currentStickR - currentThumbR;
 
-      function initEntities() {
-        coins.length = groundObs.length = fallingObs.length = stairs.length = 0;
-        for (let i = 0; i < numCoins; i++) {
-          coins.push({ x: rand(300, worldW - coinSize - 200), y: groundY - coinSize - rand(0, 80) });
-        }
-        for (let i = 0; i < numGroundObs; i++) {
-          groundObs.push({ x: rand(500, worldW - obstacleSize - 200), y: groundY - obstacleSize, hp: 5 });
-        }
-        for (let i = 0; i < numFallingObs; i++) {
-          const size = rand(30, 60);
-          fallingObs.push({ x: rand(300, worldW - 300), y: -size, vy: rand(200, 400), size, hp: 3 });
-        }
-        for (let i = 0; i < numStairs; i++) {
-          let sx = rand(400, worldW - stairW - 200);
-          let sy = groundY - 150 - rand(0, 150);
-          stairs.push({ x: sx, y: sy, vx: rand(50, 100) * (Math.random() < 0.5 ? -1 : 1) });
-          coins.push({ x: sx + stairW / 2 - coinSize / 2, y: sy - coinSize, onStair: true });
-        }
-      }
+                let dx = t.clientX - (r.left + currentStickR),
+                    dy = t.clientY - (r.top + currentStickR),
+                    d = Math.hypot(dx, dy);
+                if (d > currentMaxDisp) { dx = dx / d * currentMaxDisp; dy = dy / d * currentMaxDisp; }
+                thumb.style.left = `${currentStickR + dx - currentThumbR}px`;
+                thumb.style.top = `${currentStickR + dy - currentThumbR}px`;
+                joyX = dx / currentMaxDisp; joyY = dy / currentMaxDisp;
+                e.preventDefault();
+            }, { passive: false });
 
-      function rand(min, max) { return Math.random() * (max - min) + min; }
-      function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
-      function overlap(x1, y1, w1, h1, x2, y2, w2, h2) {
-        return x1 <= x2 + w2 && x2 <= x1 + w1 && y1 <= y2 + h2 && y2 <= y1 + h1;
-      }
+            base.addEventListener("touchend", handleEnd);
+            base.addEventListener("touchcancel", handleEnd);
 
-      function draw() {
-        const now = Date.now(), dt = (now - lastTime) / 1000;
-        lastTime = now;
+            function handleEnd() {
+                const currentThumbR = thumb.offsetWidth / 2;
+                thumb.style.left = `calc(50% - ${currentThumbR}px)`;
+                thumb.style.top = `calc(50% - ${currentThumbR}px)`;
+                joyX = joyY = 0;
+            }
 
-        let ax = 0;
-        if (keys["d"] || keys["arrowright"]) ax += accel * runMultiplier;
-        if (keys["a"] || keys["arrowleft"]) ax -= accel * runMultiplier;
-        ax += joyX * accel * joyBoost * runMultiplier;
-        vx += ax * dt;
-        vx *= horizontalFric;
+            fireBtn.addEventListener("touchstart", e => { e.preventDefault(); shootBullet(); });
+            fireBtn.addEventListener("mousedown", e => { e.preventDefault(); shootBullet(); });
 
-        if (joyY < -0.5 && jumpsRemaining > 0) {
-          vy = -jumpVelocity;
-          jumpsRemaining--;
-          grounded = false;
-        }
-        if (joyY > 0.5 && !grounded) vy += gravity * dt * 1.5;
-        vy += gravity * dt;
-        vy *= verticalFric;
+            function shootBullet() {
+                if (gameOver) return;
+                const scale = viewW / REF_VIEW_W;
+                bullets.push({ 
+                    x: x + (playerSize * scale) / 2, 
+                    y: y + (playerSize * scale) / 2, 
+                    vx: bulletSpeed, 
+                    vy: 0
+                });
+            }
 
-        x += vx * dt;
-        y += vy * dt;
+            function generateStairs() {
+                stairs.length = 0;
+                coins.length = 0;
+                const scale = viewW / REF_VIEW_W;
+                const scaledPlayerSize = playerSize * scale;
+                const scaledStairW = stairW * scale;
+                const scaledStairH = stairH * scale;
+                const scaledCoinSize = coinSize * scale;
 
-        if (x + playerSize >= worldW) x = 0;
-        else if (x <= 0) x = worldW - playerSize;
+                stairs.push({ 
+                    x: 0, 
+                    y: viewH - scaledStairH, 
+                    vx: 0, 
+                    isGround: true, 
+                    width: viewW, 
+                    height: scaledStairH 
+                });
 
-        grounded = false;
-        if (y + playerSize >= groundY) {
-          y = groundY - playerSize;
-          vy = 0;
-          grounded = true;
-          jumpsRemaining = 2;
-        }
+                let lastStairY = viewH - scaledStairH;
 
-        const camX = clamp(x + playerSize / 2 - viewW / 2, 0, worldW - viewW);
+                for (let i = 0; i < 20; i++) {
+                    const sx = rand(0, viewW - scaledStairW);
+                    const maxPossibleGap = (MAX_JUMP_HEIGHT - scaledPlayerSize) * 0.95;
+                    const verticalGap = rand(scaledPlayerSize, maxPossibleGap);
+                    lastStairY -= verticalGap;
 
-        ctx.clearRect(0, 0, viewW, viewH);
-        ctx.save();
-        ctx.translate(-camX, 0);
+                    const newStair = { 
+                        x: sx, 
+                        y: lastStairY, 
+                        vx: rand(50, 150) * (Math.random() < 0.5 ? -1 : 1), 
+                        isGround: false, 
+                        width: scaledStairW, 
+                        height: scaledStairH 
+                    };
+                    stairs.push(newStair);
+                    coins.push({ 
+                        x: sx + scaledStairW / 2 - scaledCoinSize / 2, 
+                        y: lastStairY - scaledCoinSize * 1.1, 
+                        onStair: true, 
+                        associatedStair: newStair,
+                        size: scaledCoinSize
+                    });
+                }
+            }
 
-        ctx.fillStyle = "#654321";
-        ctx.fillRect(0, groundY, worldW, groundH);
+            function initGame() {
+                bullets.length = 0;
+                
+                const scale = viewW / REF_VIEW_W;
+                x = viewW / 2 - (playerSize * scale) / 2;
+                y = viewH - (playerSize * scale) - (stairH * scale); 
+                
+                vx = 0; vy = 0;
+                grounded = true; 
+                jumpsRemaining = 2;
+                gameOver = false;
+                score = 0;
+                camY = 0;
+                highestYReached = y;
 
-        ctx.fillStyle = "#444";
-        stairs.forEach((stair, i) => {
-          stair.x += stair.vx * dt;
-          if (stair.x <= 0 || stair.x + stairW >= worldW) stair.vx *= -1;
-          ctx.fillRect(stair.x, stair.y, stairW, stairH);
+                generateStairs();
+            }
 
-          if (
-            vy >= 0 &&
-            x + playerSize > stair.x &&
-            x < stair.x + stairW &&
-            y + playerSize <= stair.y + stairH &&
-            y + playerSize + vy * dt >= stair.y
-          ) {
-            y = stair.y - playerSize;
-            vy = 0;
-            grounded = true;
-            jumpsRemaining = 2;
-          }
-        });
+            function rand(min, max) { return Math.random() * (max - min) + min; }
+            function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+            function overlap(x1, y1, w1, h1, x2, y2, w2, h2) {
+                return x1 < x2 + w2 && x1 + w1 > x2 && y1 < y2 + h2 && y1 + h1 > y2;
+            }
 
-        coins.forEach((c, i) => {
-          if (c.onStair) {
-            const stair = stairs.find(s => Math.abs(c.x - (s.x + stairW / 2 - coinSize / 2)) < 5);
-            if (stair) c.x = stair.x + stairW / 2 - coinSize / 2;
-          }
-          ctx.drawImage(coinImg, c.x, c.y, coinSize, coinSize);
-          if (overlap(c.x, c.y, coinSize, coinSize, x, y, playerSize, playerSize)) {
-            score++;
-            coins.splice(i, 1);
-          }
-        });
+            function gameLoop(now) {
+                if (!lastTime) { lastTime = now; }
+                const dt = (now - lastTime) / 1000;
+                lastTime = now;
 
-        ctx.drawImage(playerImg, x, y, playerSize, playerSize);
-        ctx.restore();
+                if (gameOver) {
+                    restartBtn.style.display = "block";
+                    return;
+                }
+                
+                update(dt);
+                draw();
 
-        ctx.fillStyle = "black";
-        ctx.font = "25px Arial";
-        ctx.fillText("Score: " + score, 10, 30);
+                requestAnimationFrame(gameLoop);
+            }
 
-        if (!gameOver) requestAnimationFrame(draw);
-      }
+            function manageStairs() {
+                let highestStairY = Infinity;
+                for (let i = stairs.length - 1; i >= 0; i--) {
+                    const stair = stairs[i];
+                    if (stair.y > camY + viewH + 100 && !stair.isGround) {
+                        const removedStair = stairs.splice(i, 1)[0];
+                        for (let j = coins.length - 1; j >= 0; j--) {
+                            if (coins[j].associatedStair === removedStair) {
+                                coins.splice(j, 1);
+                                break;
+                            }
+                        }
+                    } else if (!stair.isGround) {
+                        if (stair.y < highestStairY) {
+                            highestStairY = stair.y;
+                        }
+                    }
+                }
 
-      restartBtn.onclick = () => {
-        x = 100;
-        y = groundY - playerSize;
-        vx = vy = 0;
-        grounded = true;
-        jumpsRemaining = 2;
-        gameOver = false;
-        score = 0;
-        bullets.length = 0;
-        initEntities();
-        restartBtn.style.display = "none";
-        lastTime = Date.now();
-        requestAnimationFrame(draw);
-      };
+                if (highestStairY > camY) {
+                    const scale = viewW / REF_VIEW_W;
+                    const sx = rand(0, viewW - (stairW * scale));
+                    const maxPossibleGap = (MAX_JUMP_HEIGHT - (playerSize * scale)) * 0.95;
+                    const verticalGap = rand(playerSize * scale, maxPossibleGap);
+                    const newStairY = highestStairY - verticalGap;
+                    
+                    const newStair = { 
+                        x: sx, y: newStairY, 
+                        vx: rand(50, 150) * (Math.random() < 0.5 ? -1 : 1), 
+                        isGround: false, width: stairW * scale, height: stairH * scale 
+                    };
+                    stairs.push(newStair);
+                    coins.push({ 
+                        x: sx + (stairW * scale) / 2 - (coinSize * scale) / 2, 
+                        y: newStairY - (coinSize * scale) * 1.1, 
+                        onStair: true, associatedStair: newStair, size: coinSize * scale
+                    });
+                }
+            }
 
-      const playerImg = new Image(), coinImg = new Image(), bombImg = new Image();
-      playerImg.src = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS2oP3lWLmezhBAmuHvAwuaqRv6xVX0eApt7A&s';
-      coinImg.src = 'https://www.partysuppliesindia.com/cdn/shop/products/1_36_9f92dde3-d77d-4459-a21f-63744a94c836.jpg?v=1735574298&width=1500';
-      bombImg.src = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSrhGLUu7GF58R8WurYsZXGRwPSg1aER4LGrw&s';
+            function update(dt) {
+                const scale = viewW / REF_VIEW_W;
+                const scaledPlayerSize = playerSize * scale;
 
-      let lastTime = Date.now();
-      playerImg.onload = () => coinImg.onload = () => bombImg.onload = () => {
-        initEntities();
-        lastTime = Date.now();
-        draw();
-      };
-    };
-  </script>
+                let ax = 0;
+                if (keys["d"] || keys["arrowright"]) ax += accel;
+                if (keys["a"] || keys["arrowleft"]) ax -= accel;
+                ax += joyX * accel * joyBoost;
+                
+                vx += ax * dt;
+                vx *= horizontalFric;
+                x += vx * dt * runMultiplier; 
+
+                if (joyY < -0.5 && jumpsRemaining > 0) {
+                    vy = -jumpVelocity;
+                    jumpsRemaining--;
+                    grounded = false;
+                }
+                
+                // *** BUG FIX STARTS HERE ***
+                // Only apply gravity if the player is not on the ground
+                if (!grounded) {
+                    if (joyY > 0.5) vy += gravity * dt * 1.5; // Faster fall
+                    vy += gravity * dt;
+                    vy *= verticalFric;
+                }
+                // *** BUG FIX ENDS HERE ***
+
+                y += vy * dt;
+
+                x = clamp(x, 0, viewW - scaledPlayerSize);
+
+                const cameraScrollThreshold = viewH * 0.4;
+                const desiredCamY = y - cameraScrollThreshold;
+                if (desiredCamY < camY) {
+                    camY = desiredCamY;
+                }
+                camY = Math.min(camY, 0);
+
+                grounded = false; // Assume not grounded until a collision is found
+                stairs.forEach(stair => {
+                    const stairWidth = stair.width;
+                    if (!stair.isGround) {
+                        stair.x += stair.vx * dt;
+                        if (stair.x <= 0 || stair.x + stairWidth >= viewW) stair.vx *= -1;
+                    }
+
+                    if (vy >= 0 &&
+                        x + scaledPlayerSize > stair.x &&
+                        x < stair.x + stairWidth &&
+                        y + scaledPlayerSize >= stair.y &&
+                        y + scaledPlayerSize - vy * dt <= stair.y + 1 // Add a 1px tolerance
+                    ) {
+                        y = stair.y - scaledPlayerSize;
+                        vy = 0;
+                        grounded = true;
+                        jumpsRemaining = 2;
+                    }
+                });
+
+                if (y < highestYReached) {
+                    score += Math.floor((highestYReached - y) / 10);
+                    highestYReached = y;
+                }
+
+                if (y > camY + viewH + scaledPlayerSize) {
+                    gameOver = true;
+                }
+
+                manageStairs();
+
+                bullets.forEach((bullet, i) => {
+                    bullet.x += bullet.vx * dt;
+                    bullet.y += bullet.vy * dt;
+                    if (bullet.x > viewW || bullet.x < 0 || bullet.y > camY + viewH || bullet.y < camY) {
+                        bullets.splice(i, 1);
+                    }
+                });
+            }
+
+            function draw() {
+                const scale = viewW / REF_VIEW_W;
+                const scaledPlayerSize = playerSize * scale;
+                const scaledBulletSize = bulletSize * scale;
+
+                ctx.clearRect(0, 0, viewW, viewH);
+                ctx.save();
+                ctx.translate(0, -camY);
+
+                ctx.fillStyle = "#444";
+                stairs.forEach(stair => {
+                    ctx.fillRect(stair.x, stair.y, stair.width, stair.height);
+                });
+
+                coins.forEach((c, i) => {
+                    if (c.onStair && c.associatedStair) {
+                        c.x = c.associatedStair.x + c.associatedStair.width / 2 - c.size / 2;
+                    }
+                    ctx.drawImage(coinImg, c.x, c.y, c.size, c.size);
+                    if (overlap(c.x, c.y, c.size, c.size, x, y, scaledPlayerSize, scaledPlayerSize)) {
+                        score += 10;
+                        coins.splice(i, 1);
+                    }
+                });
+
+                ctx.drawImage(playerImg, x, y, scaledPlayerSize, scaledPlayerSize);
+                
+                ctx.fillStyle = "yellow";
+                bullets.forEach(bullet => {
+                    ctx.fillRect(bullet.x, bullet.y, scaledBulletSize, scaledBulletSize);
+                });
+
+                ctx.restore();
+
+                ctx.fillStyle = "black";
+                ctx.font = `${Math.max(18, 25 * scale)}px Arial`;
+                ctx.fillText("Score: " + score, 10, 30);
+            }
+
+            restartBtn.onclick = () => {
+                initGame();
+                restartBtn.style.display = "none";
+                lastTime = performance.now();
+                requestAnimationFrame(gameLoop);
+            };
+
+            const playerImg = new Image(), coinImg = new Image();
+            playerImg.src = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS2oP3lWLmezhBAmuHvAwuaqRv6xVX0eApt7A&s';
+            playerImg.onerror = () => { playerImg.src = 'https://placehold.co/50x50/ff0000/ffffff?text=P'; };
+            coinImg.src = 'https://www.partysuppliesindia.com/cdn/shop/products/1_36_9f92dde3-d77d-4459-a21f-63744a94c836.jpg?v=1735574298&width=1500';
+            coinImg.onerror = () => { coinImg.src = 'https://placehold.co/35x35/ffff00/000000?text=C'; };
+
+            let lastTime;
+
+            function resizeCanvas() {
+                const gameContainer = document.getElementById("game-container");
+                const aspectRatio = REF_VIEW_W / REF_VIEW_H;
+
+                let containerWidth = gameContainer.offsetWidth;
+                let containerHeight = gameContainer.offsetHeight;
+
+                if (containerWidth / containerHeight > aspectRatio) {
+                    canvas.height = containerHeight;
+                    canvas.width = containerHeight * aspectRatio;
+                } else {
+                    canvas.width = containerWidth;
+                    canvas.height = containerWidth / aspectRatio;
+                }
+
+                viewW = canvas.width;
+                viewH = canvas.height;
+
+                initGame();
+            }
+
+            let loaded = 0;
+            const onImageLoad = () => {
+                loaded++;
+                if (loaded === 2) {
+                    resizeCanvas();
+                    lastTime = performance.now();
+                    gameLoop(lastTime);
+                }
+            };
+            playerImg.onload = onImageLoad;
+            coinImg.onload = onImageLoad;
+
+            window.addEventListener('resize', resizeCanvas);
+        };
+    </script>
 </body>
 </html>
