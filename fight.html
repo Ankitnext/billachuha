@@ -4,9 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fighting Game</title>
+    <link rel="stylesheet" href="fight.css">
 </head>
 <body>
-    <canvas></canvas>
+    <!-- Red Container div-->
+    <div style="position: relative; display: inline-block;">
+        <!-- Smaller Red Container div-->
+        <div style="position: absolute; display:flex; width:100%; align-items: center; padding: 20px;">
+            <!-- Player Health-->
+             <div id="parentplayer">
+                 <div style=" background-color: yellow;  height:30px; width: 100%;"></div>
+                 <div id="playerHealth" class="playerbar"></div>
+            </div>
+            <!-- Timer-->
+            <div id="timer" class="timercheck">10</div>
+            <!-- Enemy Health-->
+             <div id="parentenemy">
+                 <div style="background-color: yellow; height:30px;"></div>
+                 <div id="enemyHealth" class="enemybar"></div>
+            </div>
+        </div>
+        <div id="displayText" class="tie">Tie</div>
+        <canvas></canvas>
+    </div>
+    <script src="js/utils.js"></script>
+    <script src="js/classes.js"></script>
     <script src="fight.js"></script>
 </body>
 </html>
