@@ -29,24 +29,40 @@
         #canvas {
             width:800px; height:600px; display:block;
         }
-        #restart {
-            position:absolute; top:50%; left:50%;
-            transform:translate(-50%,-50%);
-            padding:10px 20px; font-size:18px;
-            display:none; z-index:10;
-            @apply px-6 py-3 rounded-lg font-semibold text-white transition-all duration-200 ease-in-out;
-            background: linear-gradient(145deg, #f87171, #ef4444); /* Red gradient */
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        /* Restart button (red gradient, bigger) */
+#restart {
+  font-size: 20px;
+  padding: 14px 32px;      /* Larger tap target */
+  border-radius: 10px;
+  font-weight: 600;
+  color: white;
+  background: linear-gradient(145deg, #f87171, #ef4444);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: none;
+  display: none;
+  z-index: 10;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transition: all 0.2s ease-in-out;
+}
+
+#restart:hover {
+  background: linear-gradient(145deg, #ef4444, #dc2626);
+  transform: translate(-50%, -50%) translateY(-2px);
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+}
+
+#restart:active {
+  transform: translate(-50%, -50%) translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+        button {
+            cursor: pointer;
+            font-family: inherit;
             border: none;
-        }
-        #restart:hover {
-            background: linear-gradient(145deg, #ef4444, #dc2626);
-            transform: translate(-50%, -50%) translateY(-2px);
-            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
-        }
-        #restart:active {
-            transform: translate(-50%, -50%) translateY(0);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            outline: none;
         }
         #controls {
             width:800px;
@@ -55,22 +71,29 @@
             align-items:center;
             margin-bottom:10px;
         }
-        .control-button {
-            @apply px-4 py-2 rounded-lg font-semibold text-white transition-all duration-200 ease-in-out;
-            background: linear-gradient(145deg, #60a5fa, #3b82f6); /* Blue gradient */
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            border: none;
-            margin: 0 5px; /* Spacing between buttons */
-        }
-        .control-button:hover {
-            background: linear-gradient(145deg, #3b82f6, #2563eb);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
-        }
-        .control-button:active {
-            transform: translateY(0);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
+        /* Menu buttons (blue gradient) */
+.control-button {
+  font-size: 18px;
+  padding: 14px 28px;       /* Bigger size */
+  border-radius: 8px;
+  font-weight: 600;
+  color: white;
+  background: linear-gradient(145deg, #60a5fa, #3b82f6);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin: 5px;
+  transition: all 0.2s ease-in-out;
+}
+
+.control-button:hover {
+  background: linear-gradient(145deg, #3b82f6, #2563eb);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+}
+
+.control-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
         #joystick-container {
             width:120px; height:120px; /* Made smaller for better mobile fit */
             border-radius:50%;
@@ -139,19 +162,22 @@
                 font-size: 12px;
             }
         }
+        
     </style>
 </head>
 <body>
     <h1>SUPER JERRY RUNNER</h1>
     <h3>Now with Moving Stairs, Coins & Shooting!</h3>
     <div style="display:flex; gap:10px; margin-bottom:10px;">
-        <button onclick="window.location.href='index.html'" class="control-button">Arrow keys</button>
+        <button onclick="window.location.href='index.html'" class="control-button">Home</button>
+        <button onclick="window.location.href='index.html'" class="control-button">Other Gamea</button>
+        <!-- <button onclick="window.location.href='index1.html'" class="control-button">Arrow keys</button>
         <button onclick="window.location.href='index2.html'" class="control-button">Joystick</button>
         <button onclick="window.location.href='index3.html'" class="control-button">Joystick + Fire</button>
         <button onclick="window.location.href='index4.html'" class="control-button">Long Stage</button>
         <button onclick="window.location.href='index5.html'" class="control-button">Jump + Fire</button>
         <button onclick="window.location.href='index6.html'" class="control-button">Jump + Stairs</button>
-        <button onclick="window.location.href='index7.html'" class="control-button">Snake + Mario</button>
+        <button onclick="window.location.href='index7.html'" class="control-button">Snake + Mario</button> -->
     </div>
     <div id="game-container">
         <canvas id="canvas" width="800" height="600"></canvas>

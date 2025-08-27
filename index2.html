@@ -73,19 +73,38 @@
       top:  calc(50% - 40px);
       transition: left 0.1s, top 0.1s;
     }
+    /* Style for all buttons */
+    button {
+      font-size: 20px;       /* bigger text */
+      padding: 12px 24px;    /* more clickable area */
+      margin: 5px;           /* spacing between buttons */
+      border-radius: 8px;    /* rounded corners */
+      border: 2px solid #333;
+      background-color: #4CAF50; /* green background */
+      color: white;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    button:hover {
+      background-color: #45a049; /* slightly darker on hover */
+    }
+
   </style>
 </head>
 <body>
     <div><h1>CATCH THE JERRY</h1></div>
     <div><h3>LEVEL 2 UNLOCK at Score = 5</h3></div>
     <div style="display:flex; justify-content: center;">
-        <button onclick="window.location.href='index.html'">Arrow keys</button>
+        <button onclick="window.location.href='index.html'">Home</button>
+        <button onclick="window.location.href='index.html'">Other games</button>
+        <!-- <button onclick="window.location.href='index.html'">Arrow keys</button>
         <button onclick="window.location.href='index2.html'">Joystick</button>
         <button onclick="window.location.href='index3.html'">Joystick + Fire</button>
         <button onclick="window.location.href='index4.html'">Long Stage</button>
         <button onclick="window.location.href='index5.html'">Jump + Fire</button>
         <button onclick="window.location.href='index6.html'">Jump + Stairs</button>
-        <button onclick="window.location.href='index7.html'">Snake + Mario</button>
+        <button onclick="window.location.href='index7.html'">Snake + Mario</button> -->
     </div>
   <div id="game-container">
     <canvas id="canvas" width="600" height="400"></canvas>

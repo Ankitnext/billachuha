@@ -1,38 +1,168 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Poki-style Arcade Hub</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load the Inter font from Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Load Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Apply the Inter font and a smooth background to the body */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a1a1a; /* A darker gray for the background */
+            color: #d1d5db; /* Gray-300 */
+        }
+        /* Style the main content area to prevent it from overlapping the sidebar */
+        .main-content {
+            margin-left: 5rem; /* Matches the sidebar width */
+        }
+        /* Custom scrollbar for the game grid section */
+        .game-grid-container::-webkit-scrollbar {
+            width: 8px;
+            background-color: transparent;
+        }
+        .game-grid-container::-webkit-scrollbar-thumb {
+            background-color: #4a4a4a;
+            border-radius: 4px;
+        }
+        .game-grid-container::-webkit-scrollbar-thumb:hover {
+            background-color: #6a6a6a;
+        }
+    </style>
 </head>
-<body>
-    <div><h1>CATCH THE JERRY</h1></div>
-    <div><h3>LEVEL 2 UNLOCK at Score = 5</h3></div>
-    <div class="nav-container">
-  <button onclick="window.location.href='index.html'">Arrow keys</button>
-  <button onclick="window.location.href='index2.html'">Joystick</button>
-  <button onclick="window.location.href='index3.html'">Joystick + Fire</button>
-  <button onclick="window.location.href='index4.html'">Long Stage</button>
-  <button onclick="window.location.href='index5.html'">Jump + Fire</button>
-  <button onclick="window.location.href='index6.html'">Jump + Stairs</button>
-  <button onclick="window.location.href='index7.html'">Snake + Mario</button>
-</div>
+<body class="bg-gray-900 text-gray-300 antialiased flex flex-row min-h-screen overflow-hidden">
 
-    <div>
-        <canvas id="canvas" width="600" height="400">
-            Your browser does not support the HTML5 canvas tag.
-        </canvas>
-        <br /><br />
-        <div align="center">
-            <button id="up">↑</button><br />
-            <button id="left">←</button>
-            <button id="down">↓</button>
-            <button id="right">→</button>
-        </div>
-        <button id="restart" style="display:none; position: absolute; top: 60%; left: 50%; 
-        transform: translate(-50%, -50%); padding: 10px 20px; font-size: 20px; width:10% !important; ">Restart</button>
-    </div>
-    <script src="index.js"></script>
+    <!-- Fixed Left Sidebar -->
+    <aside class="fixed left-0 top-0 h-screen w-20 flex flex-col items-center py-6 bg-gray-800 border-r border-gray-700 z-50">
+        <!-- Logo -->
+        <a href="#" class="text-3xl font-extrabold text-blue-500 tracking-tight mb-8">
+            P<span class="text-white">K</span>
+        </a>
+        
+        <!-- Navigation Icons -->
+        <nav class="flex flex-col items-center space-y-8 mt-auto">
+            <a href="#" class="text-white hover:text-red-500 transition-colors duration-200">
+                <i class="fas fa-home text-2xl"></i>
+            </a>
+            <a href="#" class="text-white hover:text-red-500 transition-colors duration-200">
+                <i class="fas fa-gamepad text-2xl"></i>
+            </a>
+            <a href="#" class="text-white hover:text-red-500 transition-colors duration-200">
+                <i class="fas fa-search text-2xl"></i>
+            </a>
+            <a href="#" class="text-white hover:text-red-500 transition-colors duration-200">
+                <i class="fas fa-cog text-2xl"></i>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content Area (Game View and Game Grid) -->
+    <main class="flex-grow main-content bg-gray-950 p-4 sm:p-8 flex flex-col">
+
+        <!-- Top-level Game Display -->
+        <section class="flex-grow w-full max-w-full">
+            <div class="relative w-full h-full rounded-2xl overflow-hidden shadow-2xl">
+                <!-- Placeholder for the main game iframe/canvas -->
+                <div class="absolute inset-0 bg-gray-800 flex flex-col items-center justify-center p-4">
+                    <div class="text-center">
+                        <h2 class="text-5xl md:text-6xl font-black mb-4"><span class="text-blue-500">Arcade</span><span class="text-white">Hub</span></h2>
+                        <div class="relative w-64 md:w-80 lg:w-96 mx-auto">
+                            <input type="text" placeholder="Search your game..." class="w-full pl-10 pr-4 py-3 rounded-full text-gray-200 bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all duration-300 placeholder-gray-400">
+                            <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-6 w-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- More Games Section -->
+        <section class="mt-8 game-grid-container flex-shrink-0">
+            <h2 class="text-xl md:text-2xl font-bold text-white mb-6">More Games like this:</h2>
+            
+            <!-- Game Grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                <!-- Game Card 1 (now redirects to index.html) -->
+                <div class="game-card bg-gray-800 rounded-xl overflow-hidden border border-gray-700 transform transition-transform duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer" onclick="redirectToGame(1)">
+                    <img src="https://placehold.co/600x400/262626/d1d5db?text=Arrow+Game" alt="Arrow Game" class="w-full h-auto object-cover">
+                    <div class="p-2 text-center">
+                        <h3 class="text-sm font-semibold text-white truncate">Arrow Catch</h3>
+                    </div>
+                </div>
+                
+                <!-- Game Card 2 -->
+                <div class="game-card bg-gray-800 rounded-xl overflow-hidden border border-gray-700 transform transition-transform duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer" onclick="redirectToGame(2)">
+                    <img src="https://placehold.co/600x400/262626/d1d5db?text=Joystick+Catch" alt="Racing Game" class="w-full h-auto object-cover">
+                    <div class="p-2 text-center">
+                        <h3 class="text-sm font-semibold text-white truncate">Joystick Catch</h3>
+                    </div>
+                </div>
+                
+                <!-- Game Card 3 -->
+                <div class="game-card bg-gray-800 rounded-xl overflow-hidden border border-gray-700 transform transition-transform duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer" onclick="redirectToGame(3)">
+                    <img src="https://placehold.co/600x400/262626/d1d5db?text=Joystick+Fire" alt="RPG Game" class="w-full h-auto object-cover">
+                    <div class="p-2 text-center">
+                        <h3 class="text-sm font-semibold text-white truncate">Joystick + Fire</h3>
+                    </div>
+                </div>
+                
+                <!-- Game Card 4 -->
+                <div class="game-card bg-gray-800 rounded-xl overflow-hidden border border-gray-700 transform transition-transform duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer" onclick="redirectToGame(4)">
+                    <img src="https://placehold.co/600x400/262626/d1d5db?text=Long+Survival" alt="Survival Game" class="w-full h-auto object-cover">
+                    <div class="p-2 text-center">
+                        <h3 class="text-sm font-semibold text-white truncate">Long Survival</h3>
+                    </div>
+                </div>
+                
+                <!-- Game Card 5 -->
+                <div class="game-card bg-gray-800 rounded-xl overflow-hidden border border-gray-700 transform transition-transform duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer" onclick="redirectToGame(5)">
+                    <img src="https://placehold.co/600x400/262626/d1d5db?text=Jump+Fire" alt="Sports Game" class="w-full h-auto object-cover">
+                    <div class="p-2 text-center">
+                        <h3 class="text-sm font-semibold text-white truncate">Jump + Fire</h3>
+                    </div>
+                </div>
+
+                <!-- Game Card 6 -->
+                <div class="game-card bg-gray-800 rounded-xl overflow-hidden border border-gray-700 transform transition-transform duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer" onclick="redirectToGame(6)">
+                    <img src="https://placehold.co/600x400/262626/d1d5db?text=Jump+Stairs" alt="Action Game" class="w-full h-auto object-cover">
+                    <div class="p-2 text-center">
+                        <h3 class="text-sm font-semibold text-white truncate">Jump + Stairs</h3>
+                    </div>
+                </div>
+
+                <!-- Game Card 7 -->
+                <div class="game-card bg-gray-800 rounded-xl overflow-hidden border border-gray-700 transform transition-transform duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer" onclick="redirectToGame(7)">
+                    <img src="https://placehold.co/600x400/262626/d1d5db?text=Snake+Mario" alt="Casual Game" class="w-full h-auto object-cover">
+                    <div class="p-2 text-center">
+                        <h3 class="text-sm font-semibold text-white truncate">Snake Mario</h3>
+                    </div>
+                </div>
+
+                <!-- Game Card 8 -->
+                <div class="game-card bg-gray-800 rounded-xl overflow-hidden border border-gray-700 transform transition-transform duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer" onclick="redirectToGame(8)">
+                    <img src="https://placehold.co/600x400/262626/d1d5db?text=Ninja+Runner" alt="Adventure Game" class="w-full h-auto object-cover">
+                    <div class="p-2 text-center">
+                        <h3 class="text-sm font-semibold text-white truncate">Ninja Runner</h3>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <script>
+        /**
+         * Function to redirect to a specific game page.
+         * @param {number} gameNumber The number of the game card.
+         */
+        function redirectToGame(gameNumber) {
+            // Redirects to a new page, e.g., index1.html, index2.html, etc.
+            window.location.href = `index${gameNumber}.html`;
+        }
+    </script>
 </body>
 </html>
