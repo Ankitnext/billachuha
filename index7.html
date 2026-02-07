@@ -16,6 +16,12 @@
         h1, h3 {
             color: #334155; /* Tailwind slate-700 */
         }
+        #mobile-tilt-stage {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
         #game-container {
             position:relative;
             width:800px; height:600px; /* Fixed height for consistency */
@@ -163,9 +169,49 @@
             }
         }
         
+        /* Mobile portrait: rotate full game frame to landscape-style play */
+        @media (orientation: portrait) {
+            html, body {
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+            }
+
+            body {
+                display: block;
+                padding: 0;
+            }
+
+            #mobile-tilt-stage {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                width: 100vh;
+                height: 100vw;
+                transform: translate(-50%, -50%) rotate(90deg);
+                transform-origin: center center;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                padding: 0.5rem;
+                box-sizing: border-box;
+            }
+
+            #game-container, #controls {
+                width: 95%;
+                max-width: 800px;
+            }
+
+            #controls {
+                margin-top: 8px;
+                margin-bottom: 0;
+            }
+        }
     </style>
 </head>
 <body>
+    <div id="mobile-tilt-stage">
     <h1>SUPER JERRY RUNNER</h1>
     <h3>Now with Moving Stairs, Coins & Shooting!</h3>
     <div style="display:flex; gap:10px; margin-bottom:10px;">
@@ -186,6 +232,7 @@
     <div id="controls">
         <div id="joystick-container"><div id="joystick-thumb"></div></div>
         <button id="fire-button">FIRE</button>
+    </div>
     </div>
 
     <script>
@@ -665,23 +712,32 @@
                 requestAnimationFrame(gameLoop);
             };
 
+            let lastTime = Date.now();
             const playerImg = new Image(), coinImg = new Image(), bombImg = new Image();
+            const assets = [playerImg, coinImg, bombImg];
+            let loadedAssets = 0;
+
+            const startWhenReady = () => {
+                loadedAssets++;
+                if (loadedAssets === assets.length) {
+                    initEntities(); // Initial setup of entities when assets are loaded
+                    lastTime = Date.now();
+                    gameLoop(); // Start the game loop
+                }
+            };
+
+            assets.forEach(img => {
+                img.onload = startWhenReady;
+                img.onerror = startWhenReady;
+            });
+
             playerImg.src = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS2oP3lWLmezhBAmuHvAwuaqRv6xVX0eApt7A&s';
             coinImg.src = 'https://www.partysuppliesindia.com/cdn/shop/products/1_36_9f92dde3-d77d-4459-a21f-63744a94c836.jpg?v=1735574298&width=1500';
             bombImg.src = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSrhGLUu7GF58R8WurYsZXGRwPSg1aER4LGrw&s';
-
-            let lastTime = Date.now();
-
-            playerImg.onload = () => {
-                coinImg.onload = () => {
-                    bombImg.onload = () => {
-                        initEntities(); // Initial setup of entities when images are loaded
-                        lastTime = Date.now();
-                        gameLoop(); // Start the game loop
-                    };
-                };
-            };
         };
     </script>
 </body>
 </html>
+
+
+

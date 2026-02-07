@@ -11,6 +11,12 @@
       align-items:center;
       background:#eef;
     }
+    #mobile-tilt-stage {
+      width: 100%;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+    }
     #game-container {
       position:relative;
       width:800px; height:600px;
@@ -75,12 +81,84 @@ button:hover {
   background-color: #45a049; /* slightly darker on hover */
 }
 
+    @media (orientation: portrait) {
+      html, body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+
+      body {
+        display: block;
+      }
+
+      #mobile-tilt-stage {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        width: 100vh;
+        height: 100vw;
+        transform: translate(-50%, -50%) rotate(90deg);
+        transform-origin: center center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        padding: 0.5rem;
+      }
+
+      h1, h3, #top-nav {
+        display: none;
+      }
+
+      #game-container {
+        width: 95%;
+        max-width: 760px;
+        height: auto;
+        aspect-ratio: 4 / 3;
+        margin: 0 auto;
+      }
+
+      #canvas {
+        width: 100%;
+        height: 100%;
+      }
+
+      #controls {
+        width: 95%;
+        max-width: 760px;
+        margin-top: 8px;
+        margin-bottom: 0;
+      }
+
+      #joystick-container {
+        width: 110px;
+        height: 110px;
+      }
+
+      #joystick-thumb {
+        width: 34px;
+        height: 34px;
+        left: calc(50% - 17px);
+        top: calc(50% - 17px);
+      }
+
+      #fire-button {
+        width: 64px;
+        height: 64px;
+        font-size: 12px;
+        padding: 0;
+      }
+    }
+
   </style>
 </head>
 <body>
+  <div id="mobile-tilt-stage">
   <h1>SUPER JERRY RUNNER</h1>
   <h3>Now with High Double-Jump!</h3>
-  <div style="display:flex; gap:10px; margin-bottom:10px;">
+  <div id="top-nav" style="display:flex; gap:10px; margin-bottom:10px;">
     <button onclick="window.location.href='index.html'">Arrow keys</button>
     <button onclick="window.location.href='index.html'">Other Games</button>
     <!-- <button onclick="window.location.href='index1.html'">Arrow keys</button>
@@ -99,6 +177,7 @@ button:hover {
   <div id="controls">
     <div id="joystick-container"><div id="joystick-thumb"></div></div>
     <button id="fire-button">FIRE</button>
+  </div>
   </div>
 
   <script>
@@ -135,8 +214,20 @@ button:hover {
 
     // OBSTACLES (bombs)
     const obstacleSize  = coinSize;
-    const groundObs     = [], numGroundObs = 8;
-    const fallingObs    = [], numFallingObs = 8;
+    const groundObs     = [];
+    const fallingObs    = [];
+    const baseGroundObs = 8;
+    const baseFallingObs = 8;
+    const maxGroundObs = 22;
+    const maxFallingObs = 18;
+
+    // FLOATING BARS (platforms)
+    const floatingBars = [];
+    const baseFloatingBars = 28;
+    const minFloatingBars = 10;
+    const barH = 16;
+    const barMinW = 180;
+    const barMaxW = 280;
 
     // BULLETS
     const bullets      = [];
@@ -145,10 +236,13 @@ button:hover {
 
     // SCORE
     let score = 0;
+    let level = 1;
 
     // INPUT
     const keys = {};
+    const blockedKeys = new Set([" ", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]);
     document.addEventListener("keydown", e => {
+      if (blockedKeys.has(e.key)) e.preventDefault();
       keys[e.key.toLowerCase()] = true;
       if ((e.key === "w" || e.key === "ArrowUp") && jumpsRemaining > 0) {
         vy = -jumpVelocity;
@@ -157,7 +251,10 @@ button:hover {
       }
       if (e.code === "Space") shootBullet();
     });
-    document.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
+    document.addEventListener("keyup", e => {
+      if (blockedKeys.has(e.key)) e.preventDefault();
+      keys[e.key.toLowerCase()] = false;
+    });
 
     // JOYSTICK
     let joyX = 0, joyY = 0;
@@ -217,6 +314,7 @@ button:hover {
       jumpsRemaining=2;
       gameOver=false;
       score=0;
+      level=1;
       bullets.length=0;
       initEntities();
       restartBtn.style.display="none";
@@ -224,23 +322,44 @@ button:hover {
       requestAnimationFrame(draw);
     }
 
-    // INIT ALL COINS & OBSTACLES
+    function getLevelConfig(levelNo){
+      return {
+        groundBombs: Math.min(baseGroundObs + (levelNo - 1), maxGroundObs),
+        fallingBombs: Math.min(baseFallingObs + Math.floor((levelNo - 1) / 2), maxFallingObs),
+        floatingBarCount: Math.max(baseFloatingBars - Math.floor((levelNo - 1) / 2), minFloatingBars)
+      };
+    }
+
+    function advanceLevel(){
+      level++;
+      x = 20;
+      y = groundY - playerSize;
+      vx = 0;
+      vy = 0;
+      grounded = true;
+      jumpsRemaining = 2;
+      bullets.length = 0;
+      initEntities();
+    }
+
+    // INIT ALL COINS & OBSTACLES FOR CURRENT LEVEL
     function initEntities(){
-      coins.length=groundObs.length=fallingObs.length=0;
+      const cfg = getLevelConfig(level);
+      coins.length=groundObs.length=fallingObs.length=floatingBars.length=0;
       for(let i=0;i<numCoins;i++){
         coins.push({
           x:rand(300, worldW - coinSize -200),
           y:groundY - coinSize - rand(0,80)
         });
       }
-      for(let i=0;i<numGroundObs;i++){
+      for(let i=0;i<cfg.groundBombs;i++){
         groundObs.push({
-          x:rand(500, worldW - obstacleSize -200),
+          x:rand(220, worldW - obstacleSize -200),
           y:groundY - obstacleSize,
           hp:5
         });
       }
-      for(let i=0;i<numFallingObs;i++){
+      for(let i=0;i<cfg.fallingBombs;i++){
         const size=rand(30,60);
         fallingObs.push({
           x:rand(300, worldW-300),
@@ -248,6 +367,24 @@ button:hover {
           vy:rand(200,400),
           size, hp:3
         });
+      }
+      // Create floating bars across the whole world, above bombs/ground.
+      // Sequential placement keeps a playable jump path.
+      let cursorX = 140;
+      for(let i=0; i<cfg.floatingBarCount && cursorX < worldW - 200; i++){
+        const w = rand(barMinW, barMaxW);
+        const baseX = cursorX;
+        const moveRange = rand(120, 220);
+        floatingBars.push({
+          x: baseX,
+          y: groundY - rand(120, 240),
+          w,
+          h: barH,
+          vx: rand(55, 110) * (Math.random() < 0.5 ? -1 : 1),
+          minX: Math.max(0, baseX - moveRange),
+          maxX: Math.min(worldW - w, baseX + moveRange)
+        });
+        cursorX += rand(140, 230);
       }
     }
 
@@ -257,12 +394,18 @@ button:hover {
     function overlap(x1,y1,w1,h1,x2,y2,w2,h2){
       return x1<=x2+w2 && x2<=x1+w1 && y1<=y2+h2 && y2<=y1+h1;
     }
+    function triggerGameOver(){
+      if (gameOver) return;
+      gameOver = true;
+      restartBtn.style.display = "block";
+    }
 
     // MAIN LOOP
     let lastTime = Date.now();
     function draw(){
       const now = Date.now(), dt=(now-lastTime)/1000;
       lastTime=now;
+      const prevY = y;
 
       // HORIZONTAL
       let ax = 0;
@@ -286,11 +429,45 @@ button:hover {
 
       // POSITION & WRAP
       x += vx*dt; y += vy*dt;
-      if (x + playerSize >= worldW) x = 0;
-      else if (x <= 0)              x = worldW - playerSize;
+      if (x <= 0){
+        x = 0;
+        vx = Math.max(0, vx);
+      }
+      if (x + playerSize >= worldW){
+        advanceLevel();
+      }
+
+      // MOVE FLOATING BARS (left-right)
+      floatingBars.forEach(bar => {
+        bar.x += bar.vx * dt;
+        if (bar.x <= bar.minX){
+          bar.x = bar.minX;
+          bar.vx *= -1;
+        } else if (bar.x >= bar.maxX){
+          bar.x = bar.maxX;
+          bar.vx *= -1;
+        }
+      });
+
+      // FLOATING BAR COLLISION (landing from above)
+      grounded = false;
+      for (let i = 0; i < floatingBars.length; i++){
+        const bar = floatingBars[i];
+        const prevBottom = prevY + playerSize;
+        const currBottom = y + playerSize;
+        const onTopPath = prevBottom <= bar.y && currBottom >= bar.y;
+        const withinX = (x + playerSize) > bar.x && x < (bar.x + bar.w);
+        if (vy >= 0 && onTopPath && withinX){
+          y = bar.y - playerSize;
+          vy = 0;
+          grounded = true;
+          jumpsRemaining = 2;
+          break;
+        }
+      }
 
       // GROUND COLLISION & reset jumps
-      if (y + playerSize >= groundY){
+      if (!grounded && y + playerSize >= groundY){
         y = groundY - playerSize;
         vy = 0;
         grounded = true;
@@ -299,9 +476,31 @@ button:hover {
 
       // CAMERA
       const camX = clamp(x + playerSize/2 - viewW/2, 0, worldW - viewW);
+      const parallaxFactor = 0.3;
+      const gridSize = 50;
 
       // CLEAR
       ctx.clearRect(0,0,viewW,viewH);
+
+      // MOVING BACKGROUND GRID (parallax)
+      const bgOffset = camX * parallaxFactor;
+      ctx.save();
+      ctx.translate(-bgOffset, 0);
+      ctx.strokeStyle = "rgba(255,255,255,0.28)";
+      ctx.lineWidth = 1;
+      for (let gx = 0; gx <= viewW + gridSize; gx += gridSize){
+        ctx.beginPath();
+        ctx.moveTo(gx, 0);
+        ctx.lineTo(gx, viewH);
+        ctx.stroke();
+      }
+      for (let gy = 0; gy <= viewH + gridSize; gy += gridSize){
+        ctx.beginPath();
+        ctx.moveTo(0, gy);
+        ctx.lineTo(viewW + gridSize, gy);
+        ctx.stroke();
+      }
+      ctx.restore();
 
       // DRAW WORLD
       ctx.save();
@@ -311,12 +510,20 @@ button:hover {
       ctx.fillStyle="#654321";
       ctx.fillRect(0, groundY, worldW, groundH);
 
+      // FLOATING BARS
+      floatingBars.forEach(bar=>{
+        ctx.fillStyle = "#6b4f2a";
+        ctx.fillRect(bar.x, bar.y, bar.w, bar.h);
+        ctx.strokeStyle = "rgba(0,0,0,0.25)";
+        ctx.strokeRect(bar.x, bar.y, bar.w, bar.h);
+      });
+
       // COINS
       coins.forEach(c=>{
         ctx.drawImage(coinImg,c.x,c.y,coinSize,coinSize);
         if (overlap(c.x,c.y,coinSize,coinSize, x,y,playerSize,playerSize)){
           score++;
-          c.x = rand(camX+viewW,worldW-coinSize);
+          c.x = rand(120, worldW - coinSize - 120);
           c.y = groundY-coinSize-rand(0,80);
         }
       });
@@ -324,6 +531,9 @@ button:hover {
       // GROUND BOMBS
       groundObs.forEach((ob,oi)=>{
         ctx.drawImage(bombImg,ob.x,ob.y,obstacleSize,obstacleSize);
+        if (overlap(ob.x, ob.y, obstacleSize, obstacleSize, x, y, playerSize, playerSize)){
+          triggerGameOver();
+        }
       });
 
       // FALLING BOMBS
@@ -332,10 +542,13 @@ button:hover {
         ctx.drawImage(bombImg, fo.x, fo.y, fo.size, fo.size);
         if (fo.y > worldH+fo.size){
           fallingObs[fi] = {
-            x:rand(300,worldW-300),
+            x:rand(120,worldW-160),
             y:-fo.size,
             vy:fo.vy,size:fo.size,hp:3
           };
+        }
+        if (overlap(fo.x, fo.y, fo.size, fo.size, x, y, playerSize, playerSize)){
+          triggerGameOver();
         }
       });
 
@@ -382,6 +595,7 @@ button:hover {
       ctx.font="25px Arial";
       ctx.textAlign="left";
       ctx.fillText("Score: "+score,10,30);
+      ctx.fillText("Level: "+level,10,60);
 
       if (!gameOver) requestAnimationFrame(draw);
     }
@@ -390,18 +604,26 @@ button:hover {
     const playerImg = new Image(),
           coinImg   = new Image(),
           bombImg   = new Image();
+    const assets = [playerImg, coinImg, bombImg];
+    let loadedAssets = 0;
+
+    const startWhenReady = () => {
+      loadedAssets++;
+      if (loadedAssets === assets.length) {
+        initEntities();
+        lastTime = Date.now();
+        draw();
+      }
+    };
+
+    assets.forEach(img => {
+      img.onload = startWhenReady;
+      img.onerror = startWhenReady;
+    });
+
     playerImg.src = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS2oP3lWLmezhBAmuHvAwuaqRv6xVX0eApt7A&s';
     coinImg.src   = 'https://www.partysuppliesindia.com/cdn/shop/products/1_36_9f92dde3-d77d-4459-a21f-63744a94c836.jpg?v=1735574298&width=1500';
     bombImg.src   = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSrhGLUu7GF58R8WurYsZXGRwPSg1aER4LGrw&s';
-    playerImg.onload = () => {
-      coinImg.onload = () => {
-        bombImg.onload = () => {
-          initEntities();
-          lastTime = Date.now();
-          draw();
-        };
-      };
-    };
   };
   </script>
 </body>

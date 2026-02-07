@@ -47,6 +47,14 @@ const player = new Fighter({
         x: 215,
         y: 157
     },
+    attackBox: {
+        offset: {
+            x: 60,
+            y: 50
+        },
+        width: 150,
+        height: 50
+    },
     sprites: {
         idle: {
             imageSrc: './img/samuraiMack2/samuraiMack/Idle.png',
@@ -93,6 +101,14 @@ const enemy = new Fighter({
     offset: {
         x: 215,
         y: 167
+    },
+    attackBox: {
+        offset: {
+            x: 60,
+            y: 50
+        },
+        width: 170,
+        height: 50
     },
     sprites: {
         idle: {

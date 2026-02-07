@@ -7,45 +7,54 @@
     html, body {
       margin: 0;
       padding: 0;
-      overflow: hidden;
+      min-height: 100%;
+      overflow-x: hidden;
+      overflow-y: auto;
       background: #f0f0f0;
       touch-action: none;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
     }
     canvas {
       display: block;
+      width: min(96vw, 1280px);
+      height: min(80vh, 900px);
+      border: 3px solid #333;
+      background: #87ceeb;
     }
 
     #restart {
-      position: absolute;
-      top: 20px;
+      position: fixed;
+      top: 50%;
       left: 50%;
-      transform: translateX(-50%);
+      transform: translate(-50%, -50%);
       padding: 10px 20px;
       font-size: 18px;
       display: none;
-      z-index: 20;
+      z-index: 30;
+      margin: 0;
     }
 
     .joystick-base {
-      position: absolute;
-      width: 300px;
-      height: 300px;
+      position: fixed;
+      width: 220px;
+      height: 220px;
       border-radius: 50%;
       background: rgba(0, 122, 255, 0.2);
       touch-action: none;
+      z-index: 12;
     }
     .joystick-knob {
-      position: absolute;
-      width: 80px;
-      height: 80px;
+      position: fixed;
+      width: 70px;
+      height: 70px;
       border-radius: 50%;
       background: rgba(0, 122, 255, 0.9);
       touch-action: none;
       transform: translate(-50%, -50%);
+      z-index: 13;
     }
     /* Style for all buttons */
 button {
@@ -63,6 +72,23 @@ button {
 button:hover {
   background-color: #45a049; /* slightly darker on hover */
 }
+
+    @media (max-width: 900px) {
+      canvas {
+        width: 100vw;
+        height: 74dvh;
+        border-left: 0;
+        border-right: 0;
+      }
+      .joystick-base {
+        width: 180px;
+        height: 180px;
+      }
+      .joystick-knob {
+        width: 58px;
+        height: 58px;
+      }
+    }
 
   </style>
 </head>
@@ -102,10 +128,9 @@ button:hover {
     const ctx    = canvas.getContext("2d");
 
     function resizeCanvas() {
-      canvas.width  = window.innerWidth;
-      canvas.height = window.innerHeight;
+      canvas.width  = Math.max(320, Math.floor(canvas.clientWidth));
+      canvas.height = Math.max(220, Math.floor(canvas.clientHeight));
     }
-    window.addEventListener("resize", resizeCanvas);
     resizeCanvas();
 
     // game state
@@ -113,12 +138,41 @@ button:hover {
     let x = W/2, y = H/2, vx = 0, vy = 0;
     let moveInput = { x: 0, y: 0 };
     let aimVector = { x: 1, y: 0 }, aimAngle = 0;
-    const acceleration = 3000, friction = 0.9, bulletSpeed = 600;
+    const acceleration = 4200, friction = 0.92, bulletSpeed = 600;
+    const maxSpeed = 900;
     const bullets = [];
     let lastBulletTime = 0;
-    let coinx = 0, coiny = 0, bomx = 0, bomy = -100;
-    let score = 0, gameOver = false, bombActive = false;
+    let coinx = 0, coiny = 0;
+    const bombs = [];
+    const bombSize = 70;
+    const bombSpeed = 180;
+    const bombSpawnInterval = 900;
+    let lastBombSpawnTime = 0;
+    let score = 0, gameOver = false;
     let t = Date.now();
+    const keys = {};
+
+    document.addEventListener("keydown", (e) => {
+      const k = e.key.toLowerCase();
+      if (
+        k === "arrowup" || k === "arrowdown" || k === "arrowleft" || k === "arrowright" ||
+        k === "w" || k === "a" || k === "s" || k === "d" || k === " "
+      ) {
+        e.preventDefault();
+      }
+      keys[k] = true;
+    }, { passive: false });
+
+    document.addEventListener("keyup", (e) => {
+      const k = e.key.toLowerCase();
+      if (
+        k === "arrowup" || k === "arrowdown" || k === "arrowleft" || k === "arrowright" ||
+        k === "w" || k === "a" || k === "s" || k === "d" || k === " "
+      ) {
+        e.preventDefault();
+      }
+      keys[k] = false;
+    }, { passive: false });
 
     // images
     const playerImg = new Image();
@@ -130,12 +184,19 @@ button:hover {
 
     // restart button
     const restartButton = document.getElementById("restart");
+    function positionRestartButtonAtCanvasCenter() {
+      const rect = canvas.getBoundingClientRect();
+      restartButton.style.left = `${rect.left + rect.width / 2}px`;
+      restartButton.style.top = `${rect.top + rect.height / 2}px`;
+      restartButton.style.transform = "translate(-50%, -50%)";
+    }
     restartButton.onclick = () => {
       x = W/2; y = H/2; vx = vy = 0;
       bullets.length = 0;
-      score = 0; gameOver = bombActive = false;
+      bombs.length = 0;
+      score = 0; gameOver = false;
+      lastBombSpawnTime = Date.now();
       spawnCoin();
-      bomy = -100;
       restartButton.style.display = "none";
       t = Date.now();
       draw();
@@ -146,10 +207,24 @@ button:hover {
       coinx = Math.random() * (W - 70);
       coiny = Math.random() * (H - 70);
     }
-    function activateBomb() {
-      bomx = Math.random() * (W - 70);
-      bomy = -100;
-      bombActive = true;
+    function spawnBomb360() {
+      const centerX = W / 2;
+      const centerY = H / 2;
+      const spawnRadius = Math.max(W, H) * 0.75;
+      const angle = Math.random() * Math.PI * 2;
+      const bx = centerX + Math.cos(angle) * spawnRadius;
+      const by = centerY + Math.sin(angle) * spawnRadius;
+      const targetX = x + 50;
+      const targetY = y + 50;
+      const dx = targetX - bx;
+      const dy = targetY - by;
+      const mag = Math.hypot(dx, dy) || 1;
+      bombs.push({
+        x: bx,
+        y: by,
+        vx: (dx / mag) * bombSpeed,
+        vy: (dy / mag) * bombSpeed
+      });
     }
 
     // universal joystick setup
@@ -226,13 +301,34 @@ button:hover {
     spawnCoin();
 
     function update(dt) {
+      // Left joystick on desktop: WASD movement only
+      const keyX = (keys["d"] ? 1 : 0) - (keys["a"] ? 1 : 0);
+      const keyY = (keys["s"] ? 1 : 0) - (keys["w"] ? 1 : 0);
+      const inputX = Math.abs(moveInput.x) > Math.abs(keyX) ? moveInput.x : keyX;
+      const inputY = Math.abs(moveInput.y) > Math.abs(keyY) ? moveInput.y : keyY;
+
+      // Right joystick on desktop: arrow keys control aim
+      const aimKeyX = (keys["arrowright"] ? 1 : 0) - (keys["arrowleft"] ? 1 : 0);
+      const aimKeyY = (keys["arrowdown"] ? 1 : 0) - (keys["arrowup"] ? 1 : 0);
+      if (aimKeyX !== 0 || aimKeyY !== 0) {
+        const mag = Math.hypot(aimKeyX, aimKeyY) || 1;
+        aimVector.x = aimKeyX / mag;
+        aimVector.y = aimKeyY / mag;
+        aimAngle = Math.atan2(aimVector.y, aimVector.x);
+      }
+
       // accelerate by stick input
-      vx += moveInput.x * acceleration * dt;
-      vy += moveInput.y * acceleration * dt;
+      vx += inputX * acceleration * dt;
+      vy += inputY * acceleration * dt;
 
       // apply friction
       vx *= friction;
       vy *= friction;
+      const speed = Math.hypot(vx, vy);
+      if (speed > maxSpeed) {
+        vx = (vx / speed) * maxSpeed;
+        vy = (vy / speed) * maxSpeed;
+      }
 
       // move and clamp
       x = Math.max(0, Math.min(W-100, x + vx*dt));
@@ -261,17 +357,54 @@ button:hover {
         }
       }
 
-      // bomb logic
+      // 360-degree bomb logic (unlocks at score >= 5 only)
       if (score >= 5) {
-        if (!bombActive) activateBomb();
-        bomy += 150 * dt;
-        if (bomy > H) {
-          bomy = -100;
-          bomx = Math.random() * (W - 70);
+        // ensure first bomb appears immediately when threshold is reached
+        if (bombs.length === 0) {
+          spawnBomb360();
+          lastBombSpawnTime = Date.now();
         }
-        if (bomx <= x+100 && x <= bomx+70 && bomy <= y+100 && y <= bomy+70) {
-          gameOver = true;
-          restartButton.style.display = "block";
+        if (Date.now() - lastBombSpawnTime >= bombSpawnInterval) {
+          spawnBomb360();
+          lastBombSpawnTime = Date.now();
+        }
+
+        for (let i = bombs.length - 1; i >= 0; i--) {
+          const b = bombs[i];
+          b.x += b.vx * dt;
+          b.y += b.vy * dt;
+
+          if (b.x < -bombSize * 2 || b.x > W + bombSize * 2 || b.y < -bombSize * 2 || b.y > H + bombSize * 2) {
+            bombs.splice(i, 1);
+            continue;
+          }
+
+          if (b.x <= x + 100 && x <= b.x + bombSize && b.y <= y + 100 && y <= b.y + bombSize) {
+            gameOver = true;
+            positionRestartButtonAtCanvasCenter();
+            restartButton.style.display = "block";
+            break;
+          }
+        }
+      } else {
+        bombs.length = 0;
+      }
+
+      // bullets vs bombs (optional defense)
+      for (let bi = bullets.length - 1; bi >= 0; bi--) {
+        const bullet = bullets[bi];
+        for (let i = bombs.length - 1; i >= 0; i--) {
+          const b = bombs[i];
+          if (
+            bullet.x >= b.x &&
+            bullet.x <= b.x + bombSize &&
+            bullet.y >= b.y &&
+            bullet.y <= b.y + bombSize
+          ) {
+            bullets.splice(bi, 1);
+            bombs.splice(i, 1);
+            break;
+          }
         }
       }
     }
@@ -286,9 +419,9 @@ button:hover {
       ctx.fillStyle = "black";
       ctx.fillText("Score: " + score, 20, 30);
 
-      // coin & bomb
+      // coin & bombs
       ctx.drawImage(coinImg, coinx, coiny, 70, 70);
-      if (bombActive) ctx.drawImage(bombImg, bomx, bomy, 70,70);
+      bombs.forEach(b => ctx.drawImage(bombImg, b.x, b.y, bombSize, bombSize));
 
       // player
       ctx.save();
@@ -314,8 +447,18 @@ button:hover {
       }
     }
 
+    window.addEventListener("resize", () => {
+      resizeCanvas();
+      W = canvas.width;
+      H = canvas.height;
+      positionRestartButtonAtCanvasCenter();
+      x = Math.max(0, Math.min(W - 100, x));
+      y = Math.max(0, Math.min(H - 100, y));
+    });
+
     playerImg.onload = () => {
       t = Date.now();
+      lastBombSpawnTime = Date.now();
       draw();
     };
   </script>

@@ -12,6 +12,12 @@
       align-items: center;
       background: #eef;
     }
+    #mobile-tilt-stage {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
     #game-container {
       position: relative;
       width: 800px; height: 600px;
@@ -72,12 +78,41 @@ button:hover {
   background-color: #45a049; /* slightly darker on hover */
 }
 
+    @media (orientation: portrait) {
+      html, body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+
+      body {
+        display: block;
+      }
+
+      #mobile-tilt-stage {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        width: 100vh;
+        height: 100vw;
+        transform: translate(-50%, -50%) rotate(90deg);
+        transform-origin: center center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        padding: 0.5rem;
+      }
+    }
+
   </style>
 </head>
 <body>
+  <div id="mobile-tilt-stage">
   <h1>CATCH THE JERRY</h1>
   <h3>LEVEL 2 UNLOCK at Score = 5</h3>
-  <div style="display:flex; gap:10px; margin-bottom:10px;">
+  <div id="top-nav" style="display:flex; gap:10px; margin-bottom:10px;">
     <button onclick="window.location.href='index.html'">Home</button>
     <button onclick="window.location.href='index.html'">Other games</button>
     <!-- <button onclick="window.location.href='index1.html'">Arrow keys</button>
@@ -122,6 +157,7 @@ button:hover {
                z-index: 1000;">
   JUMP
 </button>
+  </div>
 
 
 <script>
