@@ -107,13 +107,10 @@ button:hover {
       }
 
       #mobile-tilt-stage {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        width: 100vh;
-        height: 100vw;
-        transform: translate(-50%, -50%) rotate(90deg);
-        transform-origin: center center;
+        position: static;
+        width: 100%;
+        height: auto;
+        transform: none;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -326,16 +323,8 @@ window.onload = function() {
     if(d>maxDisp){ dx=dx/d*maxDisp; dy=dy/d*maxDisp; }
     thumb.style.left = `${stickR+dx-thumbR}px`;
     thumb.style.top  = `${stickR+dy-thumbR}px`;
-    const rawJoyX = dx / maxDisp;
-    const rawJoyY = dy / maxDisp;
-    // Portrait uses a 90deg rotated stage, so map screen-space joystick to world axes.
-    if (window.matchMedia("(orientation: portrait)").matches) {
-      joyX = -rawJoyY;
-      joyY = rawJoyX;
-    } else {
-      joyX = rawJoyX;
-      joyY = rawJoyY;
-    }
+    joyX = dx / maxDisp;
+    joyY = dy / maxDisp;
   }
   function handleStart(e){
     e.preventDefault();
