@@ -226,6 +226,9 @@ button:hover {
         vy: (dy / mag) * bombSpeed
       });
     }
+    function overlap(ax, ay, aw, ah, bx, by, bw, bh) {
+      return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
+    }
 
     // universal joystick setup
     function setupJoystick(baseId, knobId, onMove) {
@@ -333,6 +336,12 @@ button:hover {
       // move and clamp
       x = Math.max(0, Math.min(W-100, x + vx*dt));
       y = Math.max(0, Math.min(H-100, y + vy*dt));
+
+      // collect coin instantly when player touches it (same behavior as index2)
+      if (overlap(coinx, coiny, 70, 70, x, y, 100, 100)) {
+        score++;
+        spawnCoin();
+      }
 
       // shooting
       if (Date.now() - lastBulletTime > 150) {

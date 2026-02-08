@@ -45,12 +45,15 @@
       margin-bottom: 20px;
     }
     #joystick-container {
-      display: inline-block;
+      display: block;
       width: 240px; height: 240px;
       border-radius: 50%;
       background: rgba(0,0,0,0.25);
       touch-action: none;
-      position: relative;
+      position: absolute;
+      left: 16px;
+      bottom: 16px;
+      z-index: 20;
     }
     #joystick-thumb {
       position: absolute;
@@ -60,6 +63,20 @@
       left: calc(50% - 40px);
       top:  calc(50% - 40px);
       transition: left 0.1s, top 0.1s;
+    }
+    #jumpBtn {
+      position: absolute;
+      bottom: 28px;
+      right: 16px;
+      padding: 20px 30px;
+      font-size: 20px;
+      background: limegreen;
+      border: none;
+      border-radius: 10px;
+      color: white;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      z-index: 20;
+      touch-action: manipulation;
     }
     /* Style for all buttons */
 button {
@@ -127,36 +144,11 @@ button:hover {
   <div id="game-container">
     <canvas id="canvas" width="800" height="600"></canvas>
     <button id="restart">Restart</button>
-  </div>
-
-  <!-- Joystick fixed on bottom-left -->
-<div id="joystick-container"
-     style="position: fixed; bottom: 80px; left: 40px;
-            width: 240px; height: 240px;
-            border-radius: 50%;
-            background: rgba(0,0,0,0.25);
-            touch-action: none;
-            z-index: 1000;">
-  <div id="joystick-thumb"
-       style="position: absolute;
-              width: 80px; height: 80px;
-              border-radius: 50%;
-              background: rgba(0,0,0,0.5);
-              left: calc(50% - 40px);
-              top:  calc(50% - 40px);
-              transition: left 0.1s, top 0.1s;">
-  </div>
-</div>
-
-<!-- Jump button fixed on bottom-right -->
-<button id="jumpBtn"
-        style="position: fixed; bottom: 80px; right: 40px;
-               padding: 20px 30px; font-size: 20px;
-               background: limegreen; border: none; border-radius: 10px;
-               color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-               z-index: 1000;">
-  JUMP
-</button>
+    <!-- Controls anchored to game-screen edges -->
+    <div id="joystick-container">
+      <div id="joystick-thumb"></div>
+    </div>
+    <button id="jumpBtn">JUMP</button>
   </div>
 
 
@@ -251,21 +243,50 @@ window.onload = function() {
 
   // Joystick (mobile)
   let joyX=0, joyY=0;
+  let joystickTouchId = null;
   const base   = document.getElementById("joystick-container");
   const thumb  = document.getElementById("joystick-thumb");
   const stickR = 120, thumbR=40, maxDisp=stickR-thumbR, joyBoost=2.5;
-  function handleStart(e){ e.preventDefault(); }
-  function handleMove(e){
-    const t=e.touches[0], r=base.getBoundingClientRect();
+  function setJoystickFromTouch(t){
+    const r = base.getBoundingClientRect();
     let dx=t.clientX-(r.left+stickR),
         dy=t.clientY-(r.top +stickR),
         d=Math.hypot(dx,dy);
     if(d>maxDisp){ dx=dx/d*maxDisp; dy=dy/d*maxDisp; }
     thumb.style.left = `${stickR+dx-thumbR}px`;
     thumb.style.top  = `${stickR+dy-thumbR}px`;
-    joyX=dx/maxDisp; joyY=dy/maxDisp;
+    const rawJoyX = dx / maxDisp;
+    const rawJoyY = dy / maxDisp;
+    // Portrait uses a 90deg rotated stage, so map screen-space joystick to world axes.
+    if (window.matchMedia("(orientation: portrait)").matches) {
+      joyX = -rawJoyY;
+      joyY = rawJoyX;
+    } else {
+      joyX = rawJoyX;
+      joyY = rawJoyY;
+    }
   }
-  function handleEnd(){
+  function handleStart(e){
+    e.preventDefault();
+    if (joystickTouchId !== null) return;
+    const t = e.changedTouches[0];
+    if (!t) return;
+    joystickTouchId = t.identifier;
+    setJoystickFromTouch(t);
+  }
+  function handleMove(e){
+    e.preventDefault();
+    if (joystickTouchId === null) return;
+    const t = Array.from(e.touches).find(tch => tch.identifier === joystickTouchId);
+    if (!t) return;
+    setJoystickFromTouch(t);
+  }
+  function handleEnd(e){
+    if (joystickTouchId !== null && e) {
+      const released = Array.from(e.changedTouches).some(t => t.identifier === joystickTouchId);
+      if (!released) return;
+    }
+    joystickTouchId = null;
     thumb.style.left = "calc(50% - 40px)";
     thumb.style.top  = "calc(50% - 40px)";
     joyX=joyY=0;

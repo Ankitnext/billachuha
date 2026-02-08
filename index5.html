@@ -133,21 +133,21 @@ button:hover {
       }
 
       #joystick-container {
-        width: 110px;
-        height: 110px;
+        width: 170px;
+        height: 170px;
       }
 
       #joystick-thumb {
-        width: 34px;
-        height: 34px;
-        left: calc(50% - 17px);
-        top: calc(50% - 17px);
+        width: 62px;
+        height: 62px;
+        left: calc(50% - 31px);
+        top: calc(50% - 31px);
       }
 
       #fire-button {
-        width: 64px;
-        height: 64px;
-        font-size: 12px;
+        width: 82px;
+        height: 82px;
+        font-size: 13px;
         padding: 0;
       }
     }
@@ -258,26 +258,56 @@ button:hover {
 
     // JOYSTICK
     let joyX = 0, joyY = 0;
-    const stickR = 120, thumbR = 40, maxDisp = stickR - thumbR;
-    base.addEventListener("touchstart", e=>e.preventDefault(), {passive:false});
-    base.addEventListener("touchmove",  e=>{
-      const t = e.touches[0], r = base.getBoundingClientRect();
+    let joystickTouchId = null;
+    let stickR = base.clientWidth / 2;
+    let thumbR = thumb.clientWidth / 2;
+    let maxDisp = Math.max(1, stickR - thumbR);
+    function recalcJoystickMetrics() {
+      stickR = base.clientWidth / 2;
+      thumbR = thumb.clientWidth / 2;
+      maxDisp = Math.max(1, stickR - thumbR);
+      handleEnd();
+    }
+    function setJoystickFromTouch(t) {
+      const r = base.getBoundingClientRect();
       let dx = t.clientX - (r.left + stickR),
           dy = t.clientY - (r.top  + stickR),
           d  = Math.hypot(dx, dy);
-      if (d>maxDisp){ dx=dx/d*maxDisp; dy=dy/d*maxDisp; }
+      if (d > maxDisp) { dx = dx / d * maxDisp; dy = dy / d * maxDisp; }
       thumb.style.left = `${stickR + dx - thumbR}px`;
       thumb.style.top  = `${stickR + dy - thumbR}px`;
-      joyX = dx/maxDisp; joyY = dy/maxDisp;
+      joyX = dx / maxDisp;
+      joyY = dy / maxDisp;
+    }
+    base.addEventListener("touchstart", e => {
       e.preventDefault();
+      if (joystickTouchId !== null) return;
+      const t = e.changedTouches[0];
+      if (!t) return;
+      joystickTouchId = t.identifier;
+      setJoystickFromTouch(t);
+    }, {passive:false});
+    base.addEventListener("touchmove",  e=>{
+      e.preventDefault();
+      if (joystickTouchId === null) return;
+      const t = Array.from(e.touches).find(tch => tch.identifier === joystickTouchId);
+      if (!t) return;
+      setJoystickFromTouch(t);
     }, {passive:false});
     base.addEventListener("touchend", handleEnd);
     base.addEventListener("touchcancel", handleEnd);
-    function handleEnd(){
-      thumb.style.left = "calc(50% - 40px)";
-      thumb.style.top  = "calc(50% - 40px)";
+    function handleEnd(e){
+      if (joystickTouchId !== null && e) {
+        const released = Array.from(e.changedTouches).some(t => t.identifier === joystickTouchId);
+        if (!released) return;
+      }
+      joystickTouchId = null;
+      thumb.style.left = `${stickR - thumbR}px`;
+      thumb.style.top  = `${stickR - thumbR}px`;
       joyX = joyY = 0;
     }
+    window.addEventListener("resize", recalcJoystickMetrics);
+    recalcJoystickMetrics();
 
     // FIRE BUTTON
     fireBtn.addEventListener("touchstart", e=>{e.preventDefault(); shootBullet()});
