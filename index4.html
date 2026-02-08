@@ -121,6 +121,68 @@ button:hover {
         box-sizing: border-box;
         padding: 0.5rem;
       }
+      h1, h3, #top-nav {
+        display: none;
+      }
+      #game-container {
+        width: 95%;
+        max-width: 760px;
+        height: auto;
+        aspect-ratio: 4 / 3;
+        margin: 0 auto;
+      }
+      #canvas {
+        width: 100%;
+        height: 100%;
+      }
+      #joystick-container {
+        width: 170px;
+        height: 170px;
+        left: 10px;
+        bottom: 10px;
+      }
+      #joystick-thumb {
+        width: 62px;
+        height: 62px;
+        left: calc(50% - 31px);
+        top: calc(50% - 31px);
+      }
+      #jumpBtn {
+        padding: 14px 18px;
+        font-size: 16px;
+        right: 10px;
+        bottom: 14px;
+      }
+    }
+    @media (orientation: landscape) and (max-width: 1000px) {
+      html, body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+      body {
+        display: block;
+      }
+      #mobile-tilt-stage {
+        position: static;
+        width: 100%;
+        height: auto;
+        transform: none;
+        padding: 0.25rem;
+      }
+      h1, h3, #top-nav {
+        display: none;
+      }
+      #game-container {
+        width: min(96vw, 900px);
+        height: auto;
+        aspect-ratio: 4 / 3;
+        margin: 0 auto;
+      }
+      #canvas {
+        width: 100%;
+        height: 100%;
+      }
     }
 
   </style>
@@ -246,7 +308,16 @@ window.onload = function() {
   let joystickTouchId = null;
   const base   = document.getElementById("joystick-container");
   const thumb  = document.getElementById("joystick-thumb");
-  const stickR = 120, thumbR=40, maxDisp=stickR-thumbR, joyBoost=2.5;
+  let stickR = base.clientWidth / 2;
+  let thumbR = thumb.clientWidth / 2;
+  let maxDisp = Math.max(1, stickR - thumbR);
+  const joyBoost=2.5;
+  function recalcJoystickMetrics() {
+    stickR = base.clientWidth / 2;
+    thumbR = thumb.clientWidth / 2;
+    maxDisp = Math.max(1, stickR - thumbR);
+    handleEnd();
+  }
   function setJoystickFromTouch(t){
     const r = base.getBoundingClientRect();
     let dx=t.clientX-(r.left+stickR),
@@ -287,14 +358,17 @@ window.onload = function() {
       if (!released) return;
     }
     joystickTouchId = null;
-    thumb.style.left = "calc(50% - 40px)";
-    thumb.style.top  = "calc(50% - 40px)";
+    thumb.style.left = `${stickR - thumbR}px`;
+    thumb.style.top  = `${stickR - thumbR}px`;
     joyX=joyY=0;
   }
   base.addEventListener("touchstart",  handleStart, { passive:false });
   base.addEventListener("touchmove",   handleMove,  { passive:false });
   base.addEventListener("touchend",    handleEnd);
   base.addEventListener("touchcancel", handleEnd);
+  window.addEventListener("resize", recalcJoystickMetrics);
+  window.addEventListener("orientationchange", recalcJoystickMetrics);
+  recalcJoystickMetrics();
 
   // Initialize bombs
   for(let i=0;i<8;i++) worldBombs.push(spawnWorldBomb());
