@@ -10,6 +10,8 @@ test -f .env || { echo 'Configure this environment .env before deploying.' >&2; 
 configured=$(sed -n 's/^DEPLOY_ENV=//p' .env | tr -d '\r')
 [[ "$configured" == "$environment" ]] || { echo 'Requested environment does not match DEPLOY_ENV in .env.' >&2; exit 1; }
 export DEPLOY_ENV="$environment" WEB_IMAGE
+# Keep this application's registry login separate from other VPS projects.
+export DOCKER_CONFIG="${BILLACHUHA_DOCKER_CONFIG:-/opt/billachuha/docker-config}"
 compose=(docker compose --project-name "billachuha-web-$environment" --env-file .env)
 previous=''
 if [[ -f .current-image ]]; then previous=$(cat .current-image); fi

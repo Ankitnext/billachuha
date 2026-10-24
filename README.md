@@ -54,6 +54,8 @@ Each build writes `dist/`; deploy/copy it before building the next environment i
 
 Follow the [complete VPS and GitHub environment guide](https://github.com/Ankitnext/billachuha_backend/blob/main/DEPLOYMENT.md) for DNS, networks, environment files, gateway setup, branches, secrets and deployment commands. You can also host `dist/` on another static host. Optional GitHub Pages deployment stays production-only: choose Actions in Settings → Pages, set `PRODUCTION_BACKEND_URL`, and enable `DEPLOY_GITHUB_PAGES=true`. Staging cannot publish over the production Pages site.
 
+On a shared VPS, the updater uses `/opt/billachuha/docker-config` for Billa Chuha's private GHCR image login. Log in with `docker --config /opt/billachuha/docker-config login ghcr.io --username Ankitnext` and a classic token with `read:packages`. Existing projects keep their own credentials. An explicit `BILLACHUHA_DOCKER_CONFIG` can override this application's login directory.
+
 ## Repository split
 
 All three existing Git remotes were preserved. App files, local configuration and build outputs moved to the app checkout; Go files and its database moved to the backend checkout. The move verified 855 app files and 68 backend files by SHA-256 before follow-up configuration edits.
