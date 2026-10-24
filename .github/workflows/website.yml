@@ -1,0 +1,194 @@
+name: Website CI and environment deployment
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Deploy this branch to its matching VPS environment
+        type: choice
+        options: [none, staging, production]
+        default: none
+
+permissions:
+  contents: read
+
+concurrency:
+  group: website-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.route.outputs.environment }}
+      image: ${{ steps.route.outputs.image }}
+      tags: ${{ steps.route.outputs.tags }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Route branch to environment
+        id: route
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: bash deploy/route.sh
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          package-manager-cache: false
+      - run: node --check online-chase.js
+      - run: node --check site-config.js
+      - run: node tools/build.mjs
+      - name: Check both hosted website configurations
+        run: |
+          BACKEND_URL=https://api-staging.example.com node tools/build.mjs --environment staging
+          node --check dist/site-config.js
+          BACKEND_URL=https://api.example.com node tools/build.mjs --environment production
+          node --check dist/site-config.js
+      - uses: actions/upload-artifact@v7
+        with:
+          name: website-preview-${{ github.sha }}
+          path: dist/
+          include-hidden-files: true
+          if-no-files-found: error
+      - name: Set up Docker for preview image validation
+        uses: docker/setup-buildx-action@v4
+      - name: Build preview container without publishing
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: false
+          load: true
+          tags: billachuha-website-ci:check
+          build-args: |
+            DEPLOY_ENV=staging
+            BACKEND_URL=https://api-staging.example.com
+      - name: Check the container with production filesystem restrictions
+        run: |
+          docker run -d --name website-ci --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges:true -p 127.0.0.1:8080:8080 billachuha-website-ci:check
+          trap 'docker rm -f website-ci >/dev/null' EXIT
+          for attempt in {1..30}; do
+            if [[ "$(docker inspect --format '{{.State.Health.Status}}' website-ci)" == healthy ]]; then break; fi
+            sleep 1
+          done
+          [[ "$(docker inspect --format '{{.State.Health.Status}}' website-ci)" == healthy ]] || { docker logs website-ci; exit 1; }
+          curl --fail http://127.0.0.1:8080/healthz
+          curl --fail http://127.0.0.1:8080/site-config.js | grep -q 'api-staging.example.com'
+
+  image:
+    needs: check
+    if: needs.check.outputs.environment != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ needs.check.outputs.image }}@${{ steps.build.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Select the exact environment URL
+        id: config
+        env:
+          DEPLOY_ENV: ${{ needs.check.outputs.environment }}
+          STAGING_URL: ${{ vars.STAGING_BACKEND_URL }}
+          PRODUCTION_URL: ${{ vars.PRODUCTION_BACKEND_URL }}
+        run: |
+          [[ -z "$STAGING_URL" || -z "$PRODUCTION_URL" || "$STAGING_URL" != "$PRODUCTION_URL" ]] || { echo 'Staging and production must use different API origins.' >&2; exit 1; }
+          if [[ "$DEPLOY_ENV" == staging ]]; then url="$STAGING_URL"; else url="$PRODUCTION_URL"; fi
+          [[ "$url" =~ ^https://[a-zA-Z0-9][a-zA-Z0-9.:-]*$ ]] || { echo 'Set the matching STAGING_BACKEND_URL or PRODUCTION_BACKEND_URL repository variable to an HTTPS origin.' >&2; exit 1; }
+          echo "backend_url=$url" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v7
+        id: build
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ needs.check.outputs.tags }}
+          build-args: |
+            DEPLOY_ENV=${{ needs.check.outputs.environment }}
+            BACKEND_URL=${{ steps.config.outputs.backend_url }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: [check, image]
+    if: >-
+      needs.check.outputs.environment != '' &&
+      ((github.event_name == 'push' &&
+      ((needs.check.outputs.environment == 'staging' && vars.DEPLOY_STAGING_TO_VPS == 'true') ||
+      (needs.check.outputs.environment == 'production' && vars.DEPLOY_PRODUCTION_TO_VPS == 'true'))) ||
+      (github.event_name == 'workflow_dispatch' && inputs.environment == needs.check.outputs.environment))
+    runs-on: ubuntu-latest
+    environment: ${{ needs.check.outputs.environment }}
+    concurrency:
+      group: website-deploy-${{ needs.check.outputs.environment }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+      - name: Deploy only this website environment
+        env:
+          DEPLOY_ENV: ${{ needs.check.outputs.environment }}
+          IMAGE: ${{ needs.image.outputs.image }}
+          VPS_HOST: ${{ vars.VPS_HOST }}
+          VPS_USER: ${{ vars.VPS_USER }}
+          VPS_PORT: ${{ vars.VPS_PORT || '22' }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          [[ "$DEPLOY_ENV" == staging || "$DEPLOY_ENV" == production ]]
+          [[ "$IMAGE" =~ ^ghcr\.io/[a-z0-9._/-]+@sha256:[a-f0-9]{64}$ ]]
+          [[ "$VPS_HOST" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]*$ ]]
+          [[ "$VPS_USER" =~ ^[a-z_][a-z0-9_-]*$ ]]
+          [[ "$VPS_PORT" =~ ^[0-9]+$ ]]
+          test -n "$VPS_SSH_KEY" && test -n "$VPS_KNOWN_HOSTS"
+          umask 077
+          key="$RUNNER_TEMP/vps_key"
+          known="$RUNNER_TEMP/vps_known_hosts"
+          printf '%s\n' "$VPS_SSH_KEY" > "$key"
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > "$known"
+          target="$VPS_USER@$VPS_HOST"
+          remote_root="/opt/billachuha/website/$DEPLOY_ENV"
+          ssh_args=(-i "$key" -o BatchMode=yes -o StrictHostKeyChecking=yes -o "UserKnownHostsFile=$known")
+          ssh "${ssh_args[@]}" -p "$VPS_PORT" "$target" "mkdir -p '$remote_root/deploy'"
+          scp "${ssh_args[@]}" -P "$VPS_PORT" compose.yaml "$target:$remote_root/compose.yaml"
+          scp "${ssh_args[@]}" -P "$VPS_PORT" deploy/update.sh "$target:$remote_root/deploy/update.sh"
+          ssh "${ssh_args[@]}" -p "$VPS_PORT" "$target" "cd '$remote_root' && WEB_IMAGE='$IMAGE' bash deploy/update.sh '$DEPLOY_ENV'"
+
+  pages:
+    needs: check
+    if: >-
+      vars.DEPLOY_GITHUB_PAGES == 'true' && needs.check.outputs.environment == 'production' &&
+      (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'production'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: production
+      url: ${{ steps.publish.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          package-manager-cache: false
+      - env:
+          BACKEND_URL: ${{ vars.PRODUCTION_BACKEND_URL }}
+        run: node tools/build.mjs --environment production
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/
+      - uses: actions/deploy-pages@v4
+        id: publish

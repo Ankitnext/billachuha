@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Poki-style Arcade Hub</title>
+  <script defer src="./site-config.js"></script>
+  <script defer src="./online-chase.js"></script>
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -81,37 +83,43 @@
       </div>
     </section>
 
+    <section class="mt-8 p-6 rounded-2xl bg-gray-800 border border-gray-700" aria-label="Online multiplayer">
+      <h2 class="text-xl font-bold text-white mb-2">Billa Chuha · Online Chase</h2>
+      <p id="online-chase-status" class="mb-4">Join Android players or start with bots.</p>
+      <a id="online-chase" hidden class="inline-block rounded-full bg-blue-600 px-6 py-3 font-semibold text-white hover:bg-blue-500">Play multiplayer →</a>
+    </section>
+
     <!-- Games -->
     <section class="mt-8 game-grid-container">
       <h2 class="text-base sm:text-xl md:text-2xl font-bold text-white mb-6">More Games like this:</h2>
       <div id="gameGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
         <!-- Example Game Cards -->
         <div class="game-card bg-gray-800 rounded-xl overflow-hidden border border-gray-700 hover:scale-105 cursor-pointer" onclick="redirectToGame(1)">
-          <img src="/billachuha/bck_img/cheese.html.png" class="w-full h-auto object-cover" />
+          <img src="./bck_img/cheese.html.png" class="w-full h-auto object-cover" />
           <div class="p-2 text-center"><h3 class="text-sm sm:text-base font-semibold text-white">Arrow Catch</h3></div>
         </div>
         <div class="game-card bg-gray-800 rounded-xl overflow-hidden border border-gray-700 hover:scale-105 cursor-pointer" onclick="redirectToGame(2)">
-          <img src="/billachuha/bck_img/joystick_catch.png" class="w-full h-auto object-cover" />
+          <img src="./bck_img/joystick_catch.png" class="w-full h-auto object-cover" />
           <div class="p-2 text-center"><h3 class="text-sm sm:text-base font-semibold text-white">Joystick Catch</h3></div>
         </div>
         <div class="game-card bg-gray-800 rounded-xl overflow-hidden border border-gray-700 hover:scale-105 cursor-pointer" onclick="redirectToGame(3)">
-          <img src="/billachuha/bck_img/cat_attack.html.png" class="w-full h-auto object-cover" />
+          <img src="./bck_img/cat_attack.html.png" class="w-full h-auto object-cover" />
           <div class="p-2 text-center"><h3 class="text-sm sm:text-base font-semibold text-white">Joystick + Fire</h3></div>
         </div>
         <div class="game-card bg-gray-800 rounded-xl overflow-hidden border border-gray-700 hover:scale-105 cursor-pointer" onclick="redirectToGame(4)">
-          <img src="/billachuha/bck_img/cat_rat.html.png" class="w-full h-auto object-cover" />
+          <img src="./bck_img/cat_rat.html.png" class="w-full h-auto object-cover" />
           <div class="p-2 text-center"><h3 class="text-sm sm:text-base font-semibold text-white">Long Survival</h3></div>
         </div>
         <div class="game-card bg-gray-800 rounded-xl overflow-hidden border border-gray-700 hover:scale-105 cursor-pointer" onclick="redirectToGame(5)">
-          <img src="/billachuha/bck_img/collect_coin.html.png" class="w-full h-auto object-cover" />
+          <img src="./bck_img/collect_coin.html.png" class="w-full h-auto object-cover" />
           <div class="p-2 text-center"><h3 class="text-sm sm:text-base font-semibold text-white">Jump + Fire</h3></div>
         </div>
         <div class="game-card bg-gray-800 rounded-xl overflow-hidden border border-gray-700 hover:scale-105 cursor-pointer" onclick="redirectToGame(6)">
-          <img src="/billachuha/bck_img/cloud_jumper.html.png" class="w-full h-auto object-cover" />
+          <img src="./bck_img/cloud_jumper.html.png" class="w-full h-auto object-cover" />
           <div class="p-2 text-center"><h3 class="text-sm sm:text-base font-semibold text-white">Jump + Stairs</h3></div>
         </div>
         <div class="game-card bg-gray-800 rounded-xl overflow-hidden border border-gray-700 hover:scale-105 cursor-pointer" onclick="redirectToGame(7)">
-          <img src="/billachuha/bck_img/tower_up.html.png" class="w-full h-auto object-cover" />
+          <img src="./bck_img/tower_up.html.png" class="w-full h-auto object-cover" />
           <div class="p-2 text-center"><h3 class="text-sm sm:text-base font-semibold text-white">Snake Mario</h3></div>
         </div>
         <div class="game-card bg-gray-800 rounded-xl overflow-hidden border border-gray-700 hover:scale-105 cursor-pointer" onclick="redirectToGame(8)">
@@ -119,7 +127,7 @@
           <div class="p-2 text-center"><h3 class="text-sm sm:text-base font-semibold text-white">Ninja Runner</h3></div>
         </div>
         <div class="game-card bg-gray-800 rounded-xl overflow-hidden border border-gray-700 hover:scale-105 cursor-pointer" onclick="window.location.href='fight.html'">
-          <img src="/billachuha/bck_img/fight_bck.html.png" class="w-full h-auto object-cover" />
+          <img src="./bck_img/fight_bck.html.png" class="w-full h-auto object-cover" />
           <div class="p-2 text-center"><h3 class="text-sm sm:text-base font-semibold text-white">Fighting Game</h3></div>
         </div>
       </div>

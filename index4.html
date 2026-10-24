@@ -436,7 +436,7 @@ window.onload = function() {
       if(cb.x<-cb.size*2||cb.x>worldW+cb.size*2||cb.y<-cb.size*2||cb.y>worldH+cb.size*2){
         coinBombs.splice(i,1);
       } else if(z===0 && overlap(cb.x,cb.y,cb.size,cb.size, x,y,playerSize,playerSize)){
-        applyDamage(cb.type===1?50:100);
+        applyDamage(cb.type===1?50:95);
         coinBombs.splice(i,1);
       }
     });
@@ -507,8 +507,9 @@ window.onload = function() {
     vx+=joyX*accel*dt*joyBoost; vy+=joyY*accel*dt*joyBoost;
     const f=z>0?frictionA:frictionG;
     vx*=f; vy*=f;
-    x=clamp(x+vx*dt,0,worldW-playerSize);
-    y=clamp(y+vy*dt,0,worldH-playerSize);
+    const speedScale = health < 30 ? 0.6 : 1;
+    x=clamp(x+vx*dt*speedScale,0,worldW-playerSize);
+    y=clamp(y+vy*dt*speedScale,0,worldH-playerSize);
     vz-=gravity*dt; z+=vz*dt;
     if(z<0){ z=0; vz=0; rotation=0; }
     if(z>0) rotation+=spinSpeed*dt;

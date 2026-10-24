@@ -1,0 +1,17 @@
+*
+!*.html
+!*.css
+!*.js
+!*.mp3
+!bck_img/
+!bck_img/**
+!image/
+!image/**
+!img/
+!img/**
+!js/
+!js/**
+!tools/
+!tools/build.mjs
+!deploy/
+!deploy/nginx.conf

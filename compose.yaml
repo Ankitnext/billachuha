@@ -1,0 +1,19 @@
+name: billachuha-web-${DEPLOY_ENV:?Set DEPLOY_ENV to staging or production}
+
+services:
+  website:
+    image: ${WEB_IMAGE:-ghcr.io/ankitnext/billachuha:${DEPLOY_ENV}}
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    networks:
+      proxy:
+        aliases:
+          - website-${DEPLOY_ENV}
+
+networks:
+  proxy:
+    external: true
+    name: billachuha-${DEPLOY_ENV}-proxy
