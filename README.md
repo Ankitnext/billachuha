@@ -24,6 +24,10 @@ Serve or upload **only `dist/`**. The build copies public files using an allowli
 
 The homepage's **Play multiplayer** link opens the shared Chase screen at the configured backend's `/multiplayer` URL. Android opens that server's `/multiplayer/app` inside the native app. Both platforms share rooms, bots and gameplay through one Go server.
 
+The homepage restores the browser account through the API's persistent HttpOnly cookie, shows **Signed in as**, the player ID and **Logout**, and opens multiplayer without another login. Sign in once with email/password on the shared screen; registration verifies email once, while email-code fallback supports existing accounts and password recovery. Closing a tab or leaving a match keeps the login. Temporary connection failures retain cached account display; the backend always validates protected actions. Guest sessions stay temporary.
+
+Configure the exact website origin in the backend's `CORS_ORIGINS`. Account requests use `credentials: include` and `X-Chase-Web: 1`; the backend approves credentials only for allowed origins. The website/API need matching site hosts for SameSite cookies (the hosted `osieq.online` subdomains do). Use `127.0.0.1` consistently on both local servers. No account tokens are transferred through links or browser storage.
+
 The shared Chase screen stays bundled in `billachuha_backend/internal/playweb` so native one-use launch tickets, HttpOnly app sessions, relative API/WebSocket paths and the game protocol ship together. Arcade pages belong here; offline Android Long Run belongs in the app repository. There are no copies of app/backend source in this repository.
 
 For local testing, `site-config.js` points to `http://127.0.0.1:3000`. Start the Go backend from its own checkout. For production, inject its HTTPS origin:
