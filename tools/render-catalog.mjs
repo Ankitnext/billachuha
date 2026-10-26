@@ -62,7 +62,8 @@ function detailPage(game,games){
 export function renderCatalog({check=false}={}){
   const games=loadCatalog(),files=new Map([['index.html',homepage(games)],['home.html',homepage(games)]]);
   for(const game of games)files.set(`games/${game.id}/index.html`,detailPage(game,games));
-  const stale=[];for(const [name,source] of files){const path=join(root,name);if(check){if(!existsSync(path)||readFileSync(path,'utf8')!==source)stale.push(name);}else{mkdirSync(dirname(path),{recursive:true});writeFileSync(path,source);}}
+  const norm=s=>s.replace(/\r\n/g,'\n');
+  const stale=[];for(const [name,source] of files){const path=join(root,name);if(check){if(!existsSync(path)||norm(readFileSync(path,'utf8'))!==norm(source))stale.push(name);}else{mkdirSync(dirname(path),{recursive:true});writeFileSync(path,source);}}
   if(stale.length)throw Error('Catalog pages need regeneration: '+stale.join(', ')+'. Run node tools/render-catalog.mjs.');
   return {games:games.length,pages:files.size};
 }

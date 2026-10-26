@@ -3,6 +3,10 @@
 !*.css
 !*.js
 !*.mp3
+!games.json
+!favicon.ico
+!favicon.svg
+!og-image.png
 !bck_img/
 !bck_img/**
 !image/
@@ -11,7 +15,10 @@
 !img/**
 !js/
 !js/**
+!games/
+!games/**
 !tools/
 !tools/build.mjs
+!tools/render-catalog.mjs
 !deploy/
 !deploy/nginx.conf
