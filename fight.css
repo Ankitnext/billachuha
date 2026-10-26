@@ -48,13 +48,15 @@
 }
 .timercheck {
     background-color: red; 
-    height:100px; 
-    width:100px; 
+    height:44px;
+    width:60px;
     flex-shrink: 0; 
     display:flex; 
     justify-content: center; 
     align-items: center;
 }
+
+.arcade-screen #displayText { font:700 clamp(18px,4vw,34px) system-ui; background:#0008; z-index:2; }
 
 .tie {
     position: absolute;

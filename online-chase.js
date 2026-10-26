@@ -1,13 +1,18 @@
+(() => {
 'use strict';
-const chaseLink = document.getElementById('online-chase');
-const chaseStatus = document.getElementById('online-chase-status');
+const chaseLink = document.getElementById('online-chase') || document.querySelector('[data-chase-play]');
+if (!chaseLink) return;
+const chaseStatus = document.getElementById('online-chase-status') || {textContent:''};
 try {
   const backend = new URL(window.BILLACHUHA_CONFIG.backendUrl);
   const local = ['localhost', '127.0.0.1', '10.0.2.2'].includes(backend.hostname);
   if ((backend.protocol !== 'https:' && !(backend.protocol === 'http:' && local)) || backend.username || backend.password || backend.pathname !== '/' || backend.search || backend.hash) throw new Error('Invalid backend URL');
   chaseLink.href = new URL('/multiplayer', backend).href;
   chaseLink.hidden = false;
+  for (const link of document.querySelectorAll('[data-chase-play]')) { link.href=chaseLink.href;link.hidden=false; }
+  chaseStatus.textContent = 'Browser + Android · Friends or bots.';
   const account = document.getElementById('arcade-account'), signIn = document.getElementById('arcade-signin');
+  if (!account || !signIn) return;
   signIn.href = chaseLink.href; signIn.hidden = false;
   const accountKey = `billachuha.account.${backend.origin}`;
   let accountGeneration=0, loggingOut=false;
@@ -15,7 +20,7 @@ try {
     account.hidden = !user; signIn.hidden = !!user;
     document.getElementById('arcade-player').textContent = user ? `Signed in as ${user.name}` : '';
     document.getElementById('arcade-player-id').textContent = user ? `Player ID: ${user.id}` : '';
-    chaseLink.textContent = user ? 'Open multiplayer lobby →' : 'Play multiplayer →';
+    chaseLink.textContent = user ? 'Open Chase lobby →' : 'Play Chase Now →';
     try { if(user)localStorage.setItem(accountKey,JSON.stringify({id:user.id,name:user.name}));else localStorage.removeItem(accountKey); } catch (_) {}
   }
   try { const cached=JSON.parse(localStorage.getItem(accountKey)); if(cached && typeof cached.id==='string' && typeof cached.name==='string')showAccount(cached); } catch (_) {}
@@ -46,5 +51,8 @@ try {
   chaseStatus.textContent = '7 rats · 5 cats · 3 dogs. Join Android players or start with bots.';
 } catch (_) {
   chaseLink.hidden = true;
+  for (const link of document.querySelectorAll('[data-chase-play]')) link.hidden=true;
   chaseStatus.textContent = 'Online Chase will be available when the game server is configured.';
 }
+
+})();

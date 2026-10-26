@@ -1,161 +1,58 @@
-<!DOCTYPE html>
-<html lang="en" class="dark">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Poki-style Arcade Hub</title>
-  <script defer src="./site-config.js"></script>
-  <script defer src="./online-chase.js"></script>
-
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Inter font -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet" />
-
-  <!-- Font Awesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-
-  <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: #1a1a1a;
-      color: #d1d5db;
-    }
-    .game-grid-container::-webkit-scrollbar {
-      width: 8px;
-      background-color: transparent;
-    }
-    .game-grid-container::-webkit-scrollbar-thumb {
-      background-color: #4a4a4a;
-      border-radius: 4px;
-    }
-    .game-grid-container::-webkit-scrollbar-thumb:hover {
-      background-color: #6a6a6a;
-    }
-  </style>
+<!doctype html>
+<html lang="en"><head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Cat, Rat &amp; Dog Games | Billa Chuha by Osieq</title>
+  <meta name="description" content="Explore Billa Chuha’s collection of Cat, Rat and Dog games. Find arcade adventures, survival challenges and multiplayer Chase. A gaming platform by Osieq.">
+  <meta property="og:type" content="website"><meta property="og:site_name" content="Billa Chuha by Osieq"><meta property="og:title" content="Cat, Rat &amp; Dog Games | Billa Chuha"><meta property="og:description" content="Explore Billa Chuha’s collection of Cat, Rat and Dog games. Find arcade adventures, survival challenges and multiplayer Chase. A gaming platform by Osieq."><meta property="og:image" content="https://osieq.online/og-image.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Billa Chuha — a world of Cat, Rat and Dog games by Osieq"><meta property="og:url" content="https://osieq.online/"><meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://osieq.online/"><link rel="icon" href="./favicon.svg" type="image/svg+xml"><link rel="alternate icon" href="./favicon.ico">
+  <link rel="stylesheet" href="./landing.css"><link rel="stylesheet" href="./catalog.css">
+  <script defer src="./site-config.js"></script><script defer src="./online-chase.js"></script><script defer src="./community.js"></script><script defer src="./catalog.js"></script><script defer src="./landing.js"></script>
 </head>
-
-<body class="bg-gray-900 text-gray-300 antialiased min-h-screen overflow-x-hidden">
-  <!-- Sidebar -->
-  <aside class="hidden md:flex fixed left-0 top-0 h-screen w-20 flex-col items-center py-6 bg-gray-800 border-r border-gray-700 z-50">
-    <a href="#" class="text-3xl font-extrabold text-blue-500 tracking-tight mb-8">
-      P<span class="text-white">K</span>
-    </a>
-    <nav class="flex flex-col items-center space-y-8 mt-auto">
-      <a href="#" class="text-white hover:text-red-500"><i class="fas fa-home text-2xl"></i></a>
-      <a href="#" class="text-white hover:text-red-500"><i class="fas fa-gamepad text-2xl"></i></a>
-      <a href="#" class="text-white hover:text-red-500"><i class="fas fa-search text-2xl"></i></a>
-      <a href="#" class="text-white hover:text-red-500"><i class="fas fa-cog text-2xl"></i></a>
-    </nav>
-  </aside>
-
-  <!-- Main -->
-  <main class="flex-grow md:ml-20 bg-gray-950 p-4 sm:p-8 flex flex-col">
-    <!-- Hero -->
-    <section class="w-full">
-      <div class="relative w-full min-h-[280px] sm:min-h-[340px] md:min-h-[420px] rounded-2xl overflow-hidden shadow-2xl">
-        <div class="absolute inset-0 bg-gray-800 flex flex-col items-center justify-center p-4">
-          <div class="text-center">
-            <h2 class="font-black mb-4 text-4xl sm:text-5xl md:text-6xl leading-tight">
-              <span class="block sm:inline text-blue-500">Arcade</span>
-              <span class="block sm:inline text-white">Hub</span>
-            </h2>
-
-            <!-- Search Bar -->
-            <div class="relative w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg mx-auto">
-              <input
-                type="text"
-                id="searchBar"
-                placeholder="Search your game..."
-                class="w-full pl-10 pr-4 py-3 rounded-full text-gray-200 bg-gray-700 border border-gray-600
-                       focus:outline-none focus:ring-2 focus:ring-red-500 transition-all duration-300 placeholder-gray-400"
-              />
-              <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-6 w-6 text-gray-400"
-                   fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd"
-                      d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                      clip-rule="evenodd"></path>
-              </svg>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="mt-8 p-6 rounded-2xl bg-gray-800 border border-gray-700" aria-label="Online multiplayer">
-      <h2 class="text-xl font-bold text-white mb-2">Billa Chuha · Online Chase</h2>
-      <div id="arcade-account" class="mb-4" hidden><p id="arcade-player" class="text-white font-semibold"></p><p id="arcade-player-id" class="text-sm break-all"></p><button id="arcade-logout" type="button" class="mt-2 rounded-full border border-gray-500 px-4 py-2">Logout</button></div>
-      <p id="online-chase-status" class="mb-4">Join Android players or start with bots.</p>
-      <a id="online-chase" hidden class="inline-block rounded-full bg-blue-600 px-6 py-3 font-semibold text-white hover:bg-blue-500">Play multiplayer →</a>
-      <a id="arcade-signin" hidden class="inline-block ml-3 px-4 py-3 underline">Sign in / Create account</a>
-    </section>
-
-    <!-- Games -->
-    <section class="mt-8 game-grid-container">
-      <h2 class="text-base sm:text-xl md:text-2xl font-bold text-white mb-6">More Games like this:</h2>
-      <div id="gameGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-        <!-- Example Game Cards -->
-        <div class="game-card bg-gray-800 rounded-xl overflow-hidden border border-gray-700 hover:scale-105 cursor-pointer" onclick="redirectToGame(1)">
-          <img src="./bck_img/cheese.html.png" class="w-full h-auto object-cover" />
-          <div class="p-2 text-center"><h3 class="text-sm sm:text-base font-semibold text-white">Arrow Catch</h3></div>
-        </div>
-        <div class="game-card bg-gray-800 rounded-xl overflow-hidden border border-gray-700 hover:scale-105 cursor-pointer" onclick="redirectToGame(2)">
-          <img src="./bck_img/joystick_catch.png" class="w-full h-auto object-cover" />
-          <div class="p-2 text-center"><h3 class="text-sm sm:text-base font-semibold text-white">Joystick Catch</h3></div>
-        </div>
-        <div class="game-card bg-gray-800 rounded-xl overflow-hidden border border-gray-700 hover:scale-105 cursor-pointer" onclick="redirectToGame(3)">
-          <img src="./bck_img/cat_attack.html.png" class="w-full h-auto object-cover" />
-          <div class="p-2 text-center"><h3 class="text-sm sm:text-base font-semibold text-white">Joystick + Fire</h3></div>
-        </div>
-        <div class="game-card bg-gray-800 rounded-xl overflow-hidden border border-gray-700 hover:scale-105 cursor-pointer" onclick="redirectToGame(4)">
-          <img src="./bck_img/cat_rat.html.png" class="w-full h-auto object-cover" />
-          <div class="p-2 text-center"><h3 class="text-sm sm:text-base font-semibold text-white">Long Survival</h3></div>
-        </div>
-        <div class="game-card bg-gray-800 rounded-xl overflow-hidden border border-gray-700 hover:scale-105 cursor-pointer" onclick="redirectToGame(5)">
-          <img src="./bck_img/collect_coin.html.png" class="w-full h-auto object-cover" />
-          <div class="p-2 text-center"><h3 class="text-sm sm:text-base font-semibold text-white">Jump + Fire</h3></div>
-        </div>
-        <div class="game-card bg-gray-800 rounded-xl overflow-hidden border border-gray-700 hover:scale-105 cursor-pointer" onclick="redirectToGame(6)">
-          <img src="./bck_img/cloud_jumper.html.png" class="w-full h-auto object-cover" />
-          <div class="p-2 text-center"><h3 class="text-sm sm:text-base font-semibold text-white">Jump + Stairs</h3></div>
-        </div>
-        <div class="game-card bg-gray-800 rounded-xl overflow-hidden border border-gray-700 hover:scale-105 cursor-pointer" onclick="redirectToGame(7)">
-          <img src="./bck_img/tower_up.html.png" class="w-full h-auto object-cover" />
-          <div class="p-2 text-center"><h3 class="text-sm sm:text-base font-semibold text-white">Snake Mario</h3></div>
-        </div>
-        <div class="game-card bg-gray-800 rounded-xl overflow-hidden border border-gray-700 hover:scale-105 cursor-pointer" onclick="redirectToGame(8)">
-          <img src="https://placehold.co/600x400/262626/d1d5db?text=Ninja+Runner" class="w-full h-auto object-cover" />
-          <div class="p-2 text-center"><h3 class="text-sm sm:text-base font-semibold text-white">Ninja Runner</h3></div>
-        </div>
-        <div class="game-card bg-gray-800 rounded-xl overflow-hidden border border-gray-700 hover:scale-105 cursor-pointer" onclick="window.location.href='fight.html'">
-          <img src="./bck_img/fight_bck.html.png" class="w-full h-auto object-cover" />
-          <div class="p-2 text-center"><h3 class="text-sm sm:text-base font-semibold text-white">Fighting Game</h3></div>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <script>
-    function redirectToGame(gameNumber) {
-      window.location.href = `index${gameNumber}.html`;
-    }
-
-    // --- SEARCH FUNCTION ---
-    const searchBar = document.getElementById("searchBar");
-    const gameCards = document.querySelectorAll(".game-card");
-
-    searchBar.addEventListener("input", function () {
-      const query = this.value.toLowerCase();
-      gameCards.forEach(card => {
-        const title = card.querySelector("h3").textContent.toLowerCase();
-        if (title.includes(query)) {
-          card.style.display = "block";
-        } else {
-          card.style.display = "none";
-        }
-      });
-    });
-  </script>
-</body>
-</html>
+<body class="platform-home"><a class="skip-link" href="#main">Skip to content</a><header class="site-header"><a class="wordmark" href="./index.html" aria-label="Billa Chuha home"><span class="brand-mark">BC</span><span>BILLA CHUHA<small>GAMING PLATFORM BY OSIEQ</small></span></a><nav aria-label="Main navigation"><a href="./index.html#games">All games</a><a href="./games/chase/">Chase</a><a class="nav-android" href="./android.html">Get Android ↗</a></nav></header>
+<main id="main"><section class="hero" aria-labelledby="hero-title"><div class="hero-copy"><p class="eyebrow">YOUR NEXT ADVENTURE STARTS HERE</p><h1 id="hero-title">A world of <span>Cat,<br>Rat & Dog games.</span></h1><p class="hero-description">Chase, jump, explore or battle. Discover a growing collection of games and find your own way to play.</p><div class="hero-actions"><a id="explore-games" class="button primary" href="#games">Explore Games ↓</a><a class="button secondary" href="./android.html">Get the Android app ↗</a></div><p class="catalog-total">9 games · 2 demos · Free to play in your browser</p></div><figure class="hero-art"><img src="./bck_img/chase-mascots.webp" width="1200" height="800" fetchpriority="high" alt="Billa Chuha’s rat, cat and dog mascots on a playful kitchen adventure."><figcaption>SMALL CHARACTERS. ENDLESS POSSIBILITIES.</figcaption></figure></section>
+<section id="recently-played" class="recently-played" hidden aria-labelledby="recent-title"><h2 id="recent-title">Pick up where you left off</h2><div id="recent-games" class="recent-games"></div></section>
+<section id="games" class="catalog-section" aria-labelledby="games-title"><div class="section-heading"><div><p class="eyebrow">THE GAME LIBRARY</p><h2 id="games-title">What are you playing today?</h2></div><label class="game-search" for="searchBar">Find a game<input id="searchBar" type="search" placeholder="Search games, characters or genres…" maxlength="100" autocomplete="off"></label></div><div class="catalog-categories" role="group" aria-label="Filter the game library"><button type="button" data-category="all" aria-pressed="true">All<span class="sr-only"> games and demos</span><small>11</small></button><button type="button" data-category="cats" aria-pressed="false">Cats<small>3</small></button><button type="button" data-category="dogs" aria-pressed="false">Dogs<small>1</small></button><button type="button" data-category="rats" aria-pressed="false">Rats<small>8</small></button><button type="button" data-category="action" aria-pressed="false">Action<small>9</small></button><button type="button" data-category="survival" aria-pressed="false">Survival<small>5</small></button><button type="button" data-category="platformer" aria-pressed="false">Platformer<small>3</small></button><button type="button" data-category="multiplayer" aria-pressed="false">Multiplayer<small>1</small></button><button type="button" data-category="demos" aria-pressed="false">Demos<small>2</small></button></div><div class="catalog-meta"><p id="catalog-count" role="status" aria-live="polite">11 games & demos</p><button type="button" id="clear-filters" class="text-button" hidden>Clear filters</button></div><p id="search-empty" class="catalog-empty" role="status" hidden>No matches yet. Try another search or clear the filters to see the whole collection.</p><div id="gameGrid" class="game-grid"><article class="game-card catalog-card is-featured" data-game-id="chase" data-tags="rats|cats|dogs|action|survival|multiplayer" data-search="billa chuha chase one kitchen. three teams. bring your friends. multiplayer rats cats dogs action survival multiplayer">
+    <a class="game-cover" href="./games/chase/" tabindex="-1" aria-hidden="true"><img src="./bck_img/chase-mascots.webp" width="600" height="338" loading="lazy" alt=""><span class="card-badge">FEATURED</span></a>
+    <div class="game-card-body"><h3><a href="./games/chase/">Billa Chuha Chase</a></h3><p>One kitchen. Three teams. Bring your friends.</p><div class="card-tags"><span>Multiplayer</span><span>Rats · Cats · Dogs</span></div><p id="online-count" class="online-count is-loading" aria-live="polite" aria-busy="true" role="status">Checking players online in Chase…</p><div class="card-actions"><a class="card-play" data-chase-play id="online-chase" hidden data-play-game="chase" href="./games/chase/#play">Play →</a><a class="card-details" href="./games/chase/">Details</a></div><p id="online-chase-status" class="connection-copy" role="status">Featured multiplayer game</p></div>
+  </article>
+<article class="game-card catalog-card" data-game-id="arrow-catch" data-tags="rats|action|survival" data-search="arrow catch collect cheese and dodge the falling bombs. single player rats action survival">
+    <a class="game-cover" href="./games/arrow-catch/" tabindex="-1" aria-hidden="true"><img src="./bck_img/cheese.html.png" width="600" height="338" loading="lazy" alt=""></a>
+    <div class="game-card-body"><h3><a href="./games/arrow-catch/">Arrow Catch</a></h3><p>Collect cheese and dodge the falling bombs.</p><div class="card-tags"><span>Single player</span><span>Rats</span></div><div class="card-actions"><a class="card-play"   data-play-game="arrow-catch" href="./index1.html">Play →</a><a class="card-details" href="./games/arrow-catch/">Details</a></div></div>
+  </article>
+<article class="game-card catalog-card" data-game-id="joystick-catch" data-tags="rats|action|survival" data-search="joystick catch steer, collect cheese and stay out of trouble. single player rats action survival">
+    <a class="game-cover" href="./games/joystick-catch/" tabindex="-1" aria-hidden="true"><img src="./bck_img/joystick_catch.png" width="600" height="338" loading="lazy" alt=""></a>
+    <div class="game-card-body"><h3><a href="./games/joystick-catch/">Joystick Catch</a></h3><p>Steer, collect cheese and stay out of trouble.</p><div class="card-tags"><span>Single player</span><span>Rats</span></div><div class="card-actions"><a class="card-play"   data-play-game="joystick-catch" href="./index2.html">Play →</a><a class="card-details" href="./games/joystick-catch/">Details</a></div></div>
+  </article>
+<article class="game-card catalog-card" data-game-id="joystick-shooter" data-tags="rats|cats|action|survival" data-search="joystick shooter move and aim with independent controls. single player rats cats action survival">
+    <a class="game-cover" href="./games/joystick-shooter/" tabindex="-1" aria-hidden="true"><img src="./bck_img/cat_attack.html.png" width="600" height="338" loading="lazy" alt=""></a>
+    <div class="game-card-body"><h3><a href="./games/joystick-shooter/">Joystick Shooter</a></h3><p>Move and aim with independent controls.</p><div class="card-tags"><span>Single player</span><span>Rats · Cats</span></div><div class="card-actions"><a class="card-play"   data-play-game="joystick-shooter" href="./index3.html">Play →</a><a class="card-details" href="./games/joystick-shooter/">Details</a></div></div>
+  </article>
+<article class="game-card catalog-card" data-game-id="long-survival" data-tags="rats|cats|survival|action" data-search="long survival explore, collect cheese and jump past danger. single player rats cats survival action">
+    <a class="game-cover" href="./games/long-survival/" tabindex="-1" aria-hidden="true"><img src="./bck_img/cat_rat.html.png" width="600" height="338" loading="lazy" alt=""></a>
+    <div class="game-card-body"><h3><a href="./games/long-survival/">Long Survival</a></h3><p>Explore, collect cheese and jump past danger.</p><div class="card-tags"><span>Single player</span><span>Rats · Cats</span></div><div class="card-actions"><a class="card-play"   data-play-game="long-survival" href="./index4.html">Play →</a><a class="card-details" href="./games/long-survival/">Details</a></div></div>
+  </article>
+<article class="game-card catalog-card" data-game-id="jump-and-fire" data-tags="rats|platformer|action" data-search="jump &amp; fire run, double-jump and shoot through the stage. single player rats platformer action">
+    <a class="game-cover" href="./games/jump-and-fire/" tabindex="-1" aria-hidden="true"><img src="./bck_img/collect_coin.html.png" width="600" height="338" loading="lazy" alt=""></a>
+    <div class="game-card-body"><h3><a href="./games/jump-and-fire/">Jump &amp; Fire</a></h3><p>Run, double-jump and shoot through the stage.</p><div class="card-tags"><span>Single player</span><span>Rats</span></div><div class="card-actions"><a class="card-play"   data-play-game="jump-and-fire" href="./index5.html">Play →</a><a class="card-details" href="./games/jump-and-fire/">Details</a></div></div>
+  </article>
+<article class="game-card catalog-card" data-game-id="climber" data-tags="rats|platformer|action" data-search="climber jump between platforms and climb higher. single player rats platformer action">
+    <a class="game-cover" href="./games/climber/" tabindex="-1" aria-hidden="true"><img src="./bck_img/cloud_jumper.html.png" width="600" height="338" loading="lazy" alt=""></a>
+    <div class="game-card-body"><h3><a href="./games/climber/">Climber</a></h3><p>Jump between platforms and climb higher.</p><div class="card-tags"><span>Single player</span><span>Rats</span></div><div class="card-actions"><a class="card-play"   data-play-game="climber" href="./index6.html">Play →</a><a class="card-details" href="./games/climber/">Details</a></div></div>
+  </article>
+<article class="game-card catalog-card" data-game-id="moving-stairs" data-tags="rats|platformer|action" data-search="moving stairs keep your footing as the platforms move. single player rats platformer action">
+    <a class="game-cover" href="./games/moving-stairs/" tabindex="-1" aria-hidden="true"><img src="./bck_img/tower_up.html.png" width="600" height="338" loading="lazy" alt=""></a>
+    <div class="game-card-body"><h3><a href="./games/moving-stairs/">Moving Stairs</a></h3><p>Keep your footing as the platforms move.</p><div class="card-tags"><span>Single player</span><span>Rats</span></div><div class="card-actions"><a class="card-play"   data-play-game="moving-stairs" href="./index7.html">Play →</a><a class="card-details" href="./games/moving-stairs/">Details</a></div></div>
+  </article>
+<article class="game-card catalog-card" data-game-id="fighting-arena" data-tags="action" data-search="fighting arena face a reactive opponent in a sword duel. single player action">
+    <a class="game-cover" href="./games/fighting-arena/" tabindex="-1" aria-hidden="true"><img src="./bck_img/fight_bck.html.png" width="600" height="338" loading="lazy" alt=""></a>
+    <div class="game-card-body"><h3><a href="./games/fighting-arena/">Fighting Arena</a></h3><p>Face a reactive opponent in a sword duel.</p><div class="card-tags"><span>Single player</span></div><div class="card-actions"><a class="card-play"   data-play-game="fighting-arena" href="./fight.html">Play →</a><a class="card-details" href="./games/fighting-arena/">Details</a></div></div>
+  </article>
+<article class="game-card catalog-card" data-game-id="sprite-preview" data-tags="demos" data-search="sprite preview an early canvas image-rendering experiment. demo demos">
+    <a class="game-cover" href="./games/sprite-preview/" tabindex="-1" aria-hidden="true"><img src="./img/brand/sprite-demo.svg" width="600" height="338" loading="lazy" alt=""><span class="card-badge">DEMO</span></a>
+    <div class="game-card-body"><h3><a href="./games/sprite-preview/">Sprite Preview</a></h3><p>An early canvas image-rendering experiment.</p><div class="card-tags"><span>Demo</span></div><div class="card-actions"><a class="card-play"   data-play-game="sprite-preview" href="./index8.html">Try demo →</a><a class="card-details" href="./games/sprite-preview/">Details</a></div></div>
+  </article>
+<article class="game-card catalog-card" data-game-id="animation-playground" data-tags="demos" data-search="animation playground try the running and jumping animations. demo demos">
+    <a class="game-cover" href="./games/animation-playground/" tabindex="-1" aria-hidden="true"><img src="./img/brand/animation-demo.svg" width="600" height="338" loading="lazy" alt=""><span class="card-badge">DEMO</span></a>
+    <div class="game-card-body"><h3><a href="./games/animation-playground/">Animation Playground</a></h3><p>Try the running and jumping animations.</p><div class="card-tags"><span>Demo</span></div><div class="card-actions"><a class="card-play"   data-play-game="animation-playground" href="./index9.html">Try demo →</a><a class="card-details" href="./games/animation-playground/">Details</a></div></div>
+  </article></div><div class="load-more-row"><button type="button" id="load-more" aria-controls="gameGrid" hidden>Show more</button></div></section>
+<section class="platform-about" aria-label="About Billa Chuha"><div><h2>One playful universe. Many ways to play.</h2><p>Billa Chuha is Osieq’s gaming platform, built around the mischief of cats, rats and dogs, with arcade extras to explore. Choose a solo challenge or meet friends in Chase. Each game has its own controls and introduction.</p></div><a class="button secondary" href="./games/chase/">Meet multiplayer Chase →</a></section></main><footer class="site-footer"><a class="wordmark" href="./index.html">BILLA CHUHA</a><p>© 2026 Osieq. A world of games, made for play.</p><a href="https://osieq.online">Powered by Osieq ↗</a></footer><noscript><p class="noscript-note">Browse every game and its controls using the links above. JavaScript enables search and filters; individual games may also require it.</p></noscript></body></html>

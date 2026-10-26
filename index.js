@@ -11,7 +11,7 @@
     let gameOver = false;
     let coinVisible = true;
     let coinTimer = null;
-    
+
     var t = Date.now();
     let speed = 300;
     let dir = 0;
@@ -93,7 +93,7 @@
     bgMusic.volume = 0.2;
 
     bgMusic.play().catch(() => {
-        document.body.addEventListener('click', () => bgMusic.play(), { once: true });
+        document.body.addEventListener('click', () => bgMusic.play().catch(() => {}), { once: true });
     });
 
     restartButton.onclick = () => {
@@ -116,7 +116,7 @@
         t = Date.now();
 
         context.clearRect(0, 0, 600, 400);
-        
+
         context.font = '25px Arial';
         context.fillStyle = 'black';
         context.textAlign = 'center';
@@ -166,24 +166,24 @@
         // context.fillStyle="#e3c228";
         // context.fill();
         context.drawImage(playerImg, x, y, 100, 100);
-        context.drawImage(coinImg, coinx, coiny, 70, 70); 
+        context.drawImage(coinImg, coinx, coiny, 70, 70);
 
-        if(dir == 1) { 
+        if(dir == 1) {
             if(x+100 < 600) {
                 x += (speed * timePassed);
             }
         }
-        else if(dir == 2) { 
+        else if(dir == 2) {
             if(x > 0) {
                 x -= (speed * timePassed);
             }
         }
-        else if(dir == 3) { 
+        else if(dir == 3) {
             if(y+100 < 400) {
                 y += (speed * timePassed);
             }
         }
-        else if(dir == 4) { 
+        else if(dir == 4) {
             if(y > 0) {
                 y -= (speed * timePassed);
             }
@@ -193,7 +193,7 @@
             score++;
             coinSound.currentTime = 0;
             // music start to play
-            coinSound.play();
+            coinSound.play().catch(() => {});
              // Coin Music for 3 second
              setTimeout(() => {
                 coinSound.pause();
@@ -220,7 +220,7 @@
 
         window.requestAnimationFrame(draw);
     }
-  
+
     playerImg.onload = coinImg.onload = () => {
                 draw();
             };

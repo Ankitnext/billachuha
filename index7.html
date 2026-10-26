@@ -1,8 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta charset="UTF-8" />
-    <title>Super Jerry – Double-Jump & Moving Stairs</title>
+    <title>Billa Chuha — Moving Stairs | Osieq</title>
+  <meta name="description" content="Take on moving stairs, coins and enemies in the Billa Chuha Runner browser game. A game by Osieq.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Billa Chuha by Osieq">
+  <meta property="og:title" content="Billa Chuha — Moving Stairs | Osieq">
+  <meta property="og:description" content="Take on moving stairs, coins and enemies in the Billa Chuha Runner browser game. A game by Osieq.">
+  <meta property="og:image" content="https://osieq.online/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Billa Chuha — Rat vs Cat vs Dog. A game by Osieq.">
+  <meta property="og:url" content="https://osieq.online/index7.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://osieq.online/index7.html">
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="alternate icon" href="./favicon.ico">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         html, body {
@@ -206,6 +221,8 @@
             }
         }
     </style>
+<link rel="stylesheet" href="game-shell.css">
+<script defer src="game-shell.js"></script>
 </head>
 <body>
     <div id="mobile-tilt-stage">
@@ -354,28 +371,7 @@
             document.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
 
             let joyX = 0, joyY = 0;
-            const stickR = 60, thumbR = 20, maxDisp = stickR - thumbR;
-            base.addEventListener("touchstart", e => e.preventDefault(), { passive: false });
-            base.addEventListener("touchmove", e => {
-                const t = e.touches[0], r = base.getBoundingClientRect();
-                let dx = t.clientX - (r.left + stickR),
-                    dy = t.clientY - (r.top + stickR),
-                    d = Math.hypot(dx, dy);
-                if (d > maxDisp) { dx = dx / d * maxDisp; dy = dy / d * maxDisp; }
-                thumb.style.left = `${stickR + dx - thumbR}px`;
-                thumb.style.top = `${stickR + dy - thumbR}px`;
-                joyX = dx / maxDisp; joyY = dy / maxDisp;
-                e.preventDefault();
-            }, { passive: false });
-
-            base.addEventListener("touchend", handleEnd);
-            base.addEventListener("touchcancel", handleEnd);
-
-            function handleEnd() {
-                thumb.style.left = "calc(50% - 20px)";
-                thumb.style.top = "calc(50% - 20px)";
-                joyX = joyY = 0;
-            }
+            window.ArcadeStick(base, thumb, (dx, dy) => { joyX = dx; joyY = dy; });
 
             fireBtn.addEventListener("touchstart", e => { e.preventDefault(); shootBullet(); });
             fireBtn.addEventListener("mousedown", e => { e.preventDefault(); shootBullet(); });

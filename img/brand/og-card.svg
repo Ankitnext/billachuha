@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+ <defs><radialGradient id="bg"><stop stop-color="#314b36"/><stop offset="1" stop-color="#101c16"/></radialGradient></defs>
+ <rect width="1200" height="630" fill="url(#bg)"/>
+ <rect x="32" y="32" width="1136" height="566" rx="32" fill="none" stroke="#c5e66b" stroke-opacity=".25"/>
+ <g font-family="Arial, sans-serif"><text x="80" y="112" fill="#c5e66b" font-size="22" letter-spacing="5">A GAMING PLATFORM BY OSIEQ</text>
+ <text x="76" y="250" fill="#f4f2df" font-size="100" font-weight="bold">Billa Chuha</text>
+ <text x="82" y="320" fill="#c5e66b" font-size="32">Choose a game. Start an adventure.</text>
+ <text x="82" y="410" fill="#e5e7df" font-size="25">Cat, Rat &amp; Dog games</text>
+ <text x="82" y="452" fill="#b8c8b4" font-size="25">Arcade adventures, survival and multiplayer.</text>
+ <text x="82" y="550" fill="#f4f2df" font-size="25">osieq.online</text></g>
+ <g transform="translate(930 230)">
+  <circle r="135" fill="#c5e66b" opacity=".07"/>
+  <circle cx="-42" cy="-42" r="29" fill="#c5e66b"/><circle cx="42" cy="-42" r="29" fill="#c5e66b"/>
+  <ellipse cy="15" rx="64" ry="66" fill="#c5e66b"/><circle cx="-22" cy="0" r="7" fill="#172419"/><circle cx="22" cy="0" r="7" fill="#172419"/>
+  <path d="m-10 29 10 9 10-9" fill="none" stroke="#172419" stroke-width="6" stroke-linecap="round"/>
+ </g>
+ <g transform="translate(830 440)" fill="#f3b273"><path d="m-42-10 2-48 33 23M8-35 38-58 42-10"/><ellipse rx="46" ry="40"/><g fill="#172419"><circle cx="-16" cy="-4" r="5"/><circle cx="16" cy="-4" r="5"/></g></g>
+ <g transform="translate(1025 435)"><ellipse cx="-40" cy="-4" rx="17" ry="38" fill="#567b98"/><ellipse cx="40" cy="-4" rx="17" ry="38" fill="#567b98"/><ellipse rx="43" ry="44" fill="#8cbee7"/><g fill="#172419"><circle cx="-15" cy="-6" r="5"/><circle cx="15" cy="-6" r="5"/><ellipse cy="17" rx="10" ry="7"/></g></g>
+</svg>

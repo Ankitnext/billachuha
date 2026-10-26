@@ -1,0 +1,79 @@
+[
+  {
+    "id": "chase", "title": "Billa Chuha Chase", "kind": "game", "mode": "Multiplayer", "genres": ["Action", "Survival"], "characters": ["Rats", "Cats", "Dogs"], "featured": true,
+    "summary": "One kitchen. Three teams. Bring your friends.",
+    "description": "Play a five-minute Rat vs Cat vs Dog chase with up to 15 players across browser and Android. Join a lobby, choose your role and invite friends; bots fill empty spaces.",
+    "thumbnail": "bck_img/chase-mascots.webp", "launch": "chase",
+    "controls": [{"label":"Move & aim", "text":"Hold WASD or arrow keys to move and use the mouse to aim. On touch screens, drag the joystick."}, {"label":"Abilities", "text":"Hold Space / E for ability 1 and Q for ability 2, or use the on-screen buttons. You can steer while using an ability."}]
+  },
+  {
+    "id": "arrow-catch", "title": "Arrow Catch", "kind": "game", "mode": "Single player", "genres": ["Action", "Survival"], "characters": ["Rats"],
+    "summary": "Collect cheese and dodge the falling bombs.",
+    "description": "Guide your mouse around the arena, collect cheese and keep clear of falling bombs. A quick arcade challenge from the Billa Chuha collection.",
+    "thumbnail": "bck_img/cheese.html.png", "launch": "index1.html",
+    "controls": [{"label":"Move", "text":"Use the arrow keys or the on-screen direction buttons to guide your character."}]
+  },
+  {
+    "id": "joystick-catch", "title": "Joystick Catch", "kind": "game", "mode": "Single player", "genres": ["Action", "Survival"], "characters": ["Rats"],
+    "summary": "Steer, collect cheese and stay out of trouble.",
+    "description": "A touch-friendly cheese chase. Move around the arena with the joystick, collect cheese and dodge bombs as you keep your run alive.",
+    "thumbnail": "bck_img/joystick_catch.png", "launch": "index2.html",
+    "controls": [{"label":"Move", "text":"Drag the on-screen joystick, or use WASD / arrow keys."}]
+  },
+  {
+    "id": "joystick-shooter", "title": "Joystick Shooter", "kind": "game", "mode": "Single player", "genres": ["Action", "Survival"], "characters": ["Rats", "Cats"],
+    "summary": "Move and aim with independent controls.",
+    "description": "Collect cheese, dodge danger and fight back. Separate movement and aiming controls let you keep steering while lining up your next shot.",
+    "thumbnail": "bck_img/cat_attack.html.png", "launch": "index3.html",
+    "controls": [{"label":"Move & aim", "text":"Use the movement and aiming pads on screen. Keyboard movement also supports WASD / arrow keys."}]
+  },
+  {
+    "id": "long-survival", "title": "Long Survival", "kind": "game", "mode": "Single player", "genres": ["Survival", "Action"], "characters": ["Rats", "Cats"],
+    "summary": "Explore, collect cheese and jump past danger.",
+    "description": "Take on a longer stage with cheese to collect and danger to avoid. Keep moving and time your jumps to keep the chase going.",
+    "thumbnail": "bck_img/cat_rat.html.png", "launch": "index4.html",
+    "controls": [{"label":"Move", "text":"Use WASD / arrow keys or drag the joystick."}, {"label":"Jump", "text":"Press Space or the on-screen Jump button while steering."}]
+  },
+  {
+    "id": "jump-and-fire", "title": "Jump & Fire", "kind": "game", "mode": "Single player", "genres": ["Platformer", "Action"], "characters": ["Rats"],
+    "summary": "Run, double-jump and shoot through the stage.",
+    "description": "A mouse-sized platform adventure with double jumps and shots. Move through the stage, collect coins and use the high ground to get past enemies.",
+    "thumbnail": "bck_img/collect_coin.html.png", "launch": "index5.html",
+    "controls": [{"label":"Move & jump", "text":"Use A/D or Left/Right to move and W/Up to jump. The joystick also controls movement and jumping."}, {"label":"Fire", "text":"Press Space or hold the on-screen Fire button."}]
+  },
+  {
+    "id": "climber", "title": "Climber", "kind": "game", "mode": "Single player", "genres": ["Platformer", "Action"], "characters": ["Rats"],
+    "summary": "Jump between platforms and climb higher.",
+    "description": "Collect coins, leap between platforms and keep climbing. Use movement, double jumps and shots to make your way upward.",
+    "thumbnail": "bck_img/cloud_jumper.html.png", "launch": "index6.html",
+    "controls": [{"label":"Move & jump", "text":"Use A/D or Left/Right to move and W/Up to jump, or use the on-screen joystick."}, {"label":"Fire", "text":"Press Space or hold the on-screen Fire button."}]
+  },
+  {
+    "id": "moving-stairs", "title": "Moving Stairs", "kind": "game", "mode": "Single player", "genres": ["Platformer", "Action"], "characters": ["Rats"],
+    "summary": "Keep your footing as the platforms move.",
+    "description": "A platform challenge with moving stairs, coins and enemies. Time your double jumps and use your shots while exploring the stage.",
+    "thumbnail": "bck_img/tower_up.html.png", "launch": "index7.html",
+    "controls": [{"label":"Move & jump", "text":"Use A/D or Left/Right to move and W/Up to jump, or use the on-screen joystick."}, {"label":"Fire", "text":"Press Space or hold the on-screen Fire button."}]
+  },
+  {
+    "id": "fighting-arena", "title": "Fighting Arena", "kind": "game", "mode": "Single player", "genres": ["Action"], "characters": [],
+    "summary": "Face a reactive opponent in a sword duel.",
+    "description": "Challenge a bot that approaches, retreats, attacks and evades. Move into range, time your sword attacks and jump away from danger. This arcade extra uses fighter characters.",
+    "thumbnail": "bck_img/fight_bck.html.png", "launch": "fight.html",
+    "controls": [{"label":"Move & jump", "text":"Use A/D or Left/Right to move and W/Up to jump, or use the on-screen controls."}, {"label":"Attack", "text":"Press Space or the Attack button. Use Rematch to start another round."}]
+  },
+  {
+    "id": "sprite-preview", "title": "Sprite Preview", "kind": "demo", "mode": "Demo", "genres": ["Demos"], "characters": [],
+    "summary": "An early canvas image-rendering experiment.",
+    "description": "An early image-rendering experiment that displays a test image in a canvas. This is a development demo rather than a scored game.",
+    "thumbnail": "img/brand/sprite-demo.svg", "launch": "index8.html",
+    "controls": [{"label":"View", "text":"Open the demo to view the image-rendering canvas."}]
+  },
+  {
+    "id": "animation-playground", "title": "Animation Playground", "kind": "demo", "mode": "Demo", "genres": ["Demos"], "characters": [],
+    "summary": "Try the running and jumping animations.",
+    "description": "A small character animation playground. Switch between the Run and Jump animations using the on-screen buttons. This is an animation demo, not a climbing game.",
+    "thumbnail": "img/brand/animation-demo.svg", "launch": "index9.html",
+    "controls": [{"label":"Try an animation", "text":"Select Run Animation or Jump Animation using the buttons beside or below the preview."}]
+  }
+]

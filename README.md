@@ -1,5 +1,9 @@
 # Billa Chuha website
 
+The homepage presents Billa Chuha as a multi-game platform, with a searchable/filterable library and Chase as a featured game. [CATALOG.md](CATALOG.md) explains the single `games.json` catalog, generated individual game pages, adding new games, 24-card pagination and local recent plays. Chase's role guide, pausable Canvas preview and account controls now live at `/games/chase/`; its online counter is explicitly scoped to Chase.
+
+The original mascot art and local styles introduced in Sprint 4 are retained. Artwork provenance and the built-in imagegen prompt are in [tools/artwork/README.md](tools/artwork/README.md). Preview animation pauses offscreen/in hidden tabs and respects reduced motion. Optional `ANDROID_DOWNLOAD_URL` enables the HTTPS APK/Play Store link on `android.html`; when empty, that page clearly states the public download is being prepared. No APK is bundled with this site.
+
 This repository owns the browser arcade: homepage, game pages, JavaScript, styles, images and audio. The project now has three independent Git repositories:
 
 | Repository | Local checkout | Owns |
@@ -9,6 +13,18 @@ This repository owns the browser arcade: homepage, game pages, JavaScript, style
 | [billachuha_backend](https://github.com/Ankitnext/billachuha_backend) | `D:\Custom\billachuha\billachuha_backend` | Go/Gin API, accounts, leaderboard, Chase server, shared Chase screen and Docker deployment |
 
 Each repository builds from its own root without a parent checkout. Only the optional cross-platform device harness expects app and backend beside each other. No submodules or nested repositories are needed.
+
+## Responsive game controls
+
+Sprint 3 adds `community.js` to show the configured backend's actual connected-player count. It polls every 30 seconds while visible, excludes bot estimates, and shows an unavailable state on errors. Shared Chase result cards and referral totals are owned by the backend. Deploy both checkouts with the matching schema-5 backend; no new public configuration or website tracking cookie is required.
+
+Friend invitations now use `/join/CODE` on the hosted website. Nginx routes valid eight-character room codes to `invite.html`, which previews the lobby through the configured backend and continues to sign-in/join. Deploy the website and backend Sprint 2 sources together; local static hosts without the Nginx rule can use `invite.html?room=CODE`. API-origin `/join/CODE` links also work directly in the browser.
+
+All numbered arcade pages and the fighting game use `game-shell.css` and `game-shell.js`. The complete canvas and controls fit the current viewport without scrolling. Portrait docks controls below the canvas; landscape reserves left/right control lanes. The canvas keeps its logical aspect ratio, and the layout accounts for safe areas and browser viewport changes. Rotating releases held controls; Climber keeps its logical world and progress during resize.
+
+The fighting game runs against a reactive bot (`js/fight-bot.js`) with approach/retreat decisions, reaction delays, attack cooldowns and occasional evasive jumps. Use A/D or arrow keys to move, W/Up to jump, and Space to attack, or use the on-screen controls. Combat uses a fixed 60 Hz simulation; Rematch starts a fresh round.
+
+Run `node --test tools/fight-bot.test.cjs`. For the optional real-browser source checks, make Playwright available on `NODE_PATH`, set `CHROMIUM_PATH` if needed, then run `node tools/check-device-layout.cjs`. It checks portrait, landscape, small phones and desktop layouts, real touch movement, independent firing/movement releases, rotation cancellation and the sibling backend's shared Chase page when available. Screenshots stay in ignored `tools/screenshots/`. It runs a local source server without building or deploying.
 
 ## Build and serve
 

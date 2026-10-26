@@ -21,6 +21,9 @@ class Sprite{
     }
 
     draw(){
+        if (!this.image.complete || !this.image.naturalWidth) return;
+        c.save();
+        if (this.facing === -1) { c.translate(this.position.x * 2 + this.width, 0); c.scale(-1, 1); }
         c.drawImage(
             this.image,
             this.framesCurrent * (this.image.width / this.framesMax),
@@ -32,6 +35,7 @@ class Sprite{
             (this.image.width / this.framesMax ) * this.scale, 
             this.image.height * this.scale
         )
+        c.restore();
      }
 
      animateFrames(){
@@ -91,6 +95,9 @@ class Fighter extends Sprite {
         this.color = color
         this.isAttacking = false
         this.health = 100
+        this.facing = 1;
+        this.nextAttackAt = 0;
+        this.attackUntil = 0;
         this.framesCurrent = 0
         this.framesElapsed = 0
         this.framesHold = 7
@@ -104,18 +111,18 @@ class Fighter extends Sprite {
 
    
     // Update position of player
-    update(){
-        this.draw();
+    update(render = true){
+        if (render) this.draw();
         this.animateFrames()
 
-        const facingLeft = this.lastKey === 'a' || this.lastKey === 'ArrowLeft';
-        this.attackBox.position.x = facingLeft
-            ? this.position.x - this.attackBox.width - this.attackBox.offset.x
-            : this.position.x + this.attackBox.offset.x;
-        this.attackBox.position.y = this.position.y + this.attackBox.offset.y
-
         this.position.x += this.velocity.x;
+        this.position.x = Math.max(0, Math.min(canvas.width - this.width, this.position.x));
         this.position.y += this.velocity.y;
+        this.attackBox.position.x = this.facing === -1
+            ? this.position.x + this.width - this.attackBox.offset.x - this.attackBox.width
+            : this.position.x + this.attackBox.offset.x;
+        this.attackBox.position.y = this.position.y + this.attackBox.offset.y;
+        if (performance.now() >= this.attackUntil) this.isAttacking = false;
 
         // gravity Function
         if(this.position.y + this.height + this.velocity.y >= canvas.height - 96){
@@ -126,12 +133,13 @@ class Fighter extends Sprite {
         }
     }
 
-    attack(){
+    attack(now = performance.now()){
+        if (this.health <= 0 || now < this.nextAttackAt) return false;
+        this.nextAttackAt = now + 650;
+        this.attackUntil = now + 220;
         this.switchSprite('attack1')
         this.isAttacking = true;
-        setTimeout(() => {
-            this.isAttacking = false
-        }, 220)
+        return true;
      }
      
 

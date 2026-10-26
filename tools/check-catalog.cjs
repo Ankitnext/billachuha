@@ -1,0 +1,43 @@
+// Isolated website source checks; no live account, backend, APK or deployment.
+const {createServer}=require('node:http');
+const {readFileSync,existsSync,statSync,mkdirSync}=require('node:fs');
+const {resolve,extname,sep}=require('node:path');
+const assert=require('node:assert/strict');
+const {chromium}=require('playwright');
+const root=resolve(__dirname,'..'),catalog=JSON.parse(readFileSync(resolve(root,'games.json'),'utf8')),shots=resolve(root,'tools/screenshots/catalog');
+let base,authReads=0,statsStatus=200,largeCatalog=false;
+const types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.svg':'image/svg+xml','.png':'image/png','.webp':'image/webp','.ico':'image/x-icon'};
+const server=createServer((req,res)=>{
+ const path=decodeURIComponent(new URL(req.url,'http://local').pathname);
+ if(path==='/site-config.js'){res.setHeader('Content-Type','text/javascript');res.end('window.BILLACHUHA_CONFIG='+JSON.stringify({backendUrl:base,androidDownloadUrl:''})+';');return;}
+ if(path==='/api/v1/stats/online'){res.writeHead(statsStatus,{'Content-Type':'application/json'});res.end(JSON.stringify(statsStatus===200?{playersOnline:7,activeMatches:2}:{error:{message:'Unavailable'}}));return;}
+ if(path==='/auth/web/session'){authReads++;res.setHeader('Content-Type','application/json');res.end(JSON.stringify({user:{id:'fixture-user',name:'Chase Player'}}));return;}
+ let file=resolve(root,'.'+path);if(!file.startsWith(root+sep)||!existsSync(file)){res.writeHead(404);res.end();return;}if(statSync(file).isDirectory())file=resolve(file,'index.html');
+ if(!existsSync(file)){res.writeHead(404);res.end();return;}res.setHeader('Content-Type',types[extname(file)]||'application/octet-stream');
+ if(largeCatalog&&path==='/index.html'){
+  let html=readFileSync(file,'utf8');const cards=[...html.matchAll(/<article class="game-card catalog-card[\s\S]*?<\/article>/g)].map(match=>match[0]);
+  const generated=Array.from({length:100},(_,i)=>cards[1].replaceAll('arrow-catch','qa-game-'+i).replaceAll('Arrow Catch','QA Game '+i));
+  html=html.replace(/(<div id="gameGrid" class="game-grid">)[\s\S]*?(<\/div><div class="load-more-row">)/,(_,start,end)=>start+cards[0]+generated.join('')+end);res.end(html);return;
+ }
+ res.end(readFileSync(file));
+});
+(async()=>{let browser;try{
+ await new Promise(done=>server.listen(0,'127.0.0.1',done));base='http://127.0.0.1:'+server.address().port;mkdirSync(shots,{recursive:true});
+ browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH||'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe'});
+ const errors=[],context=await browser.newContext({viewport:{width:1280,height:900}});await context.route('**/*',route=>route.request().url().startsWith(base)?route.continue():route.abort());context.on('page',page=>page.on('pageerror',error=>errors.push(error.message)));
+ const page=await context.newPage();await page.goto(base+'/index.html');await page.locator('#online-count').filter({hasText:'7 players online in Chase'}).waitFor();
+ assert.equal(authReads,0,'browsing the catalog must not require a Chase session');assert.equal(await page.locator('.catalog-card').count(),catalog.length);assert.match(await page.locator('#hero-title').innerText(),/world of Cat/);assert.equal(await page.locator('#explore-games').getAttribute('href'),'#games');assert.equal(await page.locator('#chase-preview').count(),0);assert.equal(await page.locator('#online-chase').getAttribute('href'),base+'/multiplayer');
+ for(const category of ['cats','dogs','rats','action','survival','platformer','multiplayer','demos']){await page.locator(`[data-category="${category}"]`).click();const expected=catalog.filter(game=>[...game.characters,...game.genres,...(game.mode==='Multiplayer'?['Multiplayer']:[])].map(value=>value.toLowerCase()).includes(category)).length;assert.equal(await page.locator('.catalog-card:visible').count(),expected,category+' filter');}
+ await page.locator('[data-category="dogs"]').click();await page.locator('#searchBar').fill('jump');assert.equal(await page.locator('#search-empty').isVisible(),true);await page.locator('#clear-filters').click();assert.equal(await page.locator('.catalog-card:visible').count(),11);
+ await page.locator('#searchBar').fill('fighting');assert.equal(await page.locator('.catalog-card:visible').count(),1);assert.match(page.url(),/q=fighting/);await page.reload();assert.equal(await page.locator('#searchBar').inputValue(),'fighting');assert.equal(await page.locator('.catalog-card:visible').count(),1);await page.locator('#clear-filters').click();
+ for(const size of [{width:1280,height:900},{width:390,height:844},{width:320,height:568},{width:844,height:390}]){await page.setViewportSize(size);await page.locator('#hero-title').scrollIntoViewIfNeeded();await page.evaluate(()=>{document.activeElement?.blur();scrollTo(0,0);});await page.waitForTimeout(100);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'catalog horizontal overflow');await page.screenshot({path:resolve(shots,'platform-'+size.width+'.png'),fullPage:true});}
+ for(const game of catalog){await page.goto(base+'/games/'+game.id+'/');await page.locator('#game-title').filter({hasText:game.title}).waitFor();assert.equal(await page.locator('.control-list article').count(),game.controls.length);const link=page.locator(`#play a[data-play-game="${game.id}"]`);if(game.id==='chase'){await link.waitFor();assert.equal(await link.getAttribute('href'),base+'/multiplayer');assert.equal(await page.locator('#chase-preview').count(),1);await page.locator('#preview-toggle').click();assert.equal(await page.locator('#preview-toggle').getAttribute('aria-pressed'),'true');await page.locator('#arcade-player').filter({hasText:'Chase Player'}).waitFor();}else assert.equal(await link.getAttribute('href'),'../../'+game.launch);}
+ assert.ok(authReads>0,'Chase page still restores its own account');
+ await page.goto(base+'/games/arrow-catch/');await page.locator('#play [data-play-game="arrow-catch"]').click();await page.waitForURL('**/index1.html');await page.goto(base+'/index.html');await page.locator('#recently-played').waitFor();assert.match(await page.locator('#recent-games').innerText(),/Arrow Catch/);
+ await page.goto(base+'/home.html');assert.equal(await page.locator('.catalog-card').count(),11);
+ statsStatus=503;await page.reload();await page.locator('#online-count').filter({hasText:'unavailable'}).waitFor();assert.equal(await page.locator('.catalog-card:visible').count(),11);statsStatus=200;
+ largeCatalog=true;await page.goto(base+'/index.html');assert.equal(await page.locator('.catalog-card').count(),101);assert.equal(await page.locator('.catalog-card:visible').count(),24);await page.locator('#load-more').click();assert.equal(await page.locator('.catalog-card:visible').count(),48);await page.locator('[data-category="dogs"]').click();assert.equal(await page.locator('.catalog-card:visible').count(),1);await page.locator('#clear-filters').click();for(let i=0;i<4;i++)await page.locator('#load-more').click();assert.equal(await page.locator('.catalog-card:visible').count(),101);assert.equal(await page.locator('#load-more').isVisible(),false);largeCatalog=false;
+ const noJS=await browser.newContext({javaScriptEnabled:false});const plain=await noJS.newPage();await plain.goto(base+'/index.html');assert.equal(await plain.locator('.catalog-card:visible').count(),11);await plain.locator('h3 a').filter({hasText:'Arrow Catch'}).click();await plain.waitForURL('**/games/arrow-catch/');await plain.locator('#play [data-play-game="arrow-catch"]').click();await plain.waitForURL('**/index1.html');await noJS.close();
+ const blocked=await browser.newContext();await blocked.addInitScript(()=>{Storage.prototype.getItem=()=>{throw Error('Storage unavailable')};Storage.prototype.setItem=()=>{throw Error('Storage unavailable')};});const offline=await blocked.newPage();offline.on('pageerror',error=>errors.push(error.message));await offline.goto(base+'/index.html');await offline.locator('[data-category="dogs"]').click();assert.equal(await offline.locator('.catalog-card:visible').count(),1);await blocked.close();
+ assert.deepEqual(errors,[]);await context.close();console.log('PASS platform catalog: 11 entries/13 source pages, category + search combinations, URL restoration, Chase-only activity/auth, all detail/play links, recent plays, phone/desktop layouts, offline counts, 101-entry pagination, no-JS navigation and blocked storage.');
+ }finally{await browser?.close();server.close();}})().catch(error=>{console.error(error);process.exitCode=1;});

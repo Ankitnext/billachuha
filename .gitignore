@@ -1,4 +1,5 @@
 dist/
+tools/screenshots/
 node_modules/
 .env
 .env.*

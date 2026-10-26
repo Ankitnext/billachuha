@@ -2,8 +2,23 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Super Jerry – Infinite Climb Jump</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Billa Chuha — Climber | Osieq</title>
+  <meta name="description" content="Jump between platforms, collect coins and climb higher in Billa Chuha Climber. A game by Osieq.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Billa Chuha by Osieq">
+  <meta property="og:title" content="Billa Chuha — Climber | Osieq">
+  <meta property="og:description" content="Jump between platforms, collect coins and climb higher in Billa Chuha Climber. A game by Osieq.">
+  <meta property="og:image" content="https://osieq.online/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Billa Chuha — Rat vs Cat vs Dog. A game by Osieq.">
+  <meta property="og:url" content="https://osieq.online/index6.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://osieq.online/index6.html">
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="alternate icon" href="./favicon.ico">
+
     <style>
         /* --- Basic Setup & Body Layout (FIXED) --- */
         html, body {
@@ -122,6 +137,8 @@
         }
         
     </style>
+<link rel="stylesheet" href="game-shell.css">
+<script defer src="game-shell.js"></script>
 </head>
 <body>
     <h1>SUPER JERRY CLIMBER</h1>
@@ -204,33 +221,7 @@
             document.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
 
             let joyX = 0, joyY = 0;
-
-            base.addEventListener("touchstart", e => e.preventDefault(), { passive: false });
-            base.addEventListener("touchmove", e => {
-                const t = e.touches[0], r = base.getBoundingClientRect();
-                const currentStickR = base.offsetWidth / 2;
-                const currentThumbR = thumb.offsetWidth / 2;
-                const currentMaxDisp = currentStickR - currentThumbR;
-
-                let dx = t.clientX - (r.left + currentStickR),
-                    dy = t.clientY - (r.top + currentStickR),
-                    d = Math.hypot(dx, dy);
-                if (d > currentMaxDisp) { dx = dx / d * currentMaxDisp; dy = dy / d * currentMaxDisp; }
-                thumb.style.left = `${currentStickR + dx - currentThumbR}px`;
-                thumb.style.top = `${currentStickR + dy - currentThumbR}px`;
-                joyX = dx / currentMaxDisp; joyY = dy / currentMaxDisp;
-                e.preventDefault();
-            }, { passive: false });
-
-            base.addEventListener("touchend", handleEnd);
-            base.addEventListener("touchcancel", handleEnd);
-
-            function handleEnd() {
-                const currentThumbR = thumb.offsetWidth / 2;
-                thumb.style.left = `calc(50% - ${currentThumbR}px)`;
-                thumb.style.top = `calc(50% - ${currentThumbR}px)`;
-                joyX = joyY = 0;
-            }
+            window.ArcadeStick(base, thumb, (dx, dy) => { joyX = dx; joyY = dy; });
 
             fireBtn.addEventListener("touchstart", e => { e.preventDefault(); shootBullet(); });
             fireBtn.addEventListener("mousedown", e => { e.preventDefault(); shootBullet(); });
@@ -507,8 +498,9 @@
 
             function resizeCanvas() {
                 const gameContainer = document.getElementById("game-container");
-                const containerWidth = gameContainer.clientWidth;
-                const containerHeight = gameContainer.clientHeight;
+                if (canvas.width === REF_VIEW_W && canvas.height === REF_VIEW_H) return;
+                const containerWidth = REF_VIEW_W;
+                const containerHeight = REF_VIEW_H;
                 canvas.width = Math.max(1, containerWidth);
                 canvas.height = Math.max(1, containerHeight);
 

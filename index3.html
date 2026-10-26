@@ -1,8 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta charset="UTF-8" />
-  <title>Dual Joystick Shooter (Fixed)</title>
+  <title>Billa Chuha — Joystick Shooter | Osieq</title>
+  <meta name="description" content="Move, aim and fire with dual controls in Billa Chuha Joystick Shooter. A game by Osieq.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Billa Chuha by Osieq">
+  <meta property="og:title" content="Billa Chuha — Joystick Shooter | Osieq">
+  <meta property="og:description" content="Move, aim and fire with dual controls in Billa Chuha Joystick Shooter. A game by Osieq.">
+  <meta property="og:image" content="https://osieq.online/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Billa Chuha — Rat vs Cat vs Dog. A game by Osieq.">
+  <meta property="og:url" content="https://osieq.online/index3.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://osieq.online/index3.html">
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="alternate icon" href="./favicon.ico">
+
   <style>
     html, body {
       margin: 0;
@@ -91,6 +106,8 @@ button:hover {
     }
 
   </style>
+<link rel="stylesheet" href="game-shell.css">
+<script defer src="game-shell.js"></script>
 </head>
 <body>
    <!-- <div style="display:flex; justify-content: center; position: absolute; bottom: 10px; width:100%;">
@@ -128,8 +145,8 @@ button:hover {
     const ctx    = canvas.getContext("2d");
 
     function resizeCanvas() {
-      canvas.width  = Math.max(320, Math.floor(canvas.clientWidth));
-      canvas.height = Math.max(220, Math.floor(canvas.clientHeight));
+      canvas.width = 800;
+      canvas.height = 600;
     }
     resizeCanvas();
 
@@ -235,7 +252,6 @@ button:hover {
       const base = document.getElementById(baseId);
       const knob = document.getElementById(knobId);
       let activeId = null;
-      const maxDist  = (base.offsetWidth - knob.offsetWidth) / 2;
 
       // center knob at start
       function resetKnob() {
@@ -244,6 +260,7 @@ button:hover {
         knob.style.top  = (rect.top  + base.offsetHeight/2) + "px";
       }
       resetKnob();
+      window.addEventListener("resize", () => { activeId = null; onMove(0, 0); resetKnob(); });
 
       // attach same listeners to both base & knob
       [base, knob].forEach(el => {
@@ -259,6 +276,7 @@ button:hover {
           for (let touch of e.changedTouches) {
             if (touch.identifier === activeId) {
               const rect = base.getBoundingClientRect();
+              const maxDist = Math.max(1, (base.clientWidth-knob.clientWidth)/2);
               let dx = touch.clientX - (rect.left + base.offsetWidth/2);
               let dy = touch.clientY - (rect.top  + base.offsetHeight/2);
               const mag = Math.hypot(dx, dy);
@@ -273,7 +291,7 @@ button:hover {
           }
         }, { passive: false });
 
-        el.addEventListener("touchend", e => {
+        const release = e => {
           for (let touch of e.changedTouches) {
             if (touch.identifier === activeId) {
               activeId = null;
@@ -281,7 +299,9 @@ button:hover {
               onMove(0, 0);
             }
           }
-        });
+        };
+        el.addEventListener('touchend',release);
+        el.addEventListener('touchcancel',release);
       });
     }
 
