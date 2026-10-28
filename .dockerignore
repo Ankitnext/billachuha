@@ -17,8 +17,13 @@
 !js/**
 !games/
 !games/**
+!super-fight/
+!super-fight/**
+!trap-escape/
+!trap-escape/**
 !tools/
 !tools/build.mjs
 !tools/render-catalog.mjs
+!tools/check-public-assets.mjs
 !deploy/
 !deploy/nginx.conf

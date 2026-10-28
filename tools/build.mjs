@@ -4,6 +4,7 @@ import { dirname, extname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseEnv } from 'node:util';
 import { renderCatalog } from './render-catalog.mjs';
+import { validatePublicAssets } from './check-public-assets.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const output = resolve(root, 'dist');
@@ -42,4 +43,5 @@ for (const file of ['site-config.js', 'online-chase.js']) {
 }
 writeFileSync(join(output, 'site-config.js'), 'window.BILLACHUHA_CONFIG = ' + JSON.stringify({ backendUrl: backend.origin, environment, androidDownloadUrl }) + ';' + String.fromCharCode(10));
 writeFileSync(join(output, '.nojekyll'), '');
+validatePublicAssets(output);
 console.log(`Built ${environment} website in dist/ using game server ${backend.origin}`);

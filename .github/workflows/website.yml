@@ -38,6 +38,7 @@ jobs:
           package-manager-cache: false
       - run: node --check online-chase.js
       - run: node --check site-config.js
+      - run: node --test tools/public-assets.test.mjs
       - run: node tools/build.mjs
       - name: Check both hosted website configurations
         run: |
@@ -74,6 +75,7 @@ jobs:
           [[ "$(docker inspect --format '{{.State.Health.Status}}' website-ci)" == healthy ]] || { docker logs website-ci; exit 1; }
           curl --fail http://127.0.0.1:8080/healthz
           curl --fail http://127.0.0.1:8080/site-config.js | grep -q 'api-staging.example.com'
+          node tools/check-public-assets.mjs --url http://127.0.0.1:8080
 
   image:
     needs: check

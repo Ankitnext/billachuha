@@ -50,6 +50,8 @@ node tools/build.mjs
 
 Serve or upload **only `dist/`**. The build copies public files using an allowlist; Git metadata, local configuration and tools stay out of the artifact. Homepage image paths work at a domain root and under a GitHub Pages repository path. You can also serve this repository directly with a static web server during development.
 
+Docker must include the `trap-escape/` and `super-fight/` script directories; Cat Chase also depends on Trap Escape's shared scripts. The build now checks every public HTML page's local JavaScript and stylesheet dependencies, and CI checks their HTTP status and content type in the actual preview container. Missing scripts stop deployment instead of producing blank games. Run `node --test tools/public-assets.test.mjs` for the regression checks. With Playwright on `NODE_PATH` and optional `CHROMIUM_PATH`, `node tools/check-game-startup.cjs` verifies previews and game startup for all three affected games on desktop and phone viewports, saving screenshots under ignored `tools/screenshots/`.
+
 ## Connect multiplayer
 
 The homepage's **Play multiplayer** link opens the shared Chase screen at the configured backend's `/multiplayer` URL. Android opens that server's `/multiplayer/app` inside the native app. Both platforms share rooms, bots and gameplay through one Go server.
