@@ -32,7 +32,7 @@ rmSync(output, { recursive: true, force: true });
 mkdirSync(output);
 const publicExtensions = new Set(['.html', '.css', '.js', '.mp3']);
 const publicBrandFiles = new Set(['favicon.svg', 'favicon.ico', 'og-image.png', 'games.json']);
-const publicDirectories = new Set(['bck_img', 'image', 'img', 'js', 'games']);
+const publicDirectories = new Set(['bck_img', 'image', 'img', 'js', 'games', 'super-fight', 'trap-escape']);
 for (const entry of readdirSync(root, { withFileTypes: true })) {
   if ((entry.isFile() && (publicExtensions.has(extname(entry.name)) || publicBrandFiles.has(entry.name))) || (entry.isDirectory() && publicDirectories.has(entry.name))) cpSync(join(root, entry.name), join(output, entry.name), { recursive: true });
 }

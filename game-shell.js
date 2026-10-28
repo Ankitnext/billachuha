@@ -1,6 +1,21 @@
 /* Preserve game state and event handlers while docking existing controls. */
 (() => {
  'use strict';
+ window.ArcadeStick=(base,thumb,onMove)=>{
+  let pointer=null;
+  function move(event){
+   const box=base.getBoundingClientRect(),radius=base.clientWidth/2,thumbRadius=thumb.clientWidth/2,max=Math.max(1,radius-thumbRadius);
+   let dx=event.clientX-box.left-box.width/2,dy=event.clientY-box.top-box.height/2;
+   const length=Math.hypot(dx,dy);if(length>max){dx=dx/length*max;dy=dy/length*max;}
+   thumb.style.left=`${radius+dx-thumbRadius}px`;thumb.style.top=`${radius+dy-thumbRadius}px`;onMove(dx/max,dy/max);
+  }
+  function reset(){const old=pointer;pointer=null;if(old!==null&&base.hasPointerCapture(old))base.releasePointerCapture(old);thumb.style.left='calc(50% - 17px)';thumb.style.top='calc(50% - 17px)';onMove(0,0);}
+  base.addEventListener('pointerdown',event=>{if(pointer!==null||(event.pointerType==='mouse'&&event.button!==0))return;event.preventDefault();pointer=event.pointerId;base.setPointerCapture(pointer);move(event);});
+  base.addEventListener('pointermove',event=>{if(event.pointerId===pointer){event.preventDefault();move(event);}});
+  for(const type of ['pointerup','pointercancel','lostpointercapture'])base.addEventListener(type,event=>{if(event.pointerId===pointer)reset();});
+  window.addEventListener('resize',reset);window.addEventListener('blur',reset);document.addEventListener('visibilitychange',()=>{if(document.hidden)reset();});reset();
+ };
+ if(document.documentElement.dataset.arcadeLayout==='custom')return;
  const canvas=document.querySelector('canvas'); if(!canvas)return;
  document.documentElement.classList.add('arcade-page');
  const make=(tag,cls)=>{const n=document.createElement(tag);n.className=cls;return n;};
@@ -38,20 +53,6 @@
  // Remove presentation wrappers, but keep script nodes and their already-loaded code.
  for(const child of [...document.body.children])if(child.tagName!=='SCRIPT')child.remove();
  document.body.append(shell);
- window.ArcadeStick=(base,thumb,onMove)=>{
-  let pointer=null;
-  function move(event){
-   const box=base.getBoundingClientRect(),radius=base.clientWidth/2,thumbRadius=thumb.clientWidth/2,max=Math.max(1,radius-thumbRadius);
-   let dx=event.clientX-box.left-box.width/2,dy=event.clientY-box.top-box.height/2;
-   const length=Math.hypot(dx,dy);if(length>max){dx=dx/length*max;dy=dy/length*max;}
-   thumb.style.left=`${radius+dx-thumbRadius}px`;thumb.style.top=`${radius+dy-thumbRadius}px`;onMove(dx/max,dy/max);
-  }
-  function reset(){const old=pointer;pointer=null;if(old!==null&&base.hasPointerCapture(old))base.releasePointerCapture(old);thumb.style.left='calc(50% - 17px)';thumb.style.top='calc(50% - 17px)';onMove(0,0);}
-  base.addEventListener('pointerdown',event=>{if(pointer!==null||(event.pointerType==='mouse'&&event.button!==0))return;event.preventDefault();pointer=event.pointerId;base.setPointerCapture(pointer);move(event);});
-  base.addEventListener('pointermove',event=>{if(event.pointerId===pointer){event.preventDefault();move(event);}});
-  for(const type of ['pointerup','pointercancel','lostpointercapture'])base.addEventListener(type,event=>{if(event.pointerId===pointer)reset();});
-  window.addEventListener('resize',reset);window.addEventListener('blur',reset);document.addEventListener('visibilitychange',()=>{if(document.hidden)reset();});reset();
- };
  const aspect=location.pathname.endsWith('index6.html')?2/3:canvas.width/canvas.height || 1.5;
  function fit(){
   const box=stage.getBoundingClientRect(),w=Math.max(1,Math.min(box.width,box.height*aspect)),h=w/aspect;

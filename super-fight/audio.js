@@ -1,0 +1,17 @@
+(() => {
+  class FightAudio{
+    constructor(){this.enabled=false;this.context=null;this.loops=new Map();}
+    set(enabled){this.enabled=enabled;if(!enabled)this.silence();else this.play('blast');}
+    play(type){if(!this.enabled)return;try{
+      const c=this.context||=new(window.AudioContext||window.webkitAudioContext)();c.resume().catch(()=>{});
+      if(type==='win'){for(const [i,hz]of [440,550,660].entries()){const o=c.createOscillator(),g=c.createGain(),at=c.currentTime+i*.09;o.frequency.value=hz;g.gain.setValueAtTime(.025,at);g.gain.exponentialRampToValueAtTime(.001,at+.16);o.connect(g);g.connect(c.destination);o.start(at);o.stop(at+.16);}return;}
+      const tones={hit:[100,55,.07],'heavy-hit':[70,30,.15],blast:[230,620,.16],beam:[110,80,.35],teleport:[900,140,.1],dash:[350,80,.08],jump:[170,260,.07],clash:[80,160,.25],ko:[90,20,.4],win:[430,860,.28],round:[330,500,.15],fight:[180,240,.1],combo:[750,1000,.04],'block-hit':[180,110,.06],'shield-hit':[350,240,.06],slam:[55,30,.18],dragon:[220,720,.19],swing:[150,80,.04],wall:[90,50,.08]};
+      const spec=tones[type];if(!spec)return;
+      const oscillator=c.createOscillator(),gain=c.createGain();oscillator.type=['hit','heavy-hit','ko'].includes(type)?'triangle':'sine';oscillator.frequency.setValueAtTime(spec[0],c.currentTime);oscillator.frequency.exponentialRampToValueAtTime(spec[1],c.currentTime+spec[2]);gain.gain.setValueAtTime(.035,c.currentTime);gain.gain.exponentialRampToValueAtTime(.001,c.currentTime+spec[2]);oscillator.connect(gain);gain.connect(c.destination);oscillator.start();oscillator.stop(c.currentTime+spec[2]);
+      if(['hit','heavy-hit','beam','ko','slam'].includes(type)){const duration=Math.min(.16,spec[2]),buffer=c.createBuffer(1,Math.ceil(c.sampleRate*duration),c.sampleRate),data=buffer.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*(1-i/data.length);const source=c.createBufferSource(),volume=c.createGain();source.buffer=buffer;volume.gain.value=.018;source.connect(volume);volume.connect(c.destination);source.start();}
+    }catch{/* Sound is optional. */}}
+    update(match,paused){if(!this.enabled||paused){this.silence();return;}for(const f of match.fighters){const active=match.phase==='fight'&&(f.charging||f.shield),key=f.id;if(active&&!this.loops.has(key)){try{const c=this.context||=new(window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=f.shield?95:155;g.gain.value=.012;o.connect(g);g.connect(c.destination);o.start();this.loops.set(key,{o,g});}catch{}}else if(!active&&this.loops.has(key)){this.loops.get(key).o.stop();this.loops.delete(key);}if(active&&this.loops.has(key)){const c=this.context,loop=this.loops.get(key),progress=Math.min(1,f.charge/f.spec.charge);loop.g.gain.setTargetAtTime(f.shield?.009+Math.sin(c.currentTime*11)*.003:.008+progress*.018,c.currentTime,.025);loop.o.frequency.setTargetAtTime(f.shield?95+Math.sin(c.currentTime*8)*4:130+progress*95+Math.sin(c.currentTime*19)*10,c.currentTime,.025);}}}
+    silence(){for(const value of this.loops.values()){try{value.o.stop();}catch{}}this.loops.clear();}
+  }
+  window.SuperFight.FightAudio=FightAudio;
+})();

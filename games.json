@@ -7,11 +7,11 @@
     "controls": [{"label":"Move & aim", "text":"Hold WASD or arrow keys to move and use the mouse to aim. On touch screens, drag the joystick."}, {"label":"Abilities", "text":"Hold Space / E for ability 1 and Q for ability 2, or use the on-screen buttons. You can steer while using an ability."}]
   },
   {
-    "id": "arrow-catch", "title": "Arrow Catch", "kind": "game", "mode": "Single player", "genres": ["Action", "Survival"], "characters": ["Rats"],
-    "summary": "Collect cheese and dodge the falling bombs.",
-    "description": "Guide your mouse around the arena, collect cheese and keep clear of falling bombs. A quick arcade challenge from the Billa Chuha collection.",
-    "thumbnail": "bck_img/cheese.html.png", "launch": "index1.html",
-    "controls": [{"label":"Move", "text":"Use the arrow keys or the on-screen direction buttons to guide your character."}]
+    "id": "arrow-catch", "title": "Trap Escape", "kind": "game", "mode": "Single player", "genres": ["Platformer", "Puzzle", "Action"], "characters": ["Rats", "Cats"],
+    "summary": "Escape the Cat with falling ceilings, sliding floors and 19 cartoon traps.",
+    "description": "Be the clever Rat in a manual chase platformer. The Cat follows your recorded route after a head start, slightly faster. Six carried items and thirteen stage traps include new ceiling slams, sliding floors, elevator launches, floor pistons, pendulum bonks, shutters and reversing conveyors. Pass their far levers to spring the machinery on the Cat, then chain its cartoon reactions. Ride or jump moving floors as you escape. Fifty stages span five worlds, with a boss chase in each. Quick retries, original mascots, optional sound and locally saved stars, times and progress keep every escape replayable. This is single player with an AI Cat.",
+    "thumbnail": "img/brand/trap-escape.svg", "launch": "trap-escape.html",
+    "controls": [{"label":"Run & jump", "text":"A/D or Left/Right moves. W, Up or Space jumps. Touch uses a horizontal joystick and a separate Jump button. Movement starts the chase; P or Escape pauses."}, {"label":"Set your traps", "text":"Collect up to three trap items. E/F or DROP places the selected trap behind you. Q or Tab while the game canvas is focused cycles items. Tap inventory to select, tap again to drop, or swipe to cycle. Run beyond the far levers to arm ceiling slams, pistons, pendulums, shutters and other stage traps for the Cat. Sliding floors and elevators carry you and leave real gaps; conveyors move you in the arrow direction."}, {"label":"Escape & chain", "text":"Reach the door or land three Cat stuns. Hit again within three seconds for a combo. Boss chases require four stuns and a 2× chain. All nineteen trap types work with stun and combo scoring. Firecrackers have a two-second fuse; magnets pull nearby armed metal traps, including machinery, into the combo."}, {"label":"Stars & progress", "text":"Three stars for a Cat knockout, a 3× chain or beating par. Two for escaping with any stun; one for an escape. Clear each boss and earn 15 stars in its world to unlock the next. Best times, stars and retries save on this browser; no account is needed."}]
   },
   {
     "id": "joystick-catch", "title": "Joystick Catch", "kind": "game", "mode": "Single player", "genres": ["Action", "Survival"], "characters": ["Rats"],
@@ -21,11 +21,11 @@
     "controls": [{"label":"Move", "text":"Drag the on-screen joystick, or use WASD / arrow keys."}]
   },
   {
-    "id": "joystick-shooter", "title": "Joystick Shooter", "kind": "game", "mode": "Single player", "genres": ["Action", "Survival"], "characters": ["Rats", "Cats"],
-    "summary": "Move and aim with independent controls.",
-    "description": "Collect cheese, dodge danger and fight back. Separate movement and aiming controls let you keep steering while lining up your next shot.",
-    "thumbnail": "bck_img/cat_attack.html.png", "launch": "index3.html",
-    "controls": [{"label":"Move & aim", "text":"Use the movement and aiming pads on screen. Keyboard movement also supports WASD / arrow keys."}]
+    "id": "joystick-shooter", "title": "Cat Chase", "kind": "game", "mode": "Single player", "genres": ["Platformer", "Action", "Puzzle"], "characters": ["Cats", "Rats"],
+    "summary": "Chase the Rat through 50 stages of falling ceilings and moving machinery.",
+    "description": "Control the Cat in an original platform chase inspired by surprise-trap games. Run, jump and pounce after an AI Rat through 50 stages across five worlds. Thirteen trap families include wide ceiling slams, shifting ground, elevator floors, rising pistons, swinging wrecking balls, timed shutters and conveyors, alongside crumbling floors, spikes, falling crates, sliding walls, springs and fake exits. Different early hazards and combinations make each world’s chases varied. Catch the Rat, collect bonus bells and retry quickly. Stars, best times and stage unlocks save on this browser. Keyboard and separate touch controls support manual play.",
+    "thumbnail": "img/brand/cat-chase.svg", "launch": "cat-chase.html",
+    "controls": [{"label":"Move the Cat", "text":"A/D or Left/Right moves. W, Up or Space jumps. Touch uses a horizontal joystick and separate Jump and Pounce buttons. Movement starts the chase. P or Escape pauses."}, {"label":"Pounce & catch", "text":"E/F or Shift pounces in the direction you face, with a 1.35-second cooldown. Catch the Rat by touching it. Pounce can extend a jump but cannot pass through walls or protect against traps. The AI Rat pauses at bait and waits briefly at its exit."}, {"label":"Read the machinery", "text":"Wait outside striped ceiling-slam zones, cross shutters while open and let floor pistons retract. Ride sliding/elevator floors, time the swinging wrecking ball, and follow conveyor arrows. Cracked floors, spikes, crates, walls, springs and fake exits return in varied combinations. Warnings mark each danger; failures retry automatically."}, {"label":"50 stages & local progress", "text":"Catch the Rat to unlock the next stage. Three bonus bells, or beating par without a retry, earns three stars. Catch within two retries for two stars; every catch earns at least one. Replay cleared stages to improve stars and best times. This is single player with an AI Rat, and progress saves on this browser."}]
   },
   {
     "id": "long-survival", "title": "Long Survival", "kind": "game", "mode": "Single player", "genres": ["Survival", "Action"], "characters": ["Rats", "Cats"],
@@ -35,11 +35,11 @@
     "controls": [{"label":"Move", "text":"Use WASD / arrow keys or drag the joystick."}, {"label":"Jump", "text":"Press Space or the on-screen Jump button while steering."}]
   },
   {
-    "id": "jump-and-fire", "title": "Jump & Fire", "kind": "game", "mode": "Single player", "genres": ["Platformer", "Action"], "characters": ["Rats"],
-    "summary": "Run, double-jump and shoot through the stage.",
-    "description": "A mouse-sized platform adventure with double jumps and shots. Move through the stage, collect coins and use the high ground to get past enemies.",
-    "thumbnail": "bck_img/collect_coin.html.png", "launch": "index5.html",
-    "controls": [{"label":"Move & jump", "text":"Use A/D or Left/Right to move and W/Up to jump. The joystick also controls movement and jumping."}, {"label":"Fire", "text":"Press Space or hold the on-screen Fire button."}]
+    "id": "jump-and-fire", "title": "Dungeon Dash", "kind": "game", "mode": "Single player", "genres": ["Roguelike", "Action", "Platformer"], "characters": ["Rats", "Cats", "Dogs"],
+    "summary": "Clear rooms, collect gems and come back stronger every run.",
+    "description": "Jump & Fire has become Dungeon Dash: a solo roguelike platformer with fresh rooms, six enemy types, four weapons and endless floors. Clear enemies to unlock each exit, face a phased boss every tenth room and shop safely every five rooms. Keep unspent gems after death or retreat and buy seven permanent upgrades. Explore Kitchen, Garden, Rooftop, Sewer and Inferno themes with double jumps, auto-aim, combo rewards and optional player-reported deepest-room rankings. Progress saves locally on this device.",
+    "thumbnail": "img/brand/dungeon-dash.svg", "launch": "dungeon-dash.html",
+    "controls": [{"label":"Move & jump", "text":"Use A/D or Left/Right to move, W/Up to jump twice, and S/Down to drop through platforms. Touch has a movement joystick and a separate Jump button. All movement and combat are manually controlled."}, {"label":"Fire & equip", "text":"Hold Space or FIRE to shoot with nearby-enemy auto-aim. F / SWAP or the weapon icon picks up a nearby weapon, otherwise swaps your two carried weapons. Pistol ammo is unlimited; SMG, shotgun and rocket ammo is limited. Rockets can hurt you up close."}, {"label":"Rooms & bosses", "text":"Defeat every enemy, then walk through the unlocked door on the right. Enemies and floors get harder as long as you survive. Every tenth room has a boss. Stomp enemies or shoot; attack shielded dogs from behind or above, and destroy the Dog General’s turret to break its shield."}, {"label":"Gems & upgrades", "text":"A safe shop every five rooms spends only your current-run gems. Unspent gems are banked when you die or retreat. Buy seven permanent upgrades between runs. P pauses; Retreat & keep gems safely ends the run. Progress stays on this browser, and online deepest-room scores are optional after signing in."}]
   },
   {
     "id": "climber", "title": "Climber", "kind": "game", "mode": "Single player", "genres": ["Platformer", "Action"], "characters": ["Rats"],
@@ -49,31 +49,31 @@
     "controls": [{"label":"Move & jump", "text":"Use A/D or Left/Right to move and W/Up to jump, or use the on-screen joystick."}, {"label":"Fire", "text":"Press Space or hold the on-screen Fire button."}]
   },
   {
-    "id": "moving-stairs", "title": "Moving Stairs", "kind": "game", "mode": "Single player", "genres": ["Platformer", "Action"], "characters": ["Rats"],
-    "summary": "Keep your footing as the platforms move.",
-    "description": "A platform challenge with moving stairs, coins and enemies. Time your double jumps and use your shots while exploring the stage.",
-    "thumbnail": "bck_img/tower_up.html.png", "launch": "index7.html",
-    "controls": [{"label":"Move & jump", "text":"Use A/D or Left/Right to move and W/Up to jump, or use the on-screen joystick."}, {"label":"Fire", "text":"Press Space or hold the on-screen Fire button."}]
+    "id": "moving-stairs", "title": "Moving Stairs: Snake & Ladder", "kind": "game", "mode": "Solo / Local multiplayer", "genres": ["Platformer", "Board game", "Adventure"], "characters": ["Rats", "Cats", "Dogs"],
+    "summary": "Roll the dice, leap through moving stairs and race to cell 100.",
+    "description": "A 100-cell Snake & Ladder adventure where every dice roll becomes a playable platform challenge. Cross moving stairs, climb ladders, collect coins during snake falls and defeat cell guardians. Rat double-jumps and gains a bonus cell, Cat boosts and avoids its first snake, and Dog shoots and gets one reroll. Play solo against a ten-minute clock or pass the device between 2–4 friends. Explore Garden, House, Night and Volcano themes, earn three-turn powers and optionally save completed solo scores with your existing account. Online multiplayer is planned for a future phase.",
+    "thumbnail": "img/brand/moving-stairs.svg", "launch": "snake-ladder.html",
+    "controls": [{"label":"Roll & race", "text":"Choose Solo or Pass & play, select Rat, Cat or Dog and roll the dice. Select Play this move to enter the stage. Reach its flag to advance; falling keeps your starting cell. Reach cell 100 to win without an exact roll."}, {"label":"Move & use abilities", "text":"A/D or Left/Right moves. W/Up/Space jumps; Rat can jump twice and wall-slide. E activates Cat speed or Dog shots; F also fires as Dog. Touch uses a movement joystick and separate Jump / ability buttons. Dog can reroll once before a stage; Cat ignores its first snake."}, {"label":"Special cells", "text":"Climb ladder stages for a shortcut. Steer through snake falls: each coin saves one cell. Shield, extra-jump and speed cells help for three turns. Defeat guardians by stomping or shooting to gain four cells; losing skips a turn. P pauses; Board opens the full map during challenges."}, {"label":"Play with friends & save scores", "text":"Pass & play supports 2–4 people on one device with a ready screen between turns. Solo has a ten-minute clock and saves your best locally. Completed solo wins can be submitted to the player-reported leaderboard after signing in. Online multiplayer is not part of this version."}]
   },
   {
-    "id": "fighting-arena", "title": "Fighting Arena", "kind": "game", "mode": "Single player", "genres": ["Action"], "characters": [],
-    "summary": "Face a reactive opponent in a sword duel.",
-    "description": "Challenge a bot that approaches, retreats, attacks and evades. Move into range, time your sword attacks and jump away from danger. This arcade extra uses fighter characters.",
-    "thumbnail": "bck_img/fight_bck.html.png", "launch": "fight.html",
-    "controls": [{"label":"Move & jump", "text":"Use A/D or Left/Right to move and W/Up to jump, or use the on-screen controls."}, {"label":"Attack", "text":"Press Space or the Attack button. Use Rematch to start another round."}]
+    "id": "fighting-arena", "title": "Super Fighting Arena", "kind": "game", "mode": "Solo / Local multiplayer", "genres": ["Action", "Fighting", "Arcade"], "characters": [],
+    "summary": "Fly, dash and unleash energy powers in aerial stick-warrior battles.",
+    "description": "Choose Blaze, Shadow or Titan and take the fight to a 1400 by 800 sky arena. Fly, air dash, teleport, shield and chain four basic attacks with six energy powers, including charged beams and ground shockwaves. Fight a bot at four difficulty levels or a friend on the same device with independent keyboard and touch controls. Two round wins take the best-of-three match, with 90 seconds per round. Original procedural stick-warrior art, energy auras, beam clashes and optional sound bring each hit to life. Online 1v1 is planned for a later phase. The original sword arena remains at fight.html.",
+    "thumbnail": "img/brand/super-fight.svg", "launch": "super-fight.html",
+    "controls": [{"label":"Move, fly & dash", "text":"P1 uses WASD; P2 uses arrows. Tap Up to jump, hold it to fly, Down fast-falls, and double-tapping a direction dashes for 20 energy. Land to recharge. Touch uses a movement stick with Up for flight and double taps for dash."}, {"label":"Basic attacks & powers", "text":"P1: F attacks, G is Special 1, H is Special 2. P2: L attacks, K is Special 1, J is Special 2. Attack alone punches; Up + Attack uppercuts, Down + Attack kicks on ground or slams in air. Tap Special 1 for a blast, hold for a charged beam, or combine with Up for Rising Dragon."}, {"label":"Defend & escape", "text":"Tap Special 2 to teleport behind the opponent, hold it for an energy shield, or use Down + Special 2 in the air for Ground Pound. Left Shift blocks for P1; Right Shift blocks for P2. After five incoming hits, teleport can escape stun if you have 25 energy. P / Escape pauses. Move list shows damage, costs and every input."}, {"label":"Choose your match", "text":"Solo offers Easy, Normal, Hard and Impossible bots. Local 2 Player shares one keyboard or independent touch controls on one device. Two round wins take the match; draws replay the round. Timeouts compare remaining health percentage. Blaze charges beams faster, Shadow has no teleport cooldown and Titan has more health and a wider Ground Pound. Online play is a later phase."}]
   },
   {
-    "id": "sprite-preview", "title": "Sprite Preview", "kind": "demo", "mode": "Demo", "genres": ["Demos"], "characters": [],
-    "summary": "An early canvas image-rendering experiment.",
-    "description": "An early image-rendering experiment that displays a test image in a canvas. This is a development demo rather than a scored game.",
-    "thumbnail": "img/brand/sprite-demo.svg", "launch": "index8.html",
-    "controls": [{"label":"View", "text":"Open the demo to view the image-rendering canvas."}]
+    "id": "zombie-horde", "title": "Zombie Horde", "kind": "game", "mode": "Multiplayer", "genres": ["Action", "Survival", "Co-op"], "characters": ["Rats", "Cats", "Dogs"],
+    "summary": "Explore a large survival map or capture four zones with your squad.",
+    "description": "Team up online as Rat, Cat and Dog. Choose Endless Survival to explore five supply areas across a 2400 by 1800 map, or Capture the Zone to cross a sprawling warehouse, crew mounted guns, defend checkpoints and defeat the extraction boss. Both missions include jumping, rechargeable jetpacks and character abilities. Three players share each run, with bots filling empty slots.",
+    "thumbnail": "img/brand/zombie-horde.svg", "launch": "zombie-horde.html",
+    "controls": [{"label":"Move & fire", "text":"Move with WASD / arrows and aim with the mouse. Click or hold Space to fire. Touch uses a movement joystick, FIRE and nearby-enemy auto-aim."}, {"label":"Abilities & supplies", "text":"J jumps; hold Shift, V or JET to fly. Rat: E jump, Q decoy, C dash. Cat: E speed boost, Q hide, C pounce. Dog: E chain hook, Q bark. R reloads; F swaps weapons. Land to collect ammo, weapons and medkits. White first-aid stations heal nearby players."}, {"label":"Capture the Zone", "text":"Choose Capture the Zone in the game menu. Hold each marked ring for 20 seconds; zombies contest capture. T / USE TURRET crews a mounted gun; move or press T again to dismount. Secure four zones and defeat the final boss to extract."}, {"label":"Play together", "text":"Sign in with your existing Billa Chuha account. Use Quick Play or create a private room and share its invitation. One Rat, Cat and Dog; empty slots receive bots at start. Each mission has its own Quick Play queue."}]
   },
   {
-    "id": "animation-playground", "title": "Animation Playground", "kind": "demo", "mode": "Demo", "genres": ["Demos"], "characters": [],
-    "summary": "Try the running and jumping animations.",
-    "description": "A small character animation playground. Switch between the Run and Jump animations using the on-screen buttons. This is an animation demo, not a climbing game.",
-    "thumbnail": "img/brand/animation-demo.svg", "launch": "index9.html",
-    "controls": [{"label":"Try an animation", "text":"Select Run Animation or Jump Animation using the buttons beside or below the preview."}]
+    "id": "arena-blitz", "title": "Arena Blitz", "kind": "game", "mode": "Multiplayer", "genres": ["Action", "Platformer", "Team battle"], "characters": ["Rats", "Cats", "Dogs"],
+    "summary": "Fly, gear up and fight in online 3-vs-3 jetpack battles.",
+    "description": "Join Alpha or Bravo as Rat, Cat or Dog in a six-player online arena. Explore a spacious 2400 by 1100 arena with wide platforms and spread-out team spawns. A following camera keeps players large, while the minimap shows both teams and weapon locations. Use a fuel-limited jetpack, collect weapons, throw grenades and race to 20 kills. Five-minute rounds, respawns and sudden death keep the battle moving. Bots fill empty slots.",
+    "thumbnail": "img/brand/arena-blitz.svg", "launch": "arena-blitz.html",
+    "controls": [{"label":"Move & fly", "text":"A / D or arrows move. Space jumps; hold W / Up / Space to use the jetpack. S / Down drops through platforms. Touch uses the movement joystick and JET / JUMP. Your camera follows you; the arena minimap shows the whole stage, both teams and weapons."}, {"label":"Fight & collect", "text":"Aim with the mouse and click to fire; touch uses nearby-enemy auto-aim. Q / right click throws a grenade, E melees, R reloads and F / PICK UP swaps weapons."}, {"label":"Win as a squad", "text":"Each team has one Rat, Cat and Dog. First to 20 kills wins, or highest score after five minutes. Ties enter sudden death without respawns. Create rooms for friends or use Quick Play."}]
   }
 ]
