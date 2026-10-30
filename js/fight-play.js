@@ -1,6 +1,9 @@
 'use strict';
 const fightKeys = new Set(), physicalKeys = new Set(), touchKeys = new Map();
-const opponent = new FightBot();
+const fightCompetition=window.Competitive,fightProfile=fightCompetition.load(),fightName=fightProfile.names[0],fightLevel=fightProfile.player('sword-arena',fightName).stage,fightID=fightCompetition.id();
+const opponent = new FightBot(Math.random,fightLevel);
+window.FightCompetition={finished:false,finish(a,b){if(this.finished)return;this.finished=true;const won=a.health>b.health,score=Math.min(1000000,Math.round(((100-b.health)*10+Math.max(0,a.health)*5+(won?2000:0))*(1+(fightLevel-1)*.08))),result={id:fightID,game:'sword-arena',challenge:fightLevel,players:[{name:fightName,score,won}]};fightProfile.record(result);const saved=fightCompetition.save(fightProfile);const copy=document.createElement('small');copy.textContent=`${score} points · Level ${fightLevel} · ${saved?'Saved on this device':'Storage unavailable'}`;copy.style.fontSize='14px';const next=document.createElement('button');next.textContent=won?'Next level →':'Try again';next.onclick=()=>location.reload();const board=document.createElement('a');board.href='rankings.html?game=sword-arena&source=device';board.textContent='Player rankings';board.style.fontSize='14px';document.getElementById('displayText').append(copy,next,board);fightCompetition.sync(result).catch(()=>{});}};
+document.addEventListener('DOMContentLoaded',()=>{const header=document.querySelector('.arcade-toolbar');if(header){const board=document.createElement('a');board.href='rankings.html?game=sword-arena&source=device';board.textContent=`Rankings · Lv ${fightLevel}`;header.append(board);}});
 let roundOver=false, lastFrame=0, accumulated=0;
 enemy.facing=-1;
 function jumpPlayer(){if(!roundOver&&player.velocity.y===0)player.velocity.y=-18;}
@@ -8,7 +11,7 @@ function pressFightKey(key){
  if(roundOver)return;
  fightKeys.add(key);
  if(key==='w')jumpPlayer();
- if(key===' ')player.attack();
+ if(key===' '){player.attack();window.GameAudio?.legacy().play('swing');}
 }
 function releaseFightKey(key){if(!physicalKeys.has(key)&&![...touchKeys.values()].includes(key))fightKeys.delete(key);}
 function clearFightControls(){physicalKeys.clear();touchKeys.clear();fightKeys.clear();}
@@ -49,7 +52,7 @@ function fightStep(now){
  }
  for(const [attacker,target,id] of [[player,enemy,'enemyHealth'],[enemy,player,'playerHealth']]){
   if(attacker.isAttacking&&rectangularCollision({rectangle1:attacker,rectangle2:target})){
-   attacker.isAttacking=false;target.health=Math.max(0,target.health-20);
+   attacker.isAttacking=false;target.health=Math.max(0,target.health-20);window.GameAudio?.legacy().play('impact');
    document.getElementById(id).style.width=`${target.health}%`;
   }
  }

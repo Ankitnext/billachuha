@@ -1,0 +1,19 @@
+((root)=>{
+  class HeistInput{
+    constructor(enabled,pause){this.enabled=enabled;this.keys=new Set();this.axis={x:0,y:0};this.pending={};this.sprint=false;this.sprintPointers=new Set();const $=id=>document.getElementById(id);
+      this.settings=window.ControlSettings?.create({key:'kitchen-heist.controls.v1',title:'Kitchen Heist',actions:[{id:'left',label:'Move left',codes:['KeyA','ArrowLeft']},{id:'right',label:'Move right',codes:['KeyD','ArrowRight']},{id:'up',label:'Move up',codes:['KeyW','ArrowUp']},{id:'down',label:'Move down',codes:['KeyS','ArrowDown']},{id:'use',label:'Use tool',codes:['KeyE','Space']},{id:'cycle',label:'Cycle tool',codes:['KeyQ']},{id:'sprint',label:'Sprint (hold)',codes:['ShiftLeft','ShiftRight']},{id:'pause',label:'Pause',codes:['KeyP']}],hud:[{id:'move-stick',label:'Move',stick:true},{id:'use-tool',label:'Use tool'},{id:'cycle-tool',label:'Cycle'},{id:'sprint',label:'Sprint'}],onOpen:()=>this.clear(),onClose:()=>this.clear(),onRelease:()=>this.clear(),note:'Choose keys or arrange touch controls. Your heist pauses while editing.'});
+      $('edit-keys').onclick=()=>this.settings?.open('keys');$('edit-hud').onclick=()=>this.settings?.open('hud');
+      document.addEventListener('keydown',event=>{if(!enabled()||this.settings?.editing||event.ctrlKey||event.metaKey||event.altKey||/INPUT|SELECT|TEXTAREA/.test(event.target.tagName))return;const key=this.settings?.resolve(event.code);if(event.code==='Escape'||key==='pause'){event.preventDefault();if(!event.repeat)pause();return;}if(!key)return;event.preventDefault();this.settings.updateKeys(event,this.keys,true);if(!event.repeat&&['use','cycle'].includes(key))this.pending[key]=true;});
+      document.addEventListener('keyup',event=>this.settings?.updateKeys(event,this.keys,false));
+      this.stick=window.ArcadeStick($('move-stick'),$('move-thumb'),(x,y)=>{this.axis=enabled()?{x,y}:{x:0,y:0};});
+      for(const [id,action]of [['use-tool','use'],['cycle-tool','cycle']])$(id).addEventListener('pointerdown',event=>{if(!enabled())return;event.preventDefault();$('stage').focus();this.pending[action]=true;});
+      for(const id of ['use-tool','cycle-tool'])$(id).addEventListener('click',event=>{if(event.detail===0&&enabled())this.pending[id==='use-tool'?'use':'cycle']=true;});
+      const sprint=$('sprint'),pointers=this.sprintPointers;sprint.onpointerdown=event=>{if(!enabled())return;event.preventDefault();sprint.setPointerCapture(event.pointerId);pointers.add(event.pointerId);this.sprint=true;};for(const type of ['pointerup','pointercancel','lostpointercapture'])sprint.addEventListener(type,event=>{pointers.delete(event.pointerId);this.sprint=pointers.size>0;});
+      let swipe=null;$('inventory').addEventListener('pointerdown',event=>{swipe=event.clientX;});$('inventory').addEventListener('pointerup',event=>{if(swipe!==null&&Math.abs(event.clientX-swipe)>30)this.pending.cycle=true;swipe=null;});
+      window.addEventListener('blur',()=>this.clear());window.addEventListener('resize',()=>this.clear());document.addEventListener('visibilitychange',()=>{if(document.hidden)this.clear();});
+    }
+    poll(){const result={x:this.axis.x+(this.keys.has('right')?1:0)-(this.keys.has('left')?1:0),y:this.axis.y+(this.keys.has('down')?1:0)-(this.keys.has('up')?1:0),sprint:this.sprint||this.keys.has('sprint'),...this.pending};this.pending={};return result;}
+    clear(){this.keys.clear();this.settings?.release();this.axis={x:0,y:0};this.pending={};this.sprint=false;this.stick?.reset();const button=document.getElementById('sprint');for(const id of this.sprintPointers)if(button.hasPointerCapture(id))button.releasePointerCapture(id);this.sprintPointers.clear();}
+  }
+  if(typeof module==='object'&&module.exports)module.exports={HeistInput};else Object.assign(root.KitchenHeist,{HeistInput});
+})(globalThis);

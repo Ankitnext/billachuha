@@ -158,7 +158,7 @@
         const angle=aim+(spec.pellets===3?(i-1)*spec.spread:(this.random()-.5)*spec.spread*2);
         this.bullets.push({x:muzzle.x,y:muzzle.y,w:this.weapon.type==='rocket'?15:10,h:6,vx:Math.cos(angle)*spec.speed,vy:Math.sin(angle)*spec.speed,life:1.8,owner:'player',damage:spec.damage*this.damage*(this.buffs.damage>0?2:1),rocket:this.weapon.type==='rocket',origin:muzzle});
       }
-      this.weapon.ammo--; this.nextShot=this.elapsed+spec.delay;this.emit('fire');
+      this.weapon.ammo--; this.nextShot=this.elapsed+spec.delay;this.lastWeaponFired=this.weapon.type;this.emit('fire');
       if(this.weapon.ammo<=0){this.weapon=this.makeWeapon('pistol');this.text('PISTOL · ∞',this.player.x,this.player.y-20);}
     }
     swap() {

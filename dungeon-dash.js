@@ -4,7 +4,7 @@
   const C=window.DungeonDash,Art=window.DungeonArt,$=id=>document.getElementById(id),SAVE='dungeon-dash.save.v1';
   const clock=n=>`${Math.floor(n/60)}:${String(Math.floor(n)%60).padStart(2,'0')}`;
   const keys=new Set(),held=new Map();let joy=0,pending={jump:false,fire:false,swap:false};
-  let run=null,screen='title',last=0,hudAt=0,saveAt=0,oldRoom=0,bestBefore=0,sound=false,audio=null;
+  let run=null,screen='title',last=0,hudAt=0,saveAt=0,oldRoom=0,bestBefore=0;
   let motion=!matchMedia('(prefers-reduced-motion: reduce)').matches,storageOK=true,savingScore=false;
   let raw={};try{raw=JSON.parse(localStorage.getItem(SAVE))||{};}catch{storageOK=false;}
   let profile=new C.Profile(raw);const recovered=profile.recover();
@@ -94,12 +94,8 @@
     if(visibility){$('boss-name').textContent={ 'fat-cat':'THE FAT CAT',general:'THE DOG GENERAL',twins:'THE TWIN CATS'}[run.room.bossType];$('boss-health').style.width=`${hp/max*100}%`;
       $('boss-note').textContent=bosses.some(e=>run.generalShield(e))?'Destroy the turret to break the shield':bosses.some(e=>e.enraged)?'Last twin enraged':bosses.some(e=>e.phase===3)?'Final phase · keep moving':`♥ ${Math.ceil(hp)} / ${max}`;}
   }
-  function beep(event){
-    if(!sound)return;try{audio||=new(window.AudioContext||window.webkitAudioContext)();audio.resume().catch(()=>{});
-      const note={fire:170,gem:880,hurt:95,kill:390,door:610,boss:75,'boss-win':740,buy:560,death:130,jump:300,explosion:80,slam:70,pickup:510}[event];if(!note)return;
-      const oscillator=audio.createOscillator(),volume=audio.createGain(),length=event==='boss'?.3:.065;oscillator.type=event==='fire'?'square':'triangle';oscillator.frequency.value=note;volume.gain.setValueAtTime(event==='fire'?.012:.025,audio.currentTime);volume.gain.exponentialRampToValueAtTime(.001,audio.currentTime+length);oscillator.connect(volume);volume.connect(audio.destination);oscillator.start();oscillator.stop(audio.currentTime+length);
-    }catch{/* Audio is optional. */}
-  }
+  const dungeonSfx=window.GameAudio?.create({key:'dungeon-dash.sound.v1'}).bind([$('sound'),$('help-sound')]);
+  function beep(event){dungeonSfx?.play(event==='fire'?(run.lastWeaponFired||run.weapon.type):({'boss-win':'round',kill:'confirm',slam:'impact'}[event]||event));}
   function frame(now){
     const dt=Math.min(.1,Math.max(0,(now-(last||now))/1000));last=now;
     if(run&&screen==='game'&&!paused()){
@@ -142,8 +138,7 @@
   $('retreat').onclick=()=>{$('pause-dialog').close();run.retreat();death();};
   $('help').onclick=()=>dialog('help-dialog');$('help-close').onclick=()=>$('help-dialog').close();
   $('scores').onclick=scores;$('scores-close').onclick=()=>$('scores-dialog').close();$('save-score').onclick=saveScore;
-  function toggleSound(){sound=!sound;for(const id of ['sound','help-sound']){$(id).textContent=sound?'Sound on':'Sound off';$(id).setAttribute('aria-pressed',String(sound));}beep('gem');}
-  $('sound').onclick=toggleSound;$('help-sound').onclick=toggleSound;
+
   $('motion').textContent=motion?'Motion effects on':'Motion effects off';$('motion').setAttribute('aria-pressed',String(motion));
   $('motion').onclick=()=>{motion=!motion;$('motion').textContent=motion?'Motion effects on':'Motion effects off';$('motion').setAttribute('aria-pressed',String(motion));};
   $('fullscreen').hidden=!document.documentElement.requestFullscreen;

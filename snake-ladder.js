@@ -2,6 +2,7 @@
 (() => {
   'use strict';
   const Core = window.StairsGame, Art = window.StairsArt;
+  const competitive=window.Competitive,competitiveProfile=competitive.load();
   const $ = id => document.getElementById(id);
   const roles = {rat: '🐭', cat: '🐱', dog: '🐶'};
   const roleNames = {rat: 'Rat', cat: 'Cat', dog: 'Dog'};
@@ -10,7 +11,7 @@
   const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
   const keys = new Set(), held = new Map();
   let game = null, rolling = null, joystick = 0, jumpPending = false, abilityPending = false;
-  let last = 0, lastHud = 0, lastBoard = 0, sound = false, audio = null;
+  let last = 0, lastHud = 0, lastBoard = 0;
   let savedGame = null, scoreRequest = false, screen = 'setup';
   const bestKey = 'moving-stairs.snake-ladder.best.v1';
   let best = null;
@@ -46,24 +47,22 @@
       row.append(nameLabel, roleLabel); $('player-choices').append(row);
     }
   }
-  function beep(frequency = 440, duration = .07) {
-    if (!sound) return;
-    try {
-      audio ||= new (window.AudioContext || window.webkitAudioContext)();
-      audio.resume().catch(() => {});
-      const oscillator = audio.createOscillator(), volume = audio.createGain();
-      oscillator.type = 'triangle'; oscillator.frequency.value = frequency;
-      volume.gain.setValueAtTime(.035, audio.currentTime);
-      volume.gain.exponentialRampToValueAtTime(.001, audio.currentTime + duration);
-      oscillator.connect(volume); volume.connect(audio.destination);
-      oscillator.start(); oscillator.stop(audio.currentTime + duration);
-    } catch { /* Sound is optional. */ }
-  }
+  const stairsSfx=window.GameAudio?.create({key:'snake-ladder.sound.v1'}).bind([$('sound')]);
+  function beep(frequency=440){stairsSfx?.play(frequency>=800?'gem':frequency>=650?'round':frequency<300?'hurt':'pickup');}
   function clearInput() {
-    keys.clear(); held.clear(); joystick = 0; jumpPending = false; abilityPending = false;
+    controlSettings?.release(); keys.clear(); held.clear(); joystick = 0; jumpPending = false; abilityPending = false;
     for (const button of document.querySelectorAll('[data-action]')) button.classList.remove('held');
     if (game?.stage) game.stage.jumpHeld = false;
   }
+
+ const controlSettings=window.ControlSettings?.create({key:'snake-ladder.controls.v1',title:'Snake & Ladder',
+ actions:[{id:'a',label:'Move left',codes:['KeyA','ArrowLeft']},{id:'d',label:'Move right',codes:['KeyD','ArrowRight']},{id:'w',label:'Jump',codes:['KeyW','ArrowUp','Space']},{id:'e',label:'Role ability',codes:['KeyE']},{id:'f',label:'Dog fire',codes:['KeyF']},{id:'p',label:'Pause',codes:['KeyP']},{id:'r',label:'Roll dice',codes:['KeyR']},{id:'enter',label:'Continue / Play move',codes:['Enter']}],
+ hud:[{id:'joystick-container',label:'Move',stick:true},{id:'jump-button',label:'Jump'},{id:'ability-button',label:'Ability'}],
+ note:'Settings apply to every player taking a turn. The adventure pauses while settings are open.',onOpen:clearInput,onClose:clearInput,onRelease:clearInput
+ });
+ $('edit-hud').addEventListener('click',()=>controlSettings?.open('hud'));
+ $('edit-keys').addEventListener('click',()=>controlSettings?.open('keys'));
+
   const modalOpen = () => !!document.querySelector('dialog[open]');
   const active = () => game && game.phase !== 'finished';
   function openDialog(id) {
@@ -140,6 +139,7 @@
   }
   function renderResult() {
     const finished = game.phase === 'finished';
+    if(finished&&game.competitiveID&&!game.competitiveRecorded){const result={id:game.competitiveID,game:'moving-stairs',challenge:Math.max(1,Math.ceil(Math.max(...game.players.map(p=>p.cell))/25)),players:game.players.map((p,i)=>({name:p.name,score:game.score(p),won:game.winner===i}))};game.competitiveRecorded=true;if(competitiveProfile.record(result)){competitive.save(competitiveProfile);competitive.sync(result).catch(()=>{});}}
     if (finished) recordBest();
     $('result-tag').textContent = finished ? (game.winner === null ? 'ADVENTURE COMPLETE' : 'ALL THE WAY TO 100') : `${{move: 'MOVE', ladder: 'LADDER', snake: 'SNAKE', boss: 'GUARDIAN'}[game.result.kind]} · ${game.result.success ? 'CLEARED' : 'TRY AGAIN NEXT TURN'}`;
     $('result-title').textContent = game.result.title;
@@ -234,12 +234,16 @@
           game.roll(roll.value, roll.reroll); renderBoard(); beep(530);
         }
       } else if (game.phase === 'action') {
-        const s = game.stage, coins = s.coins, kills = s.kills;
+        const s = game.stage, coins = s.coins, kills = s.kills, shot=s.nextShot, boost=s.nextPower, vy=s.player.vy, hp=s.player.hp;
         const keyboardX = (keys.has('d') || keys.has('arrowright') ? 1 : 0) - (keys.has('a') || keys.has('arrowleft') ? 1 : 0);
         s.update({x: Math.abs(joystick) > .12 ? joystick : keyboardX,
           jump: jumpPending || held.has('jump') || keys.has('w') || keys.has('arrowup') || keys.has(' '),
           ability: abilityPending || held.has('ability') || keys.has('e'), fire: keys.has('f')}, dt);
         jumpPending = false; abilityPending = false;
+        if(s.nextShot>shot)stairsSfx?.play('pistol');
+        if(s.nextPower>boost)stairsSfx?.play('boost');
+        if(s.player.vy<-500&&vy>=-500)stairsSfx?.play('jump');
+        if(s.player.hp<hp)stairsSfx?.play('hurt');
         if (s.coins > coins) beep(880, .035); if (s.kills > kills) beep(600, .1);
         if (s.done) { game.complete(s.outcome); renderState(); }
       }
@@ -310,8 +314,10 @@
   $('setup-form').addEventListener('submit', event => {
     event.preventDefault();
     const players = [...$('player-choices').children].map(row => ({name: row.querySelector('input').value, role: row.querySelector('select').value}));
+    if(new Set(players.map(p=>competitive.name(p.name).toLowerCase())).size!==players.length){const input=$('player-choices').querySelector('input');input.setCustomValidity('Use a different name for each player.');input.reportValidity();input.setCustomValidity('');return;}
     const seed = window.crypto?.getRandomValues ? crypto.getRandomValues(new Uint32Array(1))[0] : Date.now();
     game = new Core.Race({mode: document.querySelector('[name="mode"]:checked').value, players, seed});
+    game.competitiveID=competitive.id();
     rolling = null; renderState(); handoff(); beep(500);
   });
   $('roll').onclick = () => startRoll(); $('reroll').onclick = () => startRoll(true);
@@ -323,7 +329,6 @@
   $('map-button').onclick = () => openDialog('map-dialog'); $('close-map').onclick = () => $('map-dialog').close();
   $('rankings').onclick = rankings; $('close-leaderboard').onclick = () => $('leaderboard-dialog').close();
   $('save-score').onclick = saveScore;
-  $('sound').onclick = () => { sound = !sound; $('sound').textContent = sound ? 'Sound on' : 'Sound off'; $('sound').setAttribute('aria-pressed', String(sound)); beep(); };
   $('fullscreen').hidden = !document.documentElement.requestFullscreen;
   $('fullscreen').onclick = () => { const operation = document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); operation?.catch(() => {}); };
 
@@ -350,7 +355,7 @@
     });
   }
   document.addEventListener('keydown', event => {
-    const key = event.key.toLowerCase();
+    const key = event.code === 'Escape' ? 'escape' : controlSettings ? controlSettings.resolve(event.code) : event.key.toLowerCase();
     if (event.ctrlKey || event.metaKey || event.altKey || modalOpen() || /INPUT|SELECT|TEXTAREA/.test(event.target.tagName)) return;
     if (['BUTTON', 'A'].includes(event.target.tagName) && ['enter', ' '].includes(key)) return;
     if (key === 'p' || key === 'escape') { if (active()) { event.preventDefault(); pause(); } return; }
@@ -358,11 +363,11 @@
     if (game?.phase === 'rolled' && key === 'enter') { event.preventDefault(); if (!event.repeat) playMove(); return; }
     if (game?.phase === 'result' && key === 'enter') { event.preventDefault(); if (!event.repeat) nextTurn(); return; }
     if (game?.phase !== 'action' || !['a', 'd', 'arrowleft', 'arrowright', 'w', 'arrowup', ' ', 'e', 'f'].includes(key)) return;
-    event.preventDefault(); keys.add(key);
+    event.preventDefault(); if(controlSettings)controlSettings.updateKeys(event,keys,true);else keys.add(key);
     if (!event.repeat && ['w', 'arrowup', ' '].includes(key)) jumpPending = true;
     if (!event.repeat && ['e', 'f'].includes(key)) abilityPending = true;
   });
-  document.addEventListener('keyup', event => keys.delete(event.key.toLowerCase()));
+  document.addEventListener('keyup', event => {if(controlSettings)controlSettings.updateKeys(event,keys,false);else keys.delete(event.key.toLowerCase());});
   for (const dialog of document.querySelectorAll('dialog')) dialog.addEventListener('close', clearInput);
   window.addEventListener('blur', () => { clearInput(); pause(); });
   document.addEventListener('visibilitychange', () => { if (document.hidden) { clearInput(); pause(); } });

@@ -1,5 +1,5 @@
 (() => {
- 'use strict';const T=window.TrapEscape;
+ 'use strict';const T=window.TrapEscape,reduced=matchMedia('(prefers-reduced-motion: reduce)');
  const THEMES={kitchen:{sky:'#e8eee2',far:'#cad9ce',floor:'#415d50',edge:'#b0c49b',ink:'#294b43',accent:'#e6ae55'},garden:{sky:'#e4edce',far:'#b6c990',floor:'#44684b',edge:'#a4c575',ink:'#335e49',accent:'#de9f71'},rooftop:{sky:'#253d53',far:'#375069',floor:'#3e5363',edge:'#9caeb4',ink:'#dbe6d9',accent:'#e7bb71'},sewer:{sky:'#273f3c',far:'#344d46',floor:'#42594a',edge:'#8aa68c',ink:'#d5e2bf',accent:'#b7d477'},inferno:{sky:'#523d39',far:'#69433a',floor:'#664739',edge:'#ce9867',ink:'#f5d6b0',accent:'#f0a465'}};
  const circle=(c,x,y,r,color)=>{c.fillStyle=color;c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fill();};
  const line=(c,points,color,width=3)=>{c.strokeStyle=color;c.lineWidth=width;c.lineCap='round';c.lineJoin='round';c.beginPath();points.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.stroke();};
@@ -23,12 +23,13 @@
  }
  function rat(c,p,time=0,hero=true){
   c.save();c.translate(p.x+p.w/2,p.y+p.h);c.scale(p.face||1,1);
-  const run=p.grounded?Math.sin(time*19)*Math.min(1,Math.abs(p.vx)/100):0,bounce=p.grounded?Math.abs(run)*1.5:0;
+  const air=p.grounded===false,tuck=air?((p.vy||0)<0?8:4):0,reach=air?12:0;
+  const run=p.grounded&&!reduced.matches?Math.sin(time*19)*Math.min(1,Math.abs(p.vx)/100):0,bounce=p.grounded?Math.abs(run)*1.5:0;
   c.translate(0,-bounce);line(c,[[-7,-14],[-17,-9],[-24,-12],[-25,-20]],'#7fabb2',3);
-  line(c,[[-4,-13],[-6+run*7,-6],[-7+run*8,-1]],'#558c9a',5);line(c,[[4,-13],[5-run*7,-6],[8-run*8,-1]],'#79b0b8',5);
+  line(c,[[-4,-13],[-6+run*7,-6-tuck],[-7+run*8,-1-tuck*.7]],'#558c9a',5);line(c,[[4,-13],[5-run*7,-6-tuck*.5],[8-run*8,-1-tuck]],'#79b0b8',5);
   c.fillStyle='#7badb5';c.beginPath();c.ellipse(0,-21,10,14,0,0,Math.PI*2);c.fill();
   const arm=p.dropPose>0?-11:run*6;
-  line(c,[[-5,-28],[-11,-19+arm],[-13,-17+arm]],'#5d95a3',4);line(c,[[5,-28],[12,-24-arm],[14,-22-arm]],'#88b9bd',4);
+  line(c,[[-5,-28],[-11,-19+arm-reach],[-13,-17+arm-reach]],'#5d95a3',4);line(c,[[5,-28],[12,-24-arm-reach],[14,-22-arm-reach]],'#88b9bd',4);
   circle(c,-7,-40,7,'#83b4bc');circle(c,6,-41,7,'#8abcc1');circle(c,-7,-40,4,'#d69f9a');circle(c,6,-41,4,'#e4b0a4');
   c.fillStyle='#91c0c5';c.beginPath();c.ellipse(0,-32,12,10,0,0,Math.PI*2);c.fill();circle(c,11,-30,4,'#c9d9ca');circle(c,14,-30,2.3,'#375752');
   circle(c,4,-35,4,'#f8f1d6');circle(c,5,-35,1.8,'#263d36');line(c,[[3,-40],[8,-39]],'#496f6a',1.5);
@@ -44,11 +45,12 @@
   if(type==='gate')c.scale(.8,1.05);
   if(type==='sweep')c.rotate(Math.sin(progress*Math.PI*2)*1.1);
   if(type==='spring')c.scale(.85,1.2);
-  const run=stunned?0:Math.sin(time*20)*Math.min(1,Math.abs(p.vx)/80),hop=type==='mousetrap'?Math.abs(Math.sin(time*17))*12:0;c.translate(0,-hop);
+  const air=!stunned&&(p.grounded===false||p.grounded===undefined&&Math.abs(p.vy)>30),tuck=air?9:0;
+  const run=stunned||air||reduced.matches?0:Math.sin(time*20)*Math.min(1,Math.abs(p.vx)/80),hop=type==='mousetrap'?Math.abs(Math.sin(time*17))*12:0;c.translate(0,-hop);
   line(c,[[-9,-20],[-24,-18],[-30,-29],[-26,-38]],'#bd7655',7);
-  line(c,[[-6,-16],[-8+run*9,-7],[-9+run*10,-2]],'#bd7655',7);line(c,[[6,-16],[8-run*9,-8],[11-run*10,-2]],'#dc9c69',7);
+  line(c,[[-6,-16],[-8+run*9,-7-tuck],[-9+run*10,-2-tuck*.7]],'#bd7655',7);line(c,[[6,-16],[8-run*9,-8-tuck*.5],[11-run*10,-2-tuck]],'#dc9c69',7);
   c.fillStyle=type==='steam'?'#696b5b':'#d49362';c.beginPath();c.ellipse(0,-27,14,19,0,0,Math.PI*2);c.fill();c.fillStyle='#ead5a6';c.beginPath();c.ellipse(4,-24,7,11,0,0,Math.PI*2);c.fill();
-  line(c,[[-8,-37],[-17,-27+run*7],[-15,-23+run*7]],'#b97956',6);line(c,[[9,-37],[20,-33-run*7],[20,-27-run*7]],'#dfa16c',6);
+  line(c,[[-8,-37],[-17,-27+run*7-tuck],[-15,-23+run*7-tuck]],'#b97956',6);line(c,[[9,-37],[20,-33-run*7-tuck],[20,-27-run*7-tuck]],'#dfa16c',6);
   c.fillStyle='#d89a69';c.beginPath();c.moveTo(-14,-48);c.lineTo(-12,-66);c.lineTo(-3,-56);c.lineTo(5,-57);c.lineTo(15,-65);c.lineTo(14,-46);c.fill();
   c.fillStyle='#e6bca0';c.beginPath();c.moveTo(-11,-54);c.lineTo(-11,-61);c.lineTo(-6,-55);c.moveTo(7,-55);c.lineTo(13,-61);c.lineTo(12,-53);c.fill();
   c.fillStyle=type==='steam'?'#717164':'#dfa16e';c.beginPath();c.ellipse(1,-47,17,13,0,0,Math.PI*2);c.fill();

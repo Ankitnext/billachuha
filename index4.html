@@ -168,7 +168,7 @@ button:hover {
 
   </style>
 <link rel="stylesheet" href="game-shell.css">
-<script defer src="game-shell.js"></script>
+<script src="long-run-movement.js"></script><script src="character-motion.js"></script><script src="game-audio.js"></script><script defer src="game-shell.js"></script>
 </head>
 <body>
   <div id="mobile-tilt-stage">
@@ -245,26 +245,17 @@ window.onload = function() {
 
   let score    = 0;
   let gameOver = false;
-  let lastTime = Date.now();
+  let lastTime = performance.now();
 
-  // Assets
-  const playerImg = new Image();
-  const coinImg   = new Image();
-  playerImg.src = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS2oP3lWLmezhBAmuHvAwuaqRv6xVX0eApt7A&s';
-  coinImg.src   = 'https://www.partysuppliesindia.com/cdn/shop/products/1_36_9f92dde3-d77d-4459-a21f-63744a94c836.jpg?v=1735574298&width=1500';
-  const bgMusic   = new Audio('background.mp3');
-  const coinSound = new Audio('foodeat.mp3');
-  bgMusic.loop   = true; bgMusic.volume = 0.2;
-  bgMusic.play().catch(()=> {
-    document.body.addEventListener('click', ()=> bgMusic.play().catch(()=>{}), { once:true });
-  });
-
-  // Input
+const sfx=window.GameAudio?.legacy();
+  const characterMotion=new CharacterMotion.Tracker(),reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
+  let characterFace=1;
+    // Input
   const keys = {};
   document.addEventListener('keydown', e=>{
     const k=e.key.toLowerCase(); keys[k]=true;
     if((k===' '||k==='space')&&z===0){
-      vz=jumpZ;
+      vz=jumpZ;sfx?.play('jump');
       let dx=vx, dy=vy, m=Math.hypot(dx,dy);
       if(m<1){ dx=0; dy=-1; } else { dx/=m; dy/=m; }
       vx+=dx*jumpXY; vy+=dy*jumpXY;
@@ -277,7 +268,7 @@ window.onload = function() {
   document.getElementById("jumpBtn").addEventListener("touchstart", e => {
   e.preventDefault();
   if (z === 0) {
-    vz = jumpZ;
+    vz = jumpZ;sfx?.play('jump');
     let dx = vx, dy = vy, m = Math.hypot(dx, dy);
     if (m < 1) { dx = 0; dy = -1; } else { dx /= m; dy /= m; }
     vx += dx * jumpXY;
@@ -352,6 +343,7 @@ window.onload = function() {
 
   // Restart
   restartBtn.onclick = ()=>{
+    characterMotion.clear();characterFace=1;
     x=worldW/2-playerSize/2;
     y=worldH/2-playerSize/2;
     z=vx=vy=vz=rotation=0;
@@ -364,13 +356,12 @@ window.onload = function() {
     for(let i=0;i<2;i++) chasingBombs.push(spawnChasingBomb());
     healthPickups=[spawnHealthPickup(),spawnHealthPickup()];
     restartBtn.style.display='none';
-    lastTime=Date.now();
+    lastTime=performance.now();
     requestAnimationFrame(draw);
   };
 
-  function draw(){
-    const now=Date.now();
-    let dt=(now-lastTime)/1000;
+  function draw(now=performance.now()){
+    const dt=Math.max(0,Math.min(.05,(now-lastTime)/1000));
     lastTime=now;
     if(!gameOver){
       update(dt);
@@ -394,9 +385,10 @@ window.onload = function() {
 
     // Coin (resets health to 100% on pickup)
     updateCoin(dt);
-    ctx.drawImage(coinImg,coin.x,coin.y,coinSize,coinSize);
+    ctx.fillStyle='#efd66b';ctx.beginPath();ctx.moveTo(coin.x,coin.y+coinSize);ctx.lineTo(coin.x+coinSize,coin.y+coinSize);ctx.lineTo(coin.x+coinSize*.8,coin.y);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#ae8b2e';for(const [dx,dy,r]of [[.65,.48,.08],[.4,.8,.06],[.82,.83,.055]]){ctx.beginPath();ctx.arc(coin.x+dx*coinSize,coin.y+dy*coinSize,r*coinSize,0,Math.PI*2);ctx.fill();}
     if(z===0 && overlap(coin.x,coin.y,coinSize,coinSize, x,y,playerSize,playerSize)){
-      score++; coinSound.currentTime=0; coinSound.play().catch(()=>{});
+      score++; sfx?.play('pickup');
       coin=spawnCoinInView(camX,camY);
       health=100;
     }
@@ -475,8 +467,9 @@ window.onload = function() {
     // Player
     ctx.save();
     ctx.translate(x+playerSize/2, y-z+playerSize/2);
-    ctx.rotate(rotation);
-    ctx.drawImage(playerImg,-playerSize/2,-playerSize/2,playerSize,playerSize);
+    if(Math.abs(vx)>10)characterFace=Math.sign(vx);
+    const pose=characterMotion.sample('rat',{x,y,z},now/1000,{topDown:true,grounded:z<=0,motion:!reducedMotion.matches,dead:gameOver});
+    CharacterMotion.rat(ctx,pose,{size:playerSize,face:characterFace});
     ctx.restore();
 
     drawArrowToNearestCoin();
@@ -509,7 +502,7 @@ window.onload = function() {
   }
 
   function applyDamage(d){
-    health-=d;
+    health-=d;sfx?.play('explosion');
     if(health<=0){
       health=0; gameOver=true;
       restartBtn.style.display='block';
@@ -517,16 +510,14 @@ window.onload = function() {
   }
 
   function update(dt){
-    if(keys['d']||keys['arrowright']) vx+=accel*dt;
-    if(keys['a']||keys['arrowleft'])  vx-=accel*dt;
-    if(keys['s']||keys['arrowdown'])  vy+=accel*dt;
-    if(keys['w']||keys['arrowup'])    vy-=accel*dt;
-    vx+=joyX*accel*dt*joyBoost; vy+=joyY*accel*dt*joyBoost;
+    const inputX=Number(!!(keys.d||keys.arrowright))-Number(!!(keys.a||keys.arrowleft))+joyX*joyBoost;
+    const inputY=Number(!!(keys.s||keys.arrowdown))-Number(!!(keys.w||keys.arrowup))+joyY*joyBoost;
     const f=z>0?frictionA:frictionG;
-    vx*=f; vy*=f;
+    const horizontal=LongRunMovement.axis(vx,inputX*accel,f,dt),vertical=LongRunMovement.axis(vy,inputY*accel,f,dt);
+    vx=horizontal.velocity;vy=vertical.velocity;
     const speedScale = health < 30 ? 0.6 : 1;
-    x=clamp(x+vx*dt*speedScale,0,worldW-playerSize);
-    y=clamp(y+vy*dt*speedScale,0,worldH-playerSize);
+    x=clamp(x+horizontal.distance*speedScale,0,worldW-playerSize);
+    y=clamp(y+vertical.distance*speedScale,0,worldH-playerSize);
     vz-=gravity*dt; z+=vz*dt;
     if(z<0){ z=0; vz=0; rotation=0; }
     if(z>0) rotation+=spinSpeed*dt;
@@ -624,7 +615,7 @@ window.onload = function() {
     return x1<=x2+w2 && x2<=x1+w1 && y1<=y2+h2 && y2<=y1+h1;
   }
 
-  playerImg.onload = () => draw();
+  requestAnimationFrame(draw);
 };
 </script>
 

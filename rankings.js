@@ -1,0 +1,19 @@
+(()=>{
+ 'use strict';const C=window.Competitive,$=id=>document.getElementById(id),params=new URLSearchParams(location.search);let offset=0,request=0;
+ const multiplayer=location.pathname.startsWith('/multiplayer/');if(multiplayer){$('back-games').href=params.get('return')==='app'?'/multiplayer/app':'/multiplayer';window.BILLACHUHA_CONFIG={backendUrl:location.origin};}
+ for(const g of [{id:'all',name:'All games'},...C.games]){const o=document.createElement('option');o.value=g.id;o.textContent=g.name;$('game').append(o);}
+ $('game').value=params.get('game')==='all'||C.games.some(g=>g.id===params.get('game'))?params.get('game'):'chase';
+ if(params.get('source')==='device')$('source').value='device';
+ const text=(tag,value)=>{const n=document.createElement(tag);n.textContent=value;return n;};
+ async function load(){const token=++request,game=$('game').value,kind=$('board').value,device=$('source').value==='device';$('status').textContent='Loading rankings…';$('entries').replaceChildren();$('next').disabled=true;$('previous').disabled=offset===0;
+  $('name-heading').textContent=kind==='teams'?'Team / registered roster':'Player';$('rules').textContent=game==='all'?'Each row shows a player or team’s best score in one game. Scores across games use different rules.':game==='chase'?'Chase: collect cheese and catch opponents. Team scores include the match’s bot support.':game==='arena-blitz'?'Blitz: 100 per kill + 25 per assist − 10 per death. Teams earn 100 per kill.':game==='capture-zone'?'Squad: 10 per kill + 100 per wave + 1,000 per zone + 5,000 for extraction.':game==='zombie-horde'?'Squad: 10 per kill + 100 per wave reached. Players: 10 per kill + 3 per assist + 10 per wave.':'Completed local matches. These scores are browser-reported.';
+  try{let rows;if(device){const all=kind==='teams'?[]:C.load().list(game);rows=all.slice(offset,offset+20);}else{const data=await C.api(`/api/v1/competition?game=${encodeURIComponent(game)}&type=${kind}&limit=20&offset=${offset}`);rows=data.entries;}
+   if(token!==request)return;for(const e of rows){const row=document.createElement('tr'),person=text('td',e.name);if(e.bots)person.append(text('small',`Supported by ${e.bots} bot${e.bots===1?'':'s'}`));if(e.members?.length)person.title=e.members.join(', ');
+    const source=text('td',device?'This device':e.verified?'Server recorded':'Browser reported'),earned=text('td',`${e.level} · ${e.xp} XP`);earned.append(text('small',`Challenge level ${e.challenge}`));source.className=e.verified?'verified':'reported';row.append(text('td','#'+e.rank),person,text('td',C.games.find(g=>g.id===e.game)?.name||e.game),text('td',Number(e.score).toLocaleString()),text('td',`${e.wins} / ${e.matches}`),earned,source);$('entries').append(row);}
+   $('status').textContent=rows.length?'Best single-match scores. Wins and levels count all completed matches.':kind==='teams'&&(device||game!=='all'&&!C.games.find(g=>g.id===game)?.teams)?'This game has individual opponents. Choose Players to see its rankings.':'No completed results yet. Finish a match to enter the rankings.';
+   $('caption').textContent=`${kind==='teams'?'Team':'Player'} rankings · ${device?'this device':'global accounts'}`;$('page-label').textContent=rows.length?`${offset+1}–${offset+rows.length}`:'No results';$('next').disabled=rows.length<20;
+  }catch(error){if(token===request)$('status').textContent='Rankings are unavailable right now. Try again, or choose This device for saved local results.';}
+ }
+ for(const id of ['game','board','source'])$(id).onchange=()=>{offset=0;load();};$('refresh').onclick=load;$('previous').onclick=()=>{offset=Math.max(0,offset-20);load();};$('next').onclick=()=>{offset+=20;load();};
+ C.api('/api/v1/competition/me').then(data=>{for(const p of data.progress){const name=C.games.find(g=>g.id===p.game)?.name||p.game;$('progress').append(text('p',`${name} · Level ${p.level} · ${p.xp} XP`));}}).catch(()=>{});load();
+})();

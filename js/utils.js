@@ -9,6 +9,7 @@ function rectangularCollision({ rectangle1, rectangle2 }){
 }
 
 function determineWinner({player, enemy, timerId}){
+    if(window.FightCompetition?.finished)return;
     clearTimeout(timerId);
         document.querySelector('#displayText').style.display = 'flex';
         if(player.health === enemy.health){
@@ -18,6 +19,7 @@ function determineWinner({player, enemy, timerId}){
         } else if(enemy.health > player.health){
             document.querySelector('#displayText').innerHTML = 'Enemy Won';
         }
+        window.FightCompetition?.finish(player,enemy);
 }
 
 // Timer

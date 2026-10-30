@@ -4,14 +4,25 @@
   class FightInput{
     constructor({enabled,onPause,onCancel}){
       this.enabled=enabled;this.onCancel=onCancel;this.keys=new Set();this.touch=[{},{}];this.latch=[{},{}];this.axes=[{x:0,y:0},{x:0,y:0}];this.dashes=[{x:0,y:0},{x:0,y:0}];this.lastTap=[{},{}];this.sticks=[];
+
+ this.settings=window.ControlSettings?.create({key:'super-fight.controls.v1',title:'Super Fighting Arena',
+ actions:[...maps.flatMap((map,id)=>Object.entries(map).map(([action,code])=>({id:code,label:'Player '+(id+1)+' · '+({up:'Jump / Fly',down:'Fast fall',left:'Left',right:'Right',attack:'Attack',sp1:'Special 1',sp2:'Special 2',block:'Block'}[action]),codes:[code]}))),{id:'pause',label:'Pause',codes:['KeyP']}],
+ hud:[...['one','two'].map((name,id)=>({id:'stick-'+name,label:'P'+(id+1)+' Move',stick:true})),...Array.from(document.querySelectorAll('[data-player][data-action]')).map(button=>{button.id='fight-'+button.dataset.player+'-'+button.dataset.action;return{id:button.id,label:'P'+(Number(button.dataset.player)+1)+' '+button.dataset.action};})],
+ note:'Both players share this keyboard. Each key can control one action. Combat pauses while settings are open.',
+ onOpen:()=>this.reset(),onClose:()=>this.reset(),onRelease:()=>this.reset()
+ });
+ document.getElementById('edit-hud').addEventListener('click',()=>this.settings?.open('hud'));
+ document.getElementById('edit-keys').addEventListener('click',()=>this.settings?.open('keys'));
+
       const codes=new Set(maps.flatMap(Object.values));
       document.addEventListener('keydown',e=>{
-        if(e.ctrlKey||e.metaKey||e.altKey||!enabled()||/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName))return;
-        if(['KeyP','Escape'].includes(e.code)){e.preventDefault();if(!e.repeat)onPause();return;}
-        if(!codes.has(e.code))return;e.preventDefault();this.keys.add(e.code);
-        if(!e.repeat)maps.forEach((map,id)=>{for(const [action,code]of Object.entries(map))if(code===e.code){if(['left','right','up','down'].includes(action))this.direction(id,action);else this.latch[id][action]=true;}});
+        if(this.settings?.editing||e.ctrlKey||e.metaKey||e.altKey||!enabled()||/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName))return;
+        const resolved=this.settings?this.settings.resolve(e.code):e.code;
+        if(e.code==='Escape'||resolved==='pause'||(!this.settings&&e.code==='KeyP')){e.preventDefault();if(!e.repeat)onPause();return;}
+        if(!codes.has(resolved))return;e.preventDefault();if(this.settings)this.settings.updateKeys(e,this.keys,true);else this.keys.add(resolved);
+        if(!e.repeat)maps.forEach((map,id)=>{for(const [action,code]of Object.entries(map))if(code===resolved){if(['left','right','up','down'].includes(action))this.direction(id,action);else this.latch[id][action]=true;}});
       });
-      document.addEventListener('keyup',e=>this.keys.delete(e.code));
+      document.addEventListener('keyup',e=>{if(this.settings)this.settings.updateKeys(e,this.keys,false);else this.keys.delete(e.code);});
       for(const [id,name]of ['one','two'].entries())this.stick(id,document.getElementById('stick-'+name),document.getElementById('thumb-'+name));
       for(const button of document.querySelectorAll('[data-player][data-action]')){
         const id=Number(button.dataset.player),action=button.dataset.action;
@@ -32,7 +43,7 @@
       this.sticks.push(reset);reset();
     }
     sample(){return maps.map((map,id)=>{const a=this.axes[id],press=key=>this.keys.has(map[key])||this.touch[id][key]!==undefined||!!this.latch[id][key];const value={x:Math.abs(a.x)>.16?a.x:(this.keys.has(map.right)?1:0)-(this.keys.has(map.left)?1:0),y:Math.abs(a.y)>.3?a.y:(this.keys.has(map.down)?1:0)-(this.keys.has(map.up)?1:0),attack:press('attack'),sp1:press('sp1'),sp2:press('sp2'),block:press('block'),dashX:this.dashes[id].x,dashY:this.dashes[id].y};this.latch[id]={};this.dashes[id]={x:0,y:0};return value;});}
-    reset(){this.keys.clear();this.touch=[{},{}];this.latch=[{},{}];this.axes=[{x:0,y:0},{x:0,y:0}];this.dashes=[{x:0,y:0},{x:0,y:0}];this.lastTap=[{},{}];for(const reset of this.sticks)reset();this.onCancel?.();}
+    reset(){this.settings?.release();this.keys.clear();this.touch=[{},{}];this.latch=[{},{}];this.axes=[{x:0,y:0},{x:0,y:0}];this.dashes=[{x:0,y:0},{x:0,y:0}];this.lastTap=[{},{}];for(const reset of this.sticks)reset();this.onCancel?.();}
   }
   window.SuperFight.FightInput=FightInput;
 })();

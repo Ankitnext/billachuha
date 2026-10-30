@@ -7,7 +7,7 @@
         $('energy-'+key).style.width=`${f.energy/f.maxEnergy*100}%`;$('hp-'+key).textContent=`♥ ${Math.ceil(f.hp)} / ${f.maxHp}`;$('en-'+key).textContent=`ϟ ${Math.floor(f.energy)} / ${f.maxEnergy}`;
         for(const [kind,value,max]of [['health',f.hp,f.maxHp],['energy',f.energy,f.maxEnergy]]){const track=$(kind+'-'+key).parentElement;track.setAttribute('aria-valuemin','0');track.setAttribute('aria-valuemax',String(max));track.setAttribute('aria-valuenow',String(Math.round(value)));}
       });
-      $('timer').textContent=String(Math.ceil(match.remaining)).padStart(2,'0');$('round-label').textContent=`ROUND ${match.roundNumber} / 3`;$('match-mode').textContent=match.mode==='solo'?match.difficulty.toUpperCase():'LOCAL 2P';
+      $('timer').textContent=String(Math.ceil(match.remaining)).padStart(2,'0');$('round-label').textContent=`ROUND ${match.roundNumber} / 3`;$('match-mode').textContent=match.mode==='solo'?`${match.difficulty.toUpperCase()} · LV ${match.bot.level}`:'LOCAL 2P';
       const f=match.fighters[0];$('power-note').textContent=f.charging?`Charging beam · ${Math.min(100,Math.round(f.charge/f.spec.charge*100))}%`:f.shield?'Energy shield · draining energy':f.powerCooldown>0?`Power recovery · ${f.powerCooldown.toFixed(1)}s`:f.energy<20?'Land to recharge energy':'Tap Blast / Step. Hold Beam / Shield.';
       const status=match.fighters.find(f=>f.receivedHits>=5&&f.energy>=25);const text=status?`P${status.id+1}: tap Special 2 to break the combo` : match.clash?'BEAM CLASH':'';if($('combat-status').textContent!==text)$('combat-status').textContent=text;
     }

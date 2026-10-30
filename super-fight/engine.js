@@ -1,16 +1,17 @@
 ((root,factory)=>{const api=factory(typeof module==='object'&&module.exports?Object.assign({},...['physics','fighter','combat','powers','particles','bot'].map(name=>require('./'+name+'.js'))):root.SuperFight);if(typeof module==='object'&&module.exports)module.exports=api;else Object.assign(root.SuperFight,api);})(globalThis,S=>{
   class Match{
-    constructor({mode='solo',characters=['blaze','shadow'],difficulty='normal',seed=Date.now()}={}){
+    constructor({mode='solo',characters=['blaze','shadow'],difficulty='normal',level=1,seed=Date.now()}={}){
       if(!['solo','local'].includes(mode)||characters.length!==2)throw Error('Choose Solo or Local 2 Player.');
       for(const key of characters)if(!S.CHARACTERS[key])throw Error('Choose a fighter.');
       if(!S.DIFFICULTIES[difficulty])throw Error('Choose a bot difficulty.');
+      if(!Number.isInteger(level)||level<1||level>50)throw Error('Choose a level from 1 to 50.');this.level=level;
       this.mode=mode;this.characters=[...characters];this.difficulty=difficulty;this.random=S.random(seed);this.wins=[0,0];this.roundNumber=1;this.history=[];
       this.effects=new S.Particles(this.random);this.events=[];this.time=0;this.nextRound();
     }
     nextRound(){
       if(this.wins.some(w=>w>=2))return false;
       this.roundNumber=this.wins[0]+this.wins[1]+1;this.fighters=this.characters.map((key,id)=>new S.Fighter(id,key));
-      this.bot=new S.SuperBot(this.difficulty,this.random);this.remaining=S.RULES.roundTime;this.phase='intro';this.intro=1.2;
+      this.bot=new S.SuperBot(this.difficulty,this.random,Math.min(50,this.level+this.roundNumber-1));this.remaining=S.RULES.roundTime;this.phase='intro';this.intro=1.2;
       this.projectiles=[];this.beams=[];this.waves=[];this.texts=[];this.clash=null;this.hitstop=0;this.shake=0;this.flash=0;this.roundResult=null;this.effects.clear();this.events=[];
       this.emit('round');return true;
     }

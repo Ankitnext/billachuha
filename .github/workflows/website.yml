@@ -38,6 +38,11 @@ jobs:
           package-manager-cache: false
       - run: node --check online-chase.js
       - run: node --check site-config.js
+      - run: node --test tools/kitchen-heist.test.cjs
+      - run: node --test tools/sky-siege.test.cjs
+      - run: node --test tools/character-motion.test.cjs
+      - run: node --test tools/long-run-movement.test.cjs
+      - run: node --test tools/competitive.test.cjs
       - run: node --test tools/public-assets.test.mjs
       - run: node tools/build.mjs
       - name: Check both hosted website configurations

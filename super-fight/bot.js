@@ -1,7 +1,7 @@
 ((root,factory)=>{const api=factory(typeof module==='object'&&module.exports?require('./physics.js'):root.SuperFight);if(typeof module==='object'&&module.exports)module.exports=api;else Object.assign(root.SuperFight,api);})(globalThis,S=>{
   const DIFFICULTIES=Object.freeze({easy:{reaction:.4,aggression:.52,defense:.2},normal:{reaction:.2,aggression:.7,defense:.52},hard:{reaction:.1,aggression:.85,defense:.78},impossible:{reaction:.05,aggression:.97,defense:.94}});
   class SuperBot{
-    constructor(difficulty='normal',random=Math.random){if(!DIFFICULTIES[difficulty])throw Error('Choose a bot difficulty.');this.spec=DIFFICULTIES[difficulty];this.difficulty=difficulty;this.random=random;this.next=0;this.decision=S.neutral();this.bias=.85+random()*.3;this.beamUntil=0;}
+    constructor(difficulty='normal',random=Math.random,level=1){if(!DIFFICULTIES[difficulty])throw Error('Choose a bot difficulty.');this.level=Math.max(1,Math.min(50,Math.floor(level)||1));const base=DIFFICULTIES[difficulty],n=this.level-1;this.spec={reaction:Math.max(.035,base.reaction/(1+n*.12)),aggression:Math.min(.99,base.aggression+n*.018),defense:Math.min(.97,base.defense+n*.025)};this.difficulty=difficulty;this.random=random;this.next=0;this.decision=S.neutral();this.bias=.85+random()*.3;this.beamUntil=0;}
     input(game,f,target){
       if(f.ko||target.ko)return S.neutral();
       if(game.time>=this.next){this.next=game.time+this.spec.reaction;const dx=S.center(target).x-S.center(f).x,dy=S.center(target).y-S.center(f).y,range=Math.abs(dx),a=this.spec.aggression*this.bias,d=S.neutral();
