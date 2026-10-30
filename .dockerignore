@@ -21,6 +21,8 @@
 !super-fight/**
 !trap-escape/
 !trap-escape/**
+!kitchen-heist/
+!kitchen-heist/**
 !tools/
 !tools/build.mjs
 !tools/render-catalog.mjs
