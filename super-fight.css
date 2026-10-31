@@ -9,3 +9,5 @@ dialog{background:#1c353f;color:var(--ink);border:1px solid #7b9b7a;border-radiu
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 
 .select-row input{font:inherit;min-width:0;min-height:39px;background:#172e37;color:#e6ecd7;border:1px solid #52706a;border-radius:7px;width:100%;padding:7px}#competition-result{font-size:12px;line-height:1.6}
+/* Customized controls must not determine the landscape arena row height. */
+@media(orientation:landscape){.fight-layout,.fight-layout.local{grid-template-rows:minmax(0,1fr)}}

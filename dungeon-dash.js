@@ -162,7 +162,8 @@
   for(const d of document.querySelectorAll('dialog'))d.addEventListener('close',clearInput);
   window.addEventListener('blur',()=>{clearInput();pause();checkpoint();});
   document.addEventListener('visibilitychange',()=>{if(document.hidden){clearInput();checkpoint();if(run&&!['dead','dying'].includes(run.phase)&&!document.querySelector('dialog[open]'))dialog('pause-dialog');}});
-  window.addEventListener('pagehide',checkpoint);window.addEventListener('resize',()=>{clearInput();if(run&&run.phase!=='dead'){const size=dimensions();run.resize(size.width,size.height);}fit();});new ResizeObserver(()=>requestAnimationFrame(fit)).observe($('viewport'));
+  let landscape=innerWidth>innerHeight;
+  window.addEventListener('pagehide',checkpoint);window.addEventListener('resize',()=>{const next=innerWidth>innerHeight;if(next!==landscape)clearInput();landscape=next;if(run&&run.phase!=='dead'){const size=dimensions();run.resize(size.width,size.height);}fit();});new ResizeObserver(()=>requestAnimationFrame(fit)).observe($('viewport'));
   persist();if(recovered)$('storage-note').textContent=`Recovered ${profile.last.gems} saved gems from your interrupted run. Your wallet is ready.`;
   title();requestAnimationFrame(frame);
 })();

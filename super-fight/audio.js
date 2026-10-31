@@ -1,7 +1,8 @@
 (() => {
   class FightAudio{
-    constructor(){this.enabled=false;this.context=null;this.loops=new Map();}
-    set(enabled){this.enabled=enabled;if(!enabled)this.silence();else this.play('blast');}
+    constructor(){this.enabled=true;this.context=null;this.loops=new Map();try{this.enabled=localStorage.getItem('super-fight.sound.v1')!=='off';}catch{}for(const name of ['pointerdown','keydown'])document.addEventListener(name,()=>{if(this.enabled)this.unlock();},{capture:true});}
+    unlock(){if(!this.enabled)return;try{this.context||=new(window.AudioContext||window.webkitAudioContext)();this.context.resume().catch(()=>{});}catch{/* Audio must not block play. */}}
+    set(enabled){this.enabled=!!enabled;try{localStorage.setItem('super-fight.sound.v1',this.enabled?'on':'off');}catch{}if(!this.enabled)this.silence();else this.play('blast');}
     play(type){if(!this.enabled)return;try{
       const c=this.context||=new(window.AudioContext||window.webkitAudioContext)();c.resume().catch(()=>{});
       if(type==='win'){for(const [i,hz]of [440,550,660].entries()){const o=c.createOscillator(),g=c.createGain(),at=c.currentTime+i*.09;o.frequency.value=hz;g.gain.setValueAtTime(.025,at);g.gain.exponentialRampToValueAtTime(.001,at+.16);o.connect(g);g.connect(c.destination);o.start(at);o.stop(at+.16);}return;}

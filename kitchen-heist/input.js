@@ -10,7 +10,7 @@
       for(const id of ['use-tool','cycle-tool'])$(id).addEventListener('click',event=>{if(event.detail===0&&enabled())this.pending[id==='use-tool'?'use':'cycle']=true;});
       const sprint=$('sprint'),pointers=this.sprintPointers;sprint.onpointerdown=event=>{if(!enabled())return;event.preventDefault();sprint.setPointerCapture(event.pointerId);pointers.add(event.pointerId);this.sprint=true;};for(const type of ['pointerup','pointercancel','lostpointercapture'])sprint.addEventListener(type,event=>{pointers.delete(event.pointerId);this.sprint=pointers.size>0;});
       let swipe=null;$('inventory').addEventListener('pointerdown',event=>{swipe=event.clientX;});$('inventory').addEventListener('pointerup',event=>{if(swipe!==null&&Math.abs(event.clientX-swipe)>30)this.pending.cycle=true;swipe=null;});
-      window.addEventListener('blur',()=>this.clear());window.addEventListener('resize',()=>this.clear());document.addEventListener('visibilitychange',()=>{if(document.hidden)this.clear();});
+      window.addEventListener('blur',()=>this.clear());document.addEventListener('visibilitychange',()=>{if(document.hidden)this.clear();});
     }
     poll(){const result={x:this.axis.x+(this.keys.has('right')?1:0)-(this.keys.has('left')?1:0),y:this.axis.y+(this.keys.has('down')?1:0)-(this.keys.has('up')?1:0),sprint:this.sprint||this.keys.has('sprint'),...this.pending};this.pending={};return result;}
     clear(){this.keys.clear();this.settings?.release();this.axis={x:0,y:0};this.pending={};this.sprint=false;this.stick?.reset();const button=document.getElementById('sprint');for(const id of this.sprintPointers)if(button.hasPointerCapture(id))button.releasePointerCapture(id);this.sprintPointers.clear();}

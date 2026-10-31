@@ -9,7 +9,7 @@
     const action={KeyW:'jump',ArrowUp:'jump',Space:'jump',KeyE:'drop',KeyF:'drop',KeyQ:'cycle',Tab:'cycle'}[e.code];
     if(action||['KeyA','KeyD','ArrowLeft','ArrowRight'].includes(e.code)){e.preventDefault();if(!e.repeat&&action)this.pending[action]=true;this.keys.add(e.code);}
    });
-   window.addEventListener('keyup',e=>this.keys.delete(e.code));window.addEventListener('blur',()=>this.reset());document.addEventListener('visibilitychange',()=>{if(document.hidden)this.reset();});window.addEventListener('resize',()=>this.reset());
+   window.addEventListener('keyup',e=>this.keys.delete(e.code));window.addEventListener('blur',()=>this.reset());document.addEventListener('visibilitychange',()=>{if(document.hidden)this.reset();});let landscape=innerWidth>innerHeight;window.addEventListener('resize',()=>{const next=innerWidth>innerHeight;if(next!==landscape)this.reset();landscape=next;});
    for(const action of ['jump','drop']){const b=document.getElementById(action+'-button');let pointer=null;
     b.addEventListener('pointerdown',e=>{if(!this.active()||pointer!==null||(e.pointerType==='mouse'&&e.button!==0))return;e.preventDefault();pointer=e.pointerId;b.setPointerCapture(pointer);this.touch[action]=true;this.pending[action]=true;});
     for(const type of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(type,e=>{if(e.pointerId===pointer){pointer=null;this.touch[action]=false;}});

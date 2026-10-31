@@ -34,6 +34,34 @@
     const size = Math.min(base * control.size / 100, bounds.width / 4, bounds.height / 2);
     return {left: control.x * Math.max(0,bounds.width-size), top:control.y * Math.max(0,bounds.height-size), size};
   }
+  function hudOverlaps(layout, controls, bounds) {
+    const boxes=controls.map(item=>box(layout[item.id],item,bounds));
+    return boxes.some((a,i)=>boxes.slice(i+1).some(b=>a.left<b.left+b.size+3&&a.left+a.size+3>b.left&&a.top<b.top+b.size+3&&a.top+a.size+3>b.top));
+  }
+  function defaultHud(controls, bounds) {
+    const out={},buttons=controls.filter(c=>!c.stick),sticks=controls.filter(c=>c.stick);
+    sticks.forEach((item,i)=>out[item.id]={x:sticks.length>1?i:0,y:1,size:100,opacity:.85});
+    const rows=Math.ceil(buttons.length/3),size=Math.min(100,Math.max(60,(bounds.height/(rows+1)-8)/56*100));
+    buttons.forEach((item,i)=>out[item.id]={x:.48+(i%3)*.26,y:rows===1?.5:.08+Math.floor(i/3)*.76/Math.max(1,rows-1),size,opacity:.85});
+    if(!hudOverlaps(out,controls,bounds))return out;
+    // Short screens need a separate button band above the movement sticks.
+    const gap=8,stickHeight=Math.max(0,...sticks.map(item=>box(out[item.id],item,bounds).size));
+    const height=Math.max(0,bounds.height-stickHeight-gap);
+    let best=out,bestSize=0;
+    for(let cols=1;cols<=buttons.length;cols++){
+      const rows=Math.ceil(buttons.length/cols);
+      const size=Math.min(100,(bounds.width-gap*(cols-1))/cols/56*100,(height-gap*(rows-1))/rows/56*100);
+      if(size<60||size<=bestSize)continue;
+      const candidate=structuredClone(out);
+      buttons.forEach((item,i)=>{
+        const c=candidate[item.id];c.size=size;c.x=cols===1?.5:(i%cols)/(cols-1);
+        const b=box(c,item,bounds),top=rows===1?(height-b.size)/2:Math.floor(i/cols)*(height-b.size)/(rows-1);
+        c.y=top/Math.max(1,bounds.height-b.size);
+      });
+      if(!hudOverlaps(candidate,controls,bounds)){best=candidate;bestSize=size;}
+    }
+    return best;
+  }
   function create(options) {
     const actions = options.actions, controls = options.hud || [];
     let stored; try { stored = JSON.parse(localStorage.getItem(options.key)); } catch (_) {}
@@ -52,6 +80,8 @@
     document.body.append(dialog);
     const safeArea=document.createElement('div');safeArea.className='cs-safe-area';safeArea.setAttribute('aria-hidden','true');document.body.append(safeArea);
     const orientation = () => innerWidth > innerHeight ? 'landscape' : 'portrait';
+    // Mobile browser bars resize the viewport while fingers are still held.
+    let viewportOrientation = orientation();
     let editingOrientation, resetHud = false, hudDirty = false;
     function actualBounds() {
       return safeArea.getBoundingClientRect();
@@ -68,12 +98,7 @@
       }
     }
     function defaults() {
-      const out = {}, buttons = controls.filter(c=>!c.stick), sticks=controls.filter(c=>c.stick);
-      sticks.forEach((item,i)=>out[item.id]={x:sticks.length>1?i:0,y:1,size:100,opacity:.85});
-      const rows=Math.ceil(buttons.length/3), bounds=actualBounds();
-      const size=Math.min(100,Math.max(60,(bounds.height/(rows+1)-8)/56*100));
-      buttons.forEach((item,i)=>out[item.id]={x:.48+(i%3)*.26,y:rows===1 ? .5 : .08+Math.floor(i/3)*.76/Math.max(1,rows-1),size,opacity:.85});
-      return out;
+      return defaultHud(controls,actualBounds());
     }
     function status(text) { find('.cs-status').textContent = text; }
     function renderKeys(focusId) {
@@ -152,15 +177,14 @@
       const nextLayouts={...layouts};
       if(hudDirty) {
         if(!resetHud) {
-          const bounds=actualBounds(),boxes=controls.map(item=>box(hudDraft[item.id],item,bounds));
-          if(boxes.some((a,i)=>boxes.slice(i+1).some(b=>a.left<b.left+b.size+3&&a.left+a.size+3>b.left&&a.top<b.top+b.size+3&&a.top+a.size+3>b.top))){status('Some controls overlap. Move them apart or reduce their size before saving.');return;}
+          if(hudOverlaps(hudDraft,controls,actualBounds())){status('Some controls overlap. Move them apart or reduce their size before saving.');return;}
         }
         nextLayouts[editingOrientation]=resetHud?null:normalizeHud(hudDraft,controls);
       }
       try{localStorage.setItem(options.key,JSON.stringify({...draft,layouts:nextLayouts}));}catch(_){status('Browser storage is unavailable. Settings could not be saved.');return;}
       saved=normalize(draft,actions);layouts=nextLayouts;resetHud=false;apply();close();
     };
-    window.addEventListener('resize',()=>{physical.clear();options.onRelease?.();apply();if(dialog.open&&editingOrientation!==orientation()){editingOrientation=orientation();hudDraft=structuredClone(layouts[editingOrientation]||defaults());resetHud=false;hudDirty=false;status('Screen rotated. Editing the layout for this orientation.');}renderHud();});
+    window.addEventListener('resize',()=>{const next=orientation();if(next!==viewportOrientation){physical.clear();options.onRelease?.();}viewportOrientation=next;apply();if(dialog.open&&editingOrientation!==next){editingOrientation=next;hudDraft=structuredClone(layouts[editingOrientation]||defaults());resetHud=false;hudDirty=false;if(controls.length)choose(selection);status('Screen rotated. Editing the layout for this orientation.');}renderHud();});
     window.addEventListener('blur',()=>physical.clear());
     document.addEventListener('visibilitychange',()=>{if(document.hidden)physical.clear();});
     apply();
@@ -171,5 +195,5 @@
       release(){physical.clear();}, refresh:apply
     };
   }
-  return {create,normalize,normalizeHud,box,keyLabel,validCode};
+  return {create,normalize,normalizeHud,box,defaultHud,hudOverlaps,keyLabel,validCode};
 });

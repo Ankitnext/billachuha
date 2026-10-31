@@ -33,7 +33,7 @@ Two round wins take a best-of-three match, with 90 simulation seconds per round.
 
 Bots have 400/200/100/50ms decision intervals across Easy, Normal, Hard and Impossible. They use the same legal movement/power functions and energy budgets as people, with seeded aggression variance, ranged attacks, flight pursuit, dash, charged beams, defensive reactions and combo escape. There are no hidden health or damage bonuses.
 
-Effects include a fixed 500-particle pool, limited projectiles/afterimages, aura/charge animation, impact bursts, teleport/dash trails, ground waves, beam clashes, heavy-hit freeze and camera shake/flash/zoom. Reduced-motion preference disables those motion effects by default; the move list has an effects switch and sound switch. Sound is initially off and uses optional procedural Web Audio, including charge/shield loops that stop on pause or quit.
+Effects include a fixed 500-particle pool, limited projectiles/afterimages, aura/charge animation, impact bursts, teleport/dash trails, ground waves, beam clashes, heavy-hit freeze and camera shake/flash/zoom. Reduced-motion preference disables those motion effects by default; the move list has an effects switch and sound switch. Sound is on by default, remembers the player's mute choice and unlocks on the first interaction. It uses procedural Web Audio, including charge/shield loops that stop on pause or quit.
 
 ## Integration and checks
 

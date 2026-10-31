@@ -24,9 +24,12 @@ reloads, hits, melee, jumps, role powers, pickups, kill confirmation and results
 - Existing procedural audio in Trap Escape, Cat Chase and Super Fighting Arena
   is retained.
 
-Sound starts muted. A player can enable it with the Sound button; the preference
-is remembered in this browser. Browsers still require a user gesture to unlock
-playback. Unsupported or blocked audio does not prevent gameplay. Muting stops
+Sound is on by default. A player can turn it off with the Sound button; an
+existing saved mute choice stays respected across reloads. This also applies to
+Trap Escape, Cat Chase and Super Fighting Arena. Android's offline Long Run
+already defaults to sound on and remembers its mute setting. Browsers require
+a first tap/click or keypress to unlock playback. Unsupported or blocked audio
+does not prevent gameplay. Muting stops
 active voices, leaving/backgrounding stops active playback, and new online
 snapshots do not replay past sounds on join/reconnect. Distant online effects
 fade, simultaneous voices are capped, and the output uses a master gain and
@@ -44,7 +47,7 @@ With Playwright on `NODE_PATH` and optional `CHROMIUM_PATH`, run
 `node tools/check-game-audio.cjs`. It uses intercepted local source and no real
 accounts/server, renders twelve effects through `OfflineAudioContext`, checks
 their finite/bounded output and distinct tails, verifies immediate mute and
-stored preferences, and checks nine updated game entry points.
+stored preferences across current game entry points and Android's bundled Long Run.
 
 The backend's `TestWeaponAudioEventsDescribeAcceptedTriggerOnce` verifies
 accepted shotgun events, pellet grouping, cooldown rejection and increasing IDs.

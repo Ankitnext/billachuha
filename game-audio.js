@@ -69,9 +69,9 @@
   }
   class Sound {
     constructor(options={}){
-      this.key=options.key||'billa.sound.v1';this.enabled=false;this.context=null;this.master=null;this.noise=null;
+      this.key=options.key||'billa.sound.v1';this.enabled=true;this.context=null;this.master=null;this.noise=null;
       this.active=new Set();this.last=new Map();this.buttons=[];this.tracker=new SnapshotSounds();
-      try{this.enabled=localStorage.getItem(this.key)==='on';}catch(_){}
+      try{this.enabled=localStorage.getItem(this.key)!=='off';}catch(_){}
       if(typeof document!=='undefined'){
         for(const name of ['pointerdown','keydown'])document.addEventListener(name,()=>{if(this.enabled)this.unlock();},{capture:true});
         document.addEventListener('visibilitychange',()=>{if(document.hidden)this.silence();this.tracker.reset();});

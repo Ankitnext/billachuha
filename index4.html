@@ -286,11 +286,16 @@ const sfx=window.GameAudio?.legacy();
   let thumbR = thumb.clientWidth / 2;
   let maxDisp = Math.max(1, stickR - thumbR);
   const joyBoost=2.5;
+  let joystickLandscape = (window.innerWidth || 0) > (window.innerHeight || 0);
   function recalcJoystickMetrics() {
     stickR = base.clientWidth / 2;
     thumbR = thumb.clientWidth / 2;
     maxDisp = Math.max(1, stickR - thumbR);
-    handleEnd();
+    const next = (window.innerWidth || 0) > (window.innerHeight || 0);
+    if (next !== joystickLandscape) handleEnd();
+    joystickLandscape = next;
+    thumb.style.left = `${stickR - thumbR + joyX * maxDisp}px`;
+    thumb.style.top = `${stickR - thumbR + joyY * maxDisp}px`;
   }
   function setJoystickFromTouch(t){
     const r = base.getBoundingClientRect();
@@ -333,7 +338,7 @@ const sfx=window.GameAudio?.legacy();
   base.addEventListener("touchend",    handleEnd);
   base.addEventListener("touchcancel", handleEnd);
   window.addEventListener("resize", recalcJoystickMetrics);
-  window.addEventListener("orientationchange", recalcJoystickMetrics);
+  window.addEventListener("orientationchange", () => { handleEnd(); recalcJoystickMetrics(); });
   recalcJoystickMetrics();
 
   // Initialize bombs

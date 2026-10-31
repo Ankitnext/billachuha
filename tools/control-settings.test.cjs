@@ -18,8 +18,17 @@ test('layout storage rejects nonfinite controls and keeps oversized values in bo
     const b=C.box(layout[def.id],def,bounds);assert.ok(b.left>=0&&b.top>=0&&b.left+b.size<=bounds.width&&b.top+b.size<=bounds.height);
   }
 });
-test('local and embedded settings assets remain identical',()=>{
+test('default HUD fits both fighting players without collisions on compact screens',()=>{
+  const controls=[{id:'one',stick:true},{id:'two',stick:true},...Array.from({length:8},(_,i)=>({id:'action-'+i}))];
+  for(const bounds of [{width:296,height:408},{width:544,height:204},{width:366,height:684},{width:820,height:253}]){
+    const layout=C.defaultHud(controls,bounds);
+    assert.equal(C.hudOverlaps(layout,controls,bounds),false,JSON.stringify(bounds));
+    for(const item of controls){const b=C.box(layout[item.id],item,bounds);assert.ok(b.size>=33&&b.left>=0&&b.top>=0&&b.left+b.size<=bounds.width+.01&&b.top+b.size<=bounds.height+.01);}
+  }
+});
+test('local and embedded settings assets match across checkout line endings',()=>{
   const backend=path.resolve(__dirname,'../../billachuha_backend/internal/playweb');
   if(!fs.existsSync(backend))return;
-  for(const file of ['control-settings.js','control-settings.css'])assert.equal(fs.readFileSync(path.resolve(__dirname,'..',file),'utf8'),fs.readFileSync(path.join(backend,file),'utf8'));
+  const source=file=>fs.readFileSync(file,'utf8').replace(/\r\n/g,'\n');
+  for(const file of ['control-settings.js','control-settings.css'])assert.equal(source(path.resolve(__dirname,'..',file)),source(path.join(backend,file)));
 });

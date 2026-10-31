@@ -17,7 +17,7 @@ async function main(){
     await page.goto('http://heist.test/index2.html');await page.waitForURL('**/kitchen-heist.html');
     await page.screenshot({path:path.join(screens,'kitchen-heist-title.png')});
     await page.locator('#start').click();await page.locator('#close-tutorial').click();
-    await page.locator('#sound').click();await page.waitForFunction(()=>HeistFixture.audio.sound.context?.state==='running');
+    assert.equal(await page.locator('#sound').innerText(),'Sound on');await page.waitForFunction(()=>HeistFixture.audio.sound.context?.state==='running');
     assert.ok(await page.evaluate(()=>{HeistFixture.audio.alarm();return HeistFixture.audio.sound.active.size>0;}));
     await page.locator('#sound').click();assert.equal(await page.evaluate(()=>HeistFixture.audio.sound.active.size),0);
     const x=await page.evaluate(()=>HeistFixture.game.player.x);await page.keyboard.down('KeyD');await page.waitForFunction(x=>HeistFixture.game.player.x>x+15,x);await page.keyboard.up('KeyD');

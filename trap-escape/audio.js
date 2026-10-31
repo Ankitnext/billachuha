@@ -1,7 +1,7 @@
 (() => {
  'use strict';
  class EscapeAudio {
-  constructor(){this.enabled=false;this.context=null;this.lastStep=0;}
+  constructor(){this.enabled=true;this.context=null;this.lastStep=0;}
   unlock(){try{this.context||=new (window.AudioContext||window.webkitAudioContext)();this.context.resume().catch(()=>{});}catch{this.enabled=false;}}
   tone(hz,duration=.12,type='sine',volume=.07,delay=0,end=hz){if(!this.enabled)return;this.unlock();const c=this.context;if(!c)return;const o=c.createOscillator(),g=c.createGain(),t=c.currentTime+delay;o.type=type;o.frequency.setValueAtTime(hz,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,end),t+duration);g.gain.setValueAtTime(volume,t);g.gain.exponentialRampToValueAtTime(.001,t+duration);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+duration+.02);}
   play(e){if(!this.enabled)return;switch(e.type){

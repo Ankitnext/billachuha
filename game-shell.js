@@ -2,7 +2,7 @@
 (() => {
  'use strict';
  window.ArcadeStick=(base,thumb,onMove)=>{
-  let pointer=null;
+  let pointer=null,landscape=innerWidth>innerHeight;
   function move(event){
    const box=base.getBoundingClientRect(),radius=base.clientWidth/2,thumbRadius=thumb.clientWidth/2,max=Math.max(1,radius-thumbRadius);
    let dx=event.clientX-box.left-box.width/2,dy=event.clientY-box.top-box.height/2;
@@ -13,7 +13,7 @@
   base.addEventListener('pointerdown',event=>{if(pointer!==null||(event.pointerType==='mouse'&&event.button!==0))return;event.preventDefault();pointer=event.pointerId;base.setPointerCapture(pointer);move(event);});
   base.addEventListener('pointermove',event=>{if(event.pointerId===pointer){event.preventDefault();move(event);}});
   for(const type of ['pointerup','pointercancel','lostpointercapture'])base.addEventListener(type,event=>{if(event.pointerId===pointer)reset();});
-  window.addEventListener('resize',reset);window.addEventListener('blur',reset);document.addEventListener('visibilitychange',()=>{if(document.hidden)reset();});reset();return{reset};
+  window.addEventListener('resize',()=>{const next=innerWidth>innerHeight;if(next!==landscape)reset();landscape=next;});window.addEventListener('blur',reset);document.addEventListener('visibilitychange',()=>{if(document.hidden)reset();});reset();return{reset};
  };
  if(document.documentElement.dataset.arcadeLayout==='custom')return;
  const canvas=document.querySelector('canvas'); if(!canvas)return;
@@ -75,6 +75,7 @@
   touches.clear();
   for(const key of pressedKeys.values())document.dispatchEvent(new KeyboardEvent('keyup',{...key,bubbles:true}));pressedKeys.clear();
  }
- window.addEventListener('resize',releaseControls);window.addEventListener('blur',releaseControls);
+ let landscape=innerWidth>innerHeight;
+ window.addEventListener('resize',()=>{const next=innerWidth>innerHeight;if(next!==landscape)releaseControls();landscape=next;});window.addEventListener('blur',releaseControls);
  document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseControls();});
 })();

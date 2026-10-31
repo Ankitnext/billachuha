@@ -4,3 +4,17 @@
 @media(max-width:700px){.platform-home .hero{grid-template-columns:1fr;padding:26px 0;gap:0}.platform-home h1{font-size:40px;letter-spacing:-1.8px}.platform-home .hero-art{display:none}.platform-home .hero-description{font-size:13px}.platform-home .hero-actions .button{flex:0 1 auto;min-height:44px;padding:11px 14px;font-size:11px}.platform-home .site-header nav{gap:14px}.platform-home .site-header nav a{font-size:10px}.catalog-section{padding-top:22px}.catalog-section .section-heading{gap:16px}.catalog-section h2{font-size:25px}.catalog-section .game-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.catalog-section .game-search input{font-size:16px;padding:10px 12px}.catalog-categories{gap:7px}.catalog-categories button{padding:7px 11px;font-size:11px;min-height:36px}.catalog-categories small{margin-left:4px}.catalog-card .game-card-body{padding:11px}.catalog-card h3{font-size:13px}.catalog-card .game-card-body>p{font-size:10px;margin-bottom:8px}.card-tags{gap:4px;margin-bottom:8px}.card-tags span{font-size:7px;padding:2px 4px}.card-actions{gap:5px}.card-actions a{font-size:10px}.card-actions .card-play{padding:7px 9px}.game-cover .card-badge{font-size:7px;top:7px;left:7px}.catalog-meta{margin-bottom:12px}.platform-about{display:block}.game-detail .hero{grid-template-columns:1fr;padding-top:28px}.game-detail h1{font-size:40px}.detail-art{max-width:550px;width:100%;margin:auto}.control-list{grid-template-columns:1fr}.related-games .game-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.chase-detail .hero-art{display:block}.game-detail .hero-actions .button{flex:0 1 auto}.chase-detail .hero-art img{max-height:320px}.breadcrumbs{font-size:10px}}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .catalog-card .card-tags>span{position:static;right:auto;top:auto;color:var(--muted)}
+@media(max-width:1000px){
+  .catalog-categories{
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    overflow-y:hidden;
+    max-width:100%;
+    padding:8px 4px 12px;
+    overscroll-behavior-x:contain;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:thin;
+    scrollbar-color:var(--line) transparent;
+  }
+  .catalog-categories button{flex:0 0 auto;white-space:nowrap;}
+}

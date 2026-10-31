@@ -17,7 +17,7 @@ async function main(){
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
     await page.setViewportSize({width:1365,height:900});
     await page.locator('#start').click();await page.locator('#close-tutorial').click();await page.waitForTimeout(60);
-    await page.locator('#sound').click();await page.waitForFunction(()=>SiegeFixture.sound.context?.state==='running');
+    assert.equal(await page.locator('#sound').innerText(),'Sound on');await page.waitForFunction(()=>SiegeFixture.sound.context?.state==='running');
     assert.ok(await page.evaluate(()=>{SiegeFixture.audio('magnet');SiegeFixture.audio('firecracker-fuse');return SiegeFixture.sound.active.size>=2;}));
     await page.locator('#sound').click();assert.equal(await page.evaluate(()=>SiegeFixture.sound.active.size),0);
     const y=await page.evaluate(()=>SiegeFixture.run.player.y);await page.keyboard.press('Space');await page.waitForFunction(y=>SiegeFixture.run.player.y<y-20,y);

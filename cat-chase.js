@@ -6,7 +6,7 @@
    window.addEventListener('keyup',e=>this.keys.delete(e.code));
    for(const action of ['jump','pounce']){const b=$(action+'-button');let pointer=null;b.addEventListener('pointerdown',e=>{if(!active()||pointer!==null||(e.pointerType==='mouse'&&e.button!==0))return;e.preventDefault();pointer=e.pointerId;b.setPointerCapture(pointer);this.touch[action]=true;this.pending[action]=true;});for(const name of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(name,e=>{if(e.pointerId===pointer){pointer=null;this.touch[action]=false;}});b.addEventListener('click',e=>{if(e.detail===0&&active())this.pending[action]=true;});}
    window.ArcadeStick($('move-stick'),$('move-thumb'),x=>this.axis=active()&&Math.abs(x)>.12?x:0);
-   for(const name of ['blur','resize'])window.addEventListener(name,()=>this.reset());document.addEventListener('visibilitychange',()=>{if(document.hidden)this.reset();});
+   window.addEventListener('blur',()=>this.reset());let landscape=innerWidth>innerHeight;window.addEventListener('resize',()=>{const next=innerWidth>innerHeight;if(next!==landscape)this.reset();landscape=next;});document.addEventListener('visibilitychange',()=>{if(document.hidden)this.reset();});
   }
   reset(){this.keys.clear();this.pending={};this.touch={};this.axis=0;const t=$('move-thumb');t.style.left='calc(50% - 17px)';t.style.top='calc(50% - 17px)';}
   consume(){const k=this.keys,q=this.pending;this.pending={};return{x:((k.has('KeyD')||k.has('ArrowRight')?1:0)-(k.has('KeyA')||k.has('ArrowLeft')?1:0))||this.axis,jump:!!(q.jump||this.touch.jump||k.has('KeyW')||k.has('ArrowUp')||k.has('Space')),pounce:!!(q.pounce||this.touch.pounce||k.has('KeyE')||k.has('KeyF')||k.has('ShiftLeft')||k.has('ShiftRight'))};}
@@ -14,7 +14,7 @@
  let raw={},settings={},storageOK=true,stored=null;try{stored=localStorage.getItem(KEY);}catch{storageOK=false;}try{raw=JSON.parse(stored||'{}');}catch{}try{settings=JSON.parse(localStorage.getItem(PREFS)||'{}')||{};}catch{}
  const save=new C.ChaseSave(raw),audio=new window.TrapEscape.EscapeAudio(),art=new C.ChaseArt($('stage'),$('route'));
  let screen='title',game=null,world=0,paused=false,last=0,acc=0,visualTime=0,hudTime=0,winDelay=0,resultShown=false,lastMessage='',effects=typeof settings.effects==='boolean'?settings.effects:!matchMedia('(prefers-reduced-motion: reduce)').matches;
- audio.enabled=settings.sound===true;
+ audio.enabled=settings.sound!==false;
  const input=new ChaseInput(()=>screen==='play'&&!paused&&!document.querySelector('dialog[open]')&&game?.phase!=='won');
  const time=ms=>(ms/1000).toFixed(2)+'s';
  const make=(tag,text,cls)=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.className=cls;return e;};
@@ -46,6 +46,6 @@
  window.addEventListener('keydown',e=>{if(e.ctrlKey||e.metaKey||e.altKey||e.repeat||['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName))return;if(screen==='play'&&['KeyP','Escape'].includes(e.code)){if($('pause-dialog').open){e.preventDefault();resume('pause-dialog');}else if(!document.querySelector('dialog[open]')){e.preventDefault();modal('pause-dialog');}}});
  function autoPause(){if(screen==='play'&&game?.phase!=='won'&&!document.querySelector('dialog[open]'))modal('pause-dialog');}window.addEventListener('blur',autoPause);document.addEventListener('visibilitychange',()=>{if(document.hidden)autoPause();});
  for(const type of ['ceiling','shift','lift','crusher','pendulum','gate','belt','crumble','spikes','drop','wall','spring','fake']){const info=C.TRAPS[type];const p=make('p');p.append(make('strong',info.name),document.createTextNode(info.hint));$('trick-guide').append(p);}
- new ResizeObserver(()=>{if(screen==='play'){art.resize();input.reset();window.scrollTo(0,0);}}).observe($('stage'));C.drawPoster($('poster'));titleStats();preferences();
+ new ResizeObserver(()=>{if(screen==='play'){art.resize();window.scrollTo(0,0);}}).observe($('stage'));C.drawPoster($('poster'));titleStats();preferences();
  function frame(now){const dt=Math.min(.1,(now-(last||now))/1000);last=now;if(screen==='play'&&game){if(!paused){acc+=dt;for(let steps=0;acc>=C.DT&&steps<6;steps++){game.step(input.consume());events();acc-=C.DT;}visualTime+=dt;if(game.phase==='won'){winDelay+=dt;if(winDelay>.75)result();}}art.draw(game,visualTime,effects);hudTime+=dt;if(hudTime>.08){hud();hudTime=0;}}requestAnimationFrame(frame);}requestAnimationFrame(frame);
 })();

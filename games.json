@@ -4,7 +4,7 @@
     "summary": "One kitchen. Three teams. Bring your friends.",
     "description": "Play a five-minute Rat vs Cat vs Dog chase with up to 15 players across browser and Android. Join a lobby, choose your role and invite friends; bots fill empty spaces.",
     "thumbnail": "bck_img/chase-mascots.webp", "launch": "chase",
-    "controls": [{"label":"Move & aim", "text":"Hold WASD or arrow keys to move and use the mouse to aim. On touch screens, drag the joystick."}, {"label":"Abilities", "text":"Hold Space / E for ability 1 and Q for ability 2, or use the on-screen buttons. You can steer while using an ability."}]
+    "controls": [{"label":"Move & aim", "text":"Hold WASD or arrow keys to move and use the mouse to aim. On touch screens, drag the joystick."}, {"label":"Chase & score", "text":"Rats chase slowly drifting cheese. Each piece adds one point and one Cheese caught, and restores health. Cats earn five points per Rat caught; Dogs earn five per Cat caught."}, {"label":"Abilities", "text":"Hold Space / E for ability 1 and Q for ability 2, or use the on-screen buttons. You can steer while using an ability."}]
   },
   {
     "id": "arrow-catch", "title": "Trap Escape", "kind": "game", "mode": "Single player", "genres": ["Platformer", "Puzzle", "Action"], "characters": ["Rats", "Cats"],

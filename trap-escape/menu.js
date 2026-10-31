@@ -2,7 +2,7 @@
  'use strict';const T=window.TrapEscape,$=id=>document.getElementById(id),KEY='trap-escape-save',SETTINGS='trap-escape-settings';
  let storageOK=true,raw={},settings={},stored=null;try{stored=localStorage.getItem(KEY);}catch{storageOK=false;}try{raw=JSON.parse(stored||'{}');}catch{raw={};}try{settings=JSON.parse(localStorage.getItem(SETTINGS)||'{}')||{};}catch{settings={};}
  const save=new T.EscapeSave(raw),audio=new T.EscapeAudio(),hud=new T.EscapeHUD(),art=new T.EscapeArt($('stage'));let game=null,screen='title',world=0,paused=false,resultShown=false,winDelay=0,last=0,acc=0,hudTime=0,visualTime=0,footTime=0,effects=settings.effects??!matchMedia('(prefers-reduced-motion: reduce)').matches;
- audio.enabled=settings.sound===true;
+ audio.enabled=settings.sound!==false;
  const input=new T.EscapeInput(()=>screen==='play'&&!paused&&!document.querySelector('dialog[open]'));
  function persist(){try{localStorage.setItem(KEY,JSON.stringify(save));storageOK=true;}catch{storageOK=false;}titleStats();}
  function prefs(){try{localStorage.setItem(SETTINGS,JSON.stringify({effects,sound:audio.enabled}));}catch{}for(const id of ['sound','help-sound']){$(id).textContent=audio.enabled?'Sound on':'Sound off';$(id).setAttribute('aria-pressed',String(audio.enabled));}$('effects').textContent=effects?'Effects on':'Effects off';$('effects').setAttribute('aria-pressed',String(effects));}
@@ -32,7 +32,7 @@
  let swipeStart=null,swipedAt=0;const inventory=$('inventory');inventory.addEventListener('pointerdown',e=>{swipeStart={x:e.clientX,y:e.clientY};});inventory.addEventListener('pointerup',e=>{if(swipeStart&&Math.abs(e.clientX-swipeStart.x)>30&&Math.abs(e.clientX-swipeStart.x)>Math.abs(e.clientY-swipeStart.y)&&screen==='play'&&!paused){input.pending.cycle=true;swipedAt=performance.now();}swipeStart=null;});inventory.addEventListener('pointercancel',()=>swipeStart=null);
  document.querySelectorAll('[data-slot]').forEach(b=>{b.onclick=()=>{if(!game||screen!=='play'||paused||performance.now()-swipedAt<250)return;const i=Number(b.dataset.slot);if(!game.inventory[i])return;if(i===game.selected)input.pending.drop=true;else game.selected=i;hud.update(game);};});
  for(const [type,spec]of Object.entries({...T.MACHINERY,...T.ITEMS,...T.ENVIRONMENT})){const box=make('div'),canvas=make('canvas'),text=make('span',`${spec.name} · ${(spec.stun/60).toFixed(1)}s`);canvas.width=60;canvas.height=60;T.trapIcon(canvas.getContext('2d'),type,30,32,38);if(spec.hint)box.title=spec.hint;box.append(canvas,text);$('trap-guide').append(box);}
- new ResizeObserver(()=>{if(screen==='play'){art.resize();input.reset();window.scrollTo(0,0);}}).observe($('stage'));T.drawPoster($('poster'));titleStats();prefs();
+ new ResizeObserver(()=>{if(screen==='play'){art.resize();window.scrollTo(0,0);}}).observe($('stage'));T.drawPoster($('poster'));titleStats();prefs();
  function frame(now){const dt=Math.min(.1,(now-(last||now))/1000);last=now;if(screen==='play'&&game){if(!paused){acc+=dt;let steps=0;while(acc>=T.RULES.dt&&steps<6){game.step(input.consume());events();acc-=T.RULES.dt;steps++;}if(game.phase==='won'){winDelay+=dt;if(winDelay>.9)result();}visualTime+=dt;if(audio.enabled&&game.player.grounded&&Math.abs(game.player.vx)>80&&game.phase==='playing'){footTime+=dt;if(footTime>.22){audio.tone(90,.025,'triangle',.012);footTime=0;}}}art.draw(game,visualTime,effects);hudTime+=dt;if(hudTime>.08){hud.update(game);hudTime=0;}}
   requestAnimationFrame(frame);
  }requestAnimationFrame(frame);

@@ -194,7 +194,6 @@
     $('start-game').focus({preventScroll: true});
   }
   function fit() {
-    clearInput();
     if (screen === 'board') {
       const box = $('board-wrap').getBoundingClientRect(), size = Math.max(1, Math.min(box.width, box.height));
       $('board-canvas').style.width = `${size}px`; $('board-canvas').style.height = `${size}px`;
