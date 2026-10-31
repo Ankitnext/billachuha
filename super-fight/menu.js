@@ -4,7 +4,7 @@
   let match=null,preview=null,last=0,accumulator=0,hudAt=0,inBattle=false;
   let motion=!matchMedia('(prefers-reduced-motion: reduce)').matches;
   const audio=new S.FightAudio(),hud=new S.FightHUD(),camera=new S.FightCamera(),previewCamera=new S.FightCamera();
-  const modal=()=>!!document.querySelector('dialog[open]'),paused=()=>document.hidden||modal();
+  const modal=()=>!!document.querySelector('dialog[open],.native-game-menu[open]'),paused=()=>document.hidden||modal();
   const input=new S.FightInput({enabled:()=>inBattle&&!!match&&!paused()&&['intro','fight'].includes(match.phase),onPause:()=>pause(),onCancel:id=>{if(Number.isInteger(id)&&match)S.cancelCharge(match.fighters[id]);else match?.clearControls();audio.silence();}});
   function options(){return{mode:document.querySelector('[name="mode"]:checked').value,characters:[$('character-one').value,$('character-two').value],difficulty:$('difficulty').value,level:profile.player('super-fight',$('player-name-one').value).stage,seed:crypto.getRandomValues(new Uint32Array(1))[0]};}
   function choices(){

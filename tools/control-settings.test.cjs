@@ -32,3 +32,12 @@ test('local and embedded settings assets match across checkout line endings',()=
   const source=file=>fs.readFileSync(file,'utf8').replace(/\r\n/g,'\n');
   for(const file of ['control-settings.js','control-settings.css'])assert.equal(source(path.resolve(__dirname,'..',file)),source(path.join(backend,file)));
 });
+test('native overlay defaults keep touch controls separate and leave the middle clear',()=>{
+  const online=[{id:'move',stick:true},...Array.from({length:9},(_,i)=>({id:'action-'+i}))];
+  const local=[0,1].flatMap(group=>[{id:'stick-'+group,stick:true,group},...Array.from({length:4},(_,i)=>({id:group+'-'+i,group}))]);
+  for(const bounds of [{width:544,height:184},{width:820,height:254},{width:366,height:708}])for(const controls of [online,local]){
+    const layout=C.overlayHud(controls,bounds);
+    assert.equal(C.hudOverlaps(layout,controls,bounds),false);
+    for(const item of controls){const b=C.box(layout[item.id],item,bounds);assert.ok(b.size>=42);assert.ok(b.left>=0&&b.top>=0&&b.left+b.size<=bounds.width+.01&&b.top+b.size<=bounds.height+.01);if(bounds.width>bounds.height)assert.ok(b.left+b.size<bounds.width*.42||b.left>bounds.width*.58,'landscape middle stays clear');else assert.ok(b.top>bounds.height*.5,'portrait upper play area stays clear');}
+  }
+});

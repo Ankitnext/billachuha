@@ -56,6 +56,7 @@
   }
 
  const controlSettings=window.ControlSettings?.create({key:'snake-ladder.controls.v1',title:'Snake & Ladder',
+ overlayHud:!!window.BILLACHUHA_CONFIG?.offline,
  actions:[{id:'a',label:'Move left',codes:['KeyA','ArrowLeft']},{id:'d',label:'Move right',codes:['KeyD','ArrowRight']},{id:'w',label:'Jump',codes:['KeyW','ArrowUp','Space']},{id:'e',label:'Role ability',codes:['KeyE']},{id:'f',label:'Dog fire',codes:['KeyF']},{id:'p',label:'Pause',codes:['KeyP']},{id:'r',label:'Roll dice',codes:['KeyR']},{id:'enter',label:'Continue / Play move',codes:['Enter']}],
  hud:[{id:'joystick-container',label:'Move',stick:true},{id:'jump-button',label:'Jump'},{id:'ability-button',label:'Ability'}],
  note:'Settings apply to every player taking a turn. The adventure pauses while settings are open.',onOpen:clearInput,onClose:clearInput,onRelease:clearInput
@@ -63,7 +64,7 @@
  $('edit-hud').addEventListener('click',()=>controlSettings?.open('hud'));
  $('edit-keys').addEventListener('click',()=>controlSettings?.open('keys'));
 
-  const modalOpen = () => !!document.querySelector('dialog[open]');
+  const modalOpen = () => !!document.querySelector('dialog[open],.native-game-menu[open]');
   const active = () => game && game.phase !== 'finished';
   function openDialog(id) {
     if ($(id).open) return;

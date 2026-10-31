@@ -62,6 +62,21 @@
     }
     return best;
   }
+  function overlayHud(controls, bounds) {
+    const out={}, groups=[...new Set(controls.map(c=>c.group??0))], paired=groups.length>1;
+    const put=(item,left,top,size)=>{const c={x:0,y:0,size,opacity:.55},b=box(c,item,bounds);c.x=clamp(left/Math.max(1,bounds.width-b.size),0,1);c.y=clamp(top/Math.max(1,bounds.height-b.size),0,1);out[item.id]=c;};
+    for(const group of groups){
+      const items=controls.filter(c=>(c.group??0)===group),stick=items.find(c=>c.stick),buttons=items.filter(c=>!c.stick);
+      const gap=8,buttonSize=clamp(Math.min(bounds.width/(paired?7:7),bounds.height/(paired?5:4)),42,52),size=buttonSize/56*100;
+      const cols=paired?2:Math.min(3,Math.max(1,buttons.length)),rows=Math.ceil(buttons.length/cols),band=cols*buttonSize+(cols-1)*gap;
+      const right=paired&&group===groups[1],stickSize=Math.min(86,bounds.width/(paired?4:3),bounds.height/2);
+      if(stick)put(stick,right?bounds.width-stickSize:0,bounds.height-stickSize,stickSize/86*100);
+      const startX=paired?(right?bounds.width-band:0):bounds.width-band;
+      const startY=bounds.height-(rows*buttonSize+(rows-1)*gap)-(paired?stickSize+gap:0);
+      buttons.forEach((item,i)=>put(item,startX+(i%cols)*(buttonSize+gap),startY+Math.floor(i/cols)*(buttonSize+gap),size));
+    }
+    return out;
+  }
   function create(options) {
     const actions = options.actions, controls = options.hud || [];
     let stored; try { stored = JSON.parse(localStorage.getItem(options.key)); } catch (_) {}
@@ -70,6 +85,9 @@
     };
     let draft, hudDraft, mode, waiting = null, selection, dragging = null, previousFocus;
     const physical = new Set();
+    const overlay=!!options.overlayHud,activeControls=()=>controls.filter(c=>!options.hudVisible||options.hudVisible(c));
+    let profile=options.hudProfile?.()||'default';const profiles=stored?.hudProfiles&&typeof stored.hudProfiles==='object'&&!Array.isArray(stored.hudProfiles)?{...stored.hudProfiles}:{};
+    if(profiles[profile])for(const direction of ['portrait','landscape'])layouts[direction]=normalizeHud(profiles[profile][direction],controls);
     const dialog = document.createElement('dialog'); dialog.className = 'control-settings';
     dialog.setAttribute('aria-label', `${options.title} controls`);
     dialog.innerHTML = '<div class="cs-header"><h2></h2><button type="button" data-close aria-label="Close control settings">Close</button></div><div class="cs-tabs"><button type="button" data-tab="keys">Choose keys</button><button type="button" data-tab="hud">Customize HUD</button></div><p class="cs-note"></p><div class="cs-keys"></div><div class="cs-hud" hidden><div class="cs-tools"><label>Control <select data-select></select></label><label>Size <input data-size type="range" min="60" max="140" step="5"></label><label>Opacity <input data-opacity type="range" min="35" max="100" step="5"></label></div><div class="cs-preview" aria-label="Drag controls to move them"></div></div><p class="cs-status" role="status" aria-live="polite"></p><div class="cs-footer"><button type="button" data-reset>Reset defaults</button><button type="button" data-cancel>Cancel</button><button type="button" data-save>Save</button></div>';
@@ -78,7 +96,7 @@
     find('.cs-note').textContent = options.note || 'Settings stay on this browser. Drag touch controls or choose the keys for each action.';
     find('[data-tab="hud"]').hidden = !controls.length;
     document.body.append(dialog);
-    const safeArea=document.createElement('div');safeArea.className='cs-safe-area';safeArea.setAttribute('aria-hidden','true');document.body.append(safeArea);
+    const safeArea=document.createElement('div');safeArea.className='cs-safe-area'+(overlay?' cs-overlay-safe-area':'');safeArea.setAttribute('aria-hidden','true');document.body.append(safeArea);
     const orientation = () => innerWidth > innerHeight ? 'landscape' : 'portrait';
     // Mobile browser bars resize the viewport while fingers are still held.
     let viewportOrientation = orientation();
@@ -88,17 +106,29 @@
     }
     const originals = new Map();
     function apply() {
-      const layout = layouts[orientation()], bounds = actualBounds();
+      const next=options.hudProfile?.()||'default';if(next!==profile){profiles[profile]={...layouts};profile=next;for(const direction of ['portrait','landscape'])layouts[direction]=normalizeHud(profiles[profile]?.[direction],controls);}
+      const bounds=actualBounds(),layout=layoutForView();
       for (const item of controls) {
         const node = document.getElementById(item.id); if (!node) continue;
+        if(overlay)node.classList.add('cs-game-control');
         if (!originals.has(node)) originals.set(node, node.getAttribute('style'));
         if (!layout) { const old = originals.get(node); if (old === null) node.removeAttribute('style'); else node.setAttribute('style', old); continue; }
-        const c = layout[item.id], b = box(c,item,bounds);
+        const c = layout[item.id];if(!c)continue;const b = box(c,item,bounds);
         for (const [name,value] of Object.entries({position:'fixed',left:`${bounds.left+b.left}px`,top:`${bounds.top+b.top}px`,right:'auto',bottom:'auto',width:`${b.size}px`,height:`${b.size}px`,'min-width':'0','min-height':'0','max-width':'none','max-height':'none',margin:'0',opacity:String(c.opacity),'z-index':'20'})) node.style.setProperty(name,value,'important');
       }
     }
     function defaults() {
-      return defaultHud(controls,actualBounds());
+      if(!overlay)return defaultHud(controls,actualBounds());
+      const active=activeControls(),result=overlayHud(active,actualBounds());
+      for(const item of controls)result[item.id]??={x:0,y:1,size:100,opacity:.55};
+      return result;
+    }
+    function layoutForView(){
+      const layout=layouts[orientation()]||(overlay?defaults():null);
+      if(!overlay||!hudOverlaps(layout,activeControls(),actualBounds()))return layout;
+      // Preserve the saved layout for a larger screen; reflow only this view.
+      const fitted=defaults();for(const item of controls)fitted[item.id].opacity=layout[item.id]?.opacity??fitted[item.id].opacity;
+      return fitted;
     }
     function status(text) { find('.cs-status').textContent = text; }
     function renderKeys(focusId) {
@@ -121,11 +151,14 @@
     function renderHud() {
       if (!hudDraft || !dialog.open || mode !== 'hud') return;
       const area=find('.cs-preview'), bounds=actualBounds();
-      const available=area.parentElement.clientWidth, scale=Math.min(available/bounds.width,innerHeight*.38/bounds.height);
+      if(overlay){const active=activeControls();for(const option of find('[data-select]').options)option.hidden=!active.some(c=>c.id===option.value);}
+      const available=area.parentElement.clientWidth, scale=overlay?1:Math.min(available/bounds.width,innerHeight*.38/bounds.height);
       area.style.width=`${bounds.width*scale}px`;area.style.height=`${bounds.height*scale}px`;
+      if(overlay){area.style.left=`${bounds.left}px`;area.style.top=`${bounds.top}px`;}
       area.dataset.scale=scale;
       for (const item of controls) {
         const node=area.querySelector(`[data-hud="${item.id}"]`), c=hudDraft[item.id], b=box(c,item,bounds);
+        node.hidden=overlay&&!activeControls().includes(item);
         Object.assign(node.style,{left:`${b.left*scale}px`,top:`${b.top*scale}px`,width:`${b.size*scale}px`,height:`${b.size*scale}px`,opacity:c.opacity});
         node.classList.toggle('selected',selection===item.id);
       }
@@ -143,18 +176,20 @@
     }
     function setMode(next) {
       mode=next;waiting=null;find('.cs-keys').hidden=mode!=='keys';find('.cs-hud').hidden=mode!=='hud';
+      dialog.classList.toggle('cs-overlay-editor',overlay&&mode==='hud');document.body.classList.toggle('cs-overlay-editing',overlay&&mode==='hud');
       for(const tab of dialog.querySelectorAll('[data-tab]'))tab.setAttribute('aria-pressed',String(tab.dataset.tab===mode));
-      status(mode==='keys'?'Click an action, then press its new key. Each key can control one action. Escape is reserved for closing menus.':'Drag controls in the preview. This layout is saved for the current screen orientation.');
+      status(mode==='keys'?'Click an action, then press its new key. Each key can control one action. Escape is reserved for closing menus.':overlay?'Drag controls on the screen. Save keeps this orientation’s layout.':'Drag controls in the preview. This layout is saved for the current screen orientation.');
       renderKeys();renderHud();
     }
     function open(tab='keys') {
       if(dialog.open)return;
+      apply();
       previousFocus=document.activeElement;physical.clear();resetHud=false;hudDirty=false;options.onOpen?.();
-      draft=normalize(saved,actions);editingOrientation=orientation();hudDraft=structuredClone(layouts[editingOrientation]||defaults());
-      dialog.showModal();setMode(tab);if(controls.length)choose(controls[0].id);
+      draft=normalize(saved,actions);editingOrientation=orientation();hudDraft=structuredClone(layoutForView()||defaults());
+      dialog.showModal();setMode(tab);if(controls.length)choose(activeControls()[0]?.id||controls[0].id);
     }
     function close() { dialog.close(); }
-    dialog.addEventListener('close',()=>{waiting=null;dragging=null;physical.clear();options.onClose?.();if(previousFocus?.isConnected)previousFocus.focus({preventScroll:true});});
+    dialog.addEventListener('close',()=>{if(dialog.open)return;document.body.classList.remove('cs-overlay-editing');waiting=null;dragging=null;physical.clear();options.onClose?.();if(previousFocus?.isConnected)previousFocus.focus({preventScroll:true});});
     dialog.addEventListener('cancel',event=>{if(waiting){event.preventDefault();waiting=null;renderKeys();status('Key change cancelled.');}});
     dialog.addEventListener('keydown',event=>{
       event.stopPropagation();
@@ -177,14 +212,15 @@
       const nextLayouts={...layouts};
       if(hudDirty) {
         if(!resetHud) {
-          if(hudOverlaps(hudDraft,controls,actualBounds())){status('Some controls overlap. Move them apart or reduce their size before saving.');return;}
+          if(hudOverlaps(hudDraft,overlay?activeControls():controls,actualBounds())){status('Some controls overlap. Move them apart or reduce their size before saving.');return;}
         }
         nextLayouts[editingOrientation]=resetHud?null:normalizeHud(hudDraft,controls);
       }
-      try{localStorage.setItem(options.key,JSON.stringify({...draft,layouts:nextLayouts}));}catch(_){status('Browser storage is unavailable. Settings could not be saved.');return;}
+      profiles[profile]=nextLayouts;
+      try{localStorage.setItem(options.key,JSON.stringify({...draft,layouts:nextLayouts,hudProfiles:profiles}));}catch(_){status('Browser storage is unavailable. Settings could not be saved.');return;}
       saved=normalize(draft,actions);layouts=nextLayouts;resetHud=false;apply();close();
     };
-    window.addEventListener('resize',()=>{const next=orientation();if(next!==viewportOrientation){physical.clear();options.onRelease?.();}viewportOrientation=next;apply();if(dialog.open&&editingOrientation!==next){editingOrientation=next;hudDraft=structuredClone(layouts[editingOrientation]||defaults());resetHud=false;hudDirty=false;if(controls.length)choose(selection);status('Screen rotated. Editing the layout for this orientation.');}renderHud();});
+    window.addEventListener('resize',()=>{const next=orientation();if(next!==viewportOrientation){physical.clear();options.onRelease?.();}viewportOrientation=next;apply();if(dialog.open&&editingOrientation!==next){editingOrientation=next;hudDraft=structuredClone(layoutForView()||defaults());resetHud=false;hudDirty=false;if(controls.length)choose(selection);status('Screen rotated. Editing the layout for this orientation.');}renderHud();});
     window.addEventListener('blur',()=>physical.clear());
     document.addEventListener('visibilitychange',()=>{if(document.hidden)physical.clear();});
     apply();
@@ -195,5 +231,5 @@
       release(){physical.clear();}, refresh:apply
     };
   }
-  return {create,normalize,normalizeHud,box,defaultHud,hudOverlaps,keyLabel,validCode};
+  return {create,normalize,normalizeHud,box,defaultHud,overlayHud,hudOverlaps,keyLabel,validCode};
 });

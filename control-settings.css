@@ -8,3 +8,29 @@
 @media(max-width:650px){.arcade-toolbar .toolbar-actions{max-width:62vw;overflow-x:auto;flex-shrink:0}.arcade-toolbar .toolbar-actions button{white-space:nowrap}.arcade-toolbar .arcade-title{min-width:0;font-size:10px}.arcade-toolbar .arcade-credit{display:none}}
 
 .cs-safe-area{position:fixed;left:max(12px,env(safe-area-inset-left),var(--native-safe-left,0px));right:max(12px,env(safe-area-inset-right),var(--native-safe-right,0px));top:max(clamp(96px,30vh,140px),calc(env(safe-area-inset-top) + 96px));bottom:max(20px,env(safe-area-inset-bottom),var(--native-safe-bottom,0px));visibility:hidden;pointer-events:none}
+
+/* Native multiplayer edits controls at their real size over the game. */
+.cs-overlay-safe-area{top:max(120px,calc(var(--native-safe-top,0px) + 120px));bottom:max(16px,env(safe-area-inset-bottom),var(--native-safe-bottom,0px))}
+.control-settings.cs-overlay-editor{position:fixed;inset:0;width:100%;height:100%;max-width:none;max-height:none;margin:0;padding:0;border:0;border-radius:0;background:transparent;overflow:hidden}
+.cs-overlay-editor::backdrop{background:#04100d80}
+.cs-overlay-editor::before{content:'';position:absolute;inset:0 0 auto;height:calc(max(8px,var(--native-safe-top,0px)) + 112px);background:#10231ff5;pointer-events:none}
+.cs-overlay-editor .cs-header{z-index:3}
+.cs-overlay-editor .cs-preview{z-index:1}
+.cs-overlay-editing:not(.is-playing)>main,.cs-overlay-editing:not(.is-playing)>header,.cs-overlay-editing:not(.is-playing)>footer{visibility:hidden}
+.cs-overlay-editor .cs-header{position:absolute;top:max(8px,var(--native-safe-top,0px));left:max(12px,var(--native-safe-left,0px));right:max(12px,var(--native-safe-right,0px));height:38px;padding:6px 0;pointer-events:none}
+.cs-overlay-editor .cs-header h2{font-size:14px;max-width:calc(100% - 225px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cs-overlay-editor [data-close],.cs-overlay-editor .cs-tabs,.cs-overlay-editor .cs-note{display:none}
+.cs-overlay-editor .cs-footer{position:absolute;z-index:3;right:max(12px,var(--native-safe-right,0px));top:max(8px,var(--native-safe-top,0px));gap:5px;flex-wrap:nowrap}
+.cs-overlay-editor .cs-footer button{min-height:36px;margin:0;padding:6px 9px;font-size:11px}
+.cs-overlay-editor .cs-tools{position:absolute;z-index:3;top:calc(max(8px,var(--native-safe-top,0px)) + 43px);left:max(12px,var(--native-safe-left,0px));right:max(12px,var(--native-safe-right,0px));margin:0;padding:5px 8px;background:#10231fe8;border:1px solid #ffffff30;border-radius:8px;flex-wrap:nowrap;gap:12px}
+.cs-overlay-editor .cs-tools label{font-size:11px;min-width:0;gap:5px}.cs-overlay-editor .cs-tools input{width:70px;height:26px;min-width:40px;margin:0}.cs-overlay-editor .cs-tools select{width:135px;min-width:55px;min-height:28px;font-size:11px;padding:3px}
+.cs-overlay-editor .cs-status{position:absolute;z-index:3;left:max(12px,var(--native-safe-left,0px));top:calc(max(8px,var(--native-safe-top,0px)) + 84px);right:12px;margin:0;padding:3px 6px;font-size:10px;min-height:0;pointer-events:none;text-shadow:0 1px 3px #000}
+.cs-overlay-editor .cs-preview{position:absolute;margin:0;border:0;border-radius:0;background:transparent;overflow:visible}
+.cs-overlay-editor .cs-preview button{border:2px solid #ffffff80;background:#ffffff25;color:#fff;border-radius:50%;font-size:10px;text-shadow:0 1px 3px #000;padding:3px}
+.cs-overlay-editor .cs-preview button.selected{outline:3px solid #e5ffac;outline-offset:2px;opacity:1!important}
+.cs-overlay-editing .cs-game-control{visibility:hidden!important}
+.native-game-menu{position:relative;color:#f0f5e9;font:12px/1.4 system-ui,sans-serif;z-index:40}
+.native-game-menu>summary{list-style:none;cursor:pointer;padding:8px 12px;min-height:36px;border:1px solid #ffffff50;border-radius:8px;background:#10231fbf;white-space:nowrap}.native-game-menu>summary::-webkit-details-marker{display:none}
+.native-game-menu>div{position:absolute;right:0;top:calc(100% + 5px);width:180px;max-height:calc(100dvh - 100px);overflow:auto;padding:8px;display:grid;gap:5px;background:#10231ff5;border:1px solid #ffffff50;border-radius:10px;box-shadow:0 8px 30px #0008}
+.native-game-menu>div button,.native-game-menu>div a{display:block!important;width:100%;min-height:40px!important;margin:0!important;padding:9px!important;white-space:normal;text-align:left;text-decoration:none;font-size:12px!important;background:#203e36!important;border:1px solid #ffffff30!important;border-radius:6px!important;color:#fff!important}
+@media(max-width:420px){.cs-overlay-editor .cs-header h2{font-size:11px;max-width:calc(100% - 195px)}.cs-overlay-editor .cs-footer button{padding:6px;font-size:10px}.cs-overlay-editor .cs-tools{gap:6px;padding:5px}.cs-overlay-editor .cs-tools label{font-size:10px}.cs-overlay-editor .cs-tools select{width:90px}.cs-overlay-editor .cs-tools input{width:55px}}

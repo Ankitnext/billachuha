@@ -6,8 +6,9 @@
       this.enabled=enabled;this.onCancel=onCancel;this.keys=new Set();this.touch=[{},{}];this.latch=[{},{}];this.axes=[{x:0,y:0},{x:0,y:0}];this.dashes=[{x:0,y:0},{x:0,y:0}];this.lastTap=[{},{}];this.sticks=[];
 
  this.settings=window.ControlSettings?.create({key:'super-fight.controls.v1',title:'Super Fighting Arena',
+ overlayHud:!!window.BILLACHUHA_CONFIG?.offline,hudProfile:()=>document.querySelector('[name="mode"]:checked')?.value||'solo',hudVisible:item=>item.group!==1||document.querySelector('[name="mode"]:checked')?.value==='local',
  actions:[...maps.flatMap((map,id)=>Object.entries(map).map(([action,code])=>({id:code,label:'Player '+(id+1)+' · '+({up:'Jump / Fly',down:'Fast fall',left:'Left',right:'Right',attack:'Attack',sp1:'Special 1',sp2:'Special 2',block:'Block'}[action]),codes:[code]}))),{id:'pause',label:'Pause',codes:['KeyP']}],
- hud:[...['one','two'].map((name,id)=>({id:'stick-'+name,label:'P'+(id+1)+' Move',stick:true})),...Array.from(document.querySelectorAll('[data-player][data-action]')).map(button=>{button.id='fight-'+button.dataset.player+'-'+button.dataset.action;return{id:button.id,label:'P'+(Number(button.dataset.player)+1)+' '+button.dataset.action};})],
+ hud:[...['one','two'].map((name,id)=>({id:'stick-'+name,label:'P'+(id+1)+' Move',stick:true,group:id})),...Array.from(document.querySelectorAll('[data-player][data-action]')).map(button=>{button.id='fight-'+button.dataset.player+'-'+button.dataset.action;return{id:button.id,label:'P'+(Number(button.dataset.player)+1)+' '+button.dataset.action,group:Number(button.dataset.player)};})],
  note:'Both players share this keyboard. Each key can control one action. Combat pauses while settings are open.',
  onOpen:()=>this.reset(),onClose:()=>this.reset(),onRelease:()=>this.reset()
  });
