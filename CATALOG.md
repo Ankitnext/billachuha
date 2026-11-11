@@ -45,3 +45,11 @@ Run `node tools/render-catalog.mjs --check`, then `node tools/check-catalog.cjs`
 Screenshots are saved under ignored `tools/screenshots/catalog/`. Numbers shown there come from a test fixture. The backend's existing retention and Sprint 4 browser checks also cover the moved Chase introduction and ongoing invitation/share/tutorial flows.
 
 No APK, website package, push, live database change or deployment was performed for this update.
+
+## Play categories
+
+Every game has one exclusive category: Solo, Multiplayer, or Solo & Multiplayer. `games.json` stores `category` (`solo`, `multiplayer`, `mixed`) and `playModes` (`solo`, `local`, `online`) explicitly. The homepage filters by category; character and genre search still works. Snake & Ladder and Super Fighting Arena each have one card, with all supported modes in their game menu. Keep the existing IDs and URLs so saves and links continue working.
+
+Android uses `GameCatalog.kt` for the same one-game-per-entry structure. Long Run is Solo; Chase, Zombie Horde and Arena Blitz are Multiplayer; Snake & Ladder and Super Fighting Arena are Solo & Multiplayer. Selecting a mixed game opens its Solo / Local / Online chooser. The HUD picker uses the same entries. Transport IDs in MultiplayerGame remain internal launch routes. Local selections pass a validated mode to the bundled page; online selections retain native sign-in and the shared backend.
+
+Run `node tools/check-library.cjs` for category/search/reload, unique cards, responsive layouts and mode launches in website/Android source assets. Native GameCatalogTest covers the category and mode route invariants when Android tests are authorized. This source update does not build an APK or deploy changes.

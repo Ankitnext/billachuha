@@ -13,7 +13,7 @@
   function updateLocation(){const url=new URL(location.href);for(const name of ['q','category'])url.searchParams.delete(name);if(search.value.trim())url.searchParams.set('q',search.value.trim());if(category!=='all')url.searchParams.set('category',category);history.replaceState(null,'',url);}
   function render(updateURL=true){
     const words=search.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
-    const matches=cards.filter(card=>(category==='all'||card.dataset.tags.split('|').includes(category))&&words.every(word=>card.dataset.search.includes(word)));
+    const matches=cards.filter(card=>(category==='all'||card.dataset.playCategory===category)&&words.every(word=>card.dataset.search.includes(word)));
     const visible=new Set(matches.slice(0,limit));for(const card of cards)card.hidden=!visible.has(card);
     for(const button of filters)button.setAttribute('aria-pressed',String(button.dataset.category===category));
     count.textContent=`Showing ${Math.min(limit,matches.length)} of ${matches.length} ${category==='demos'?'demos':'games & demos'}`;

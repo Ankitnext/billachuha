@@ -11,3 +11,7 @@ dialog{background:#1c353f;color:var(--ink);border:1px solid #7b9b7a;border-radiu
 .select-row input{font:inherit;min-width:0;min-height:39px;background:#172e37;color:#e6ecd7;border:1px solid #52706a;border-radius:7px;width:100%;padding:7px}#competition-result{font-size:12px;line-height:1.6}
 /* Customized controls must not determine the landscape arena row height. */
 @media(orientation:landscape){.fight-layout,.fight-layout.local{grid-template-rows:minmax(0,1fr)}}
+
+.online-connection{font-size:11px;color:#c7dfcd;text-align:center}#online-panel{padding:12px;border:1px solid #6c9b8c;border-radius:8px}#online-login-form{display:grid;gap:12px}#online-login-form label{display:grid;gap:6px}#online-login-form input{min-height:40px}#online-login-dialog a{display:block;margin:16px 0}
+
+@media(max-width:700px){.super-shell .arcade-toolbar{min-width:0}.super-shell .toolbar-actions{max-width:62vw;overflow-x:auto;flex-wrap:nowrap}.super-shell .toolbar-actions>*{flex-shrink:0}.super-shell .arcade-title{min-width:45px}.online-connection{font-size:9px}}

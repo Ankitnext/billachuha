@@ -2,7 +2,7 @@
 ((root,factory)=>{const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.Competitive=api;})(globalThis,()=>{
  'use strict';
  const KEY='billachuha.competition.v1',localGames=['super-fight','sword-arena','moving-stairs'];
- const games=[['chase','Chase',true],['zombie-horde','Zombie Horde',true],['capture-zone','Capture the Zone',true],['arena-blitz','Arena Blitz',true],['super-fight','Super Fighting Arena',false],['sword-arena','Original Sword Arena',false],['moving-stairs','Snake & Ladder',false]].map(([id,name,verified])=>({id,name,verified,teams:verified}));
+ const games=[['chase','Chase',true],['zombie-horde','Zombie Horde',true],['capture-zone','Capture the Zone',true],['arena-blitz','Arena Blitz',true],['super-fight','Super Fighting Arena',false],['sword-arena','Original Sword Arena',false],['moving-stairs','Snake & Ladder',false],['snake-ladder-online','Snake & Ladder Online',true,false]].map(([id,name,verified,teams=verified])=>({id,name,verified,teams}));
  const integer=(n,max=1000000)=>Math.max(0,Math.min(max,Number.isFinite(n)?Math.floor(n):0));
  const name=n=>String(n||'Player').normalize('NFKC').trim().slice(0,24)||'Player';
  const level=xp=>Math.min(50,1+Math.floor(Math.sqrt(integer(xp,1e9)/100)));
@@ -28,7 +28,7 @@
  function save(profile,storage){try{storage??=globalThis.localStorage;storage.setItem(KEY,JSON.stringify(profile));return true;}catch{return false;}}
  function id(){return globalThis.crypto?.randomUUID?.()||Date.now().toString(36)+'-'+Math.random().toString(36).slice(2)+'-match';}
  function base(){return String(globalThis.BILLACHUHA_CONFIG?.backendUrl||globalThis.location?.origin||'').replace(/\/$/,'');}
- async function api(route,body){const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),8000);try{const response=await fetch(base()+route,{signal:controller.signal,credentials:'include',headers:{'X-Chase-Web':'1',...(body?{'Content-Type':'application/json'}:{})},...(body?{method:'POST',body:JSON.stringify(body)}:{})});let data;try{data=await response.json();}catch{throw Error('Rankings are unavailable. Local results are saved.');}if(!response.ok){const error=Error(data.error?.message||'Sign in to sync local results.');error.status=response.status;throw error;}return data;}finally{clearTimeout(timer);}}
+ async function api(route,body){const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),8000);try{const response=await fetch(base()+route,{signal:controller.signal,credentials:'include',headers:{[globalThis.BILLACHUHA_CONFIG?.appMode?'X-Chase-App':'X-Chase-Web']:'1',...(body?{'Content-Type':'application/json'}:{})},...(body?{method:'POST',body:JSON.stringify(body)}:{})});let data;try{data=await response.json();}catch{throw Error('Rankings are unavailable. Local results are saved.');}if(!response.ok){const error=Error(data.error?.message||'Sign in to sync local results.');error.status=response.status;throw error;}return data;}finally{clearTimeout(timer);}}
  async function sync(result){const p=result.players[0];return api('/api/v1/competition/local',{id:result.id,game:result.game,level:result.challenge,score:integer(p.score),won:!!p.won});}
  function fightScore(match,index){const rounds=match.history.map(r=>r.stats[index]),damage=rounds.reduce((sum,r)=>sum+r.damage,0),combo=Math.max(0,...rounds.map(r=>r.maxCombo)),won=match.wins[index]>=2;
   const multiplier={easy:1,normal:1.2,hard:1.5,impossible:2}[match.difficulty]||1;

@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "badges": [
+    {"id":"first_finish","name":"First Steps","icon":"🏁","description":"Finish your first match.","stat":"matches","target":1,"rarity":"bronze"},
+    {"id":"first_win","name":"Victory Spark","icon":"⭐","description":"Win your first match.","stat":"wins","target":1,"rarity":"bronze"},
+    {"id":"ten_matches","name":"Game On","icon":"🎮","description":"Finish 10 matches.","stat":"matches","target":10,"rarity":"silver"},
+    {"id":"fifty_matches","name":"Arcade Veteran","icon":"🎖","description":"Finish 50 matches.","stat":"matches","target":50,"rarity":"gold"},
+    {"id":"ten_wins","name":"Champion","icon":"🏆","description":"Win 10 matches.","stat":"wins","target":10,"rarity":"gold"},
+    {"id":"explorer","name":"Trailblazer","icon":"🧭","description":"Finish matches in 3 different games.","stat":"games","target":3,"rarity":"silver"},
+    {"id":"thousand_xp","name":"Rising Star","icon":"✨","description":"Earn 1,000 match XP.","stat":"xp","target":1000,"rarity":"gold"},
+    {"id":"chase_win","name":"Chase Ace","icon":"🐭","description":"Win a Chase match.","stat":"chaseWins","target":1,"rarity":"silver"},
+    {"id":"horde_win","name":"Squad Hero","icon":"🛡","description":"Complete a Capture the Zone extraction.","stat":"captureWins","target":1,"rarity":"gold"},
+    {"id":"blitz_win","name":"Sky Champion","icon":"🚀","description":"Win an Arena Blitz match.","stat":"blitzWins","target":1,"rarity":"silver"},
+    {"id":"snake_win","name":"Top of the Board","icon":"🎲","description":"Win a Snake & Ladder race by reaching cell 100.","stat":"snakeWins","target":1,"rarity":"gold"},
+    {"id":"runner_1000","name":"Long Runner","icon":"⚡","description":"Reach a Long Run best score of 1,000.","stat":"runnerBest","target":1000,"rarity":"bronze"},
+    {"id":"runner_5000","name":"Run Legend","icon":"💎","description":"Reach a Long Run best score of 5,000.","stat":"runnerBest","target":5000,"rarity":"legendary"}
+  ],
+  "styles": [
+    {"id":"moss","name":"Moss","color":"#a3e635","required":0,"title":"New Challenger"},
+    {"id":"frost","name":"Frost","color":"#8edcff","required":3,"title":"Trailblazer"},
+    {"id":"amber","name":"Amber","color":"#ffd278","required":6,"title":"Arcade Champion"},
+    {"id":"aurora","name":"Aurora","color":"#d3b2ff","required":10,"title":"Arcade Legend"}
+  ]
+}

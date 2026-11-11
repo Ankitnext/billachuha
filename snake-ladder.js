@@ -1,7 +1,10 @@
 /* Moving Stairs: menus, local turns, accessible controls and optional score sync. */
 (() => {
   'use strict';
-  const Core = window.StairsGame, Art = window.StairsArt;
+  const Core = window.StairsGame, Art = window.StairsArt, View = window.StairsView;
+  const online = window.StairsOnline;
+  const camera = new View.Camera();
+  const boardView = {zoom:2,pan:{x:0,y:0},player:null,pointer:null};
   const competitive=window.Competitive,competitiveProfile=competitive.load();
   const $ = id => document.getElementById(id);
   const roles = {rat: '🐭', cat: '🐱', dog: '🐶'};
@@ -50,16 +53,17 @@
   const stairsSfx=window.GameAudio?.create({key:'snake-ladder.sound.v1'}).bind([$('sound')]);
   function beep(frequency=440){stairsSfx?.play(frequency>=800?'gem':frequency>=650?'round':frequency<300?'hurt':'pickup');}
   function clearInput() {
+    if(boardView.pointer!==null){const id=boardView.pointer;boardView.pointer=null;const canvas=$('board-canvas');if(canvas.hasPointerCapture(id))canvas.releasePointerCapture(id);}
     controlSettings?.release(); keys.clear(); held.clear(); joystick = 0; jumpPending = false; abilityPending = false;
     for (const button of document.querySelectorAll('[data-action]')) button.classList.remove('held');
     if (game?.stage) game.stage.jumpHeld = false;
   }
 
  const controlSettings=window.ControlSettings?.create({key:'snake-ladder.controls.v1',title:'Snake & Ladder',
- overlayHud:!!window.BILLACHUHA_CONFIG?.offline,
+ overlayHud:!!window.BILLACHUHA_CONFIG?.offline || !!online?.appMode,
  actions:[{id:'a',label:'Move left',codes:['KeyA','ArrowLeft']},{id:'d',label:'Move right',codes:['KeyD','ArrowRight']},{id:'w',label:'Jump',codes:['KeyW','ArrowUp','Space']},{id:'e',label:'Role ability',codes:['KeyE']},{id:'f',label:'Dog fire',codes:['KeyF']},{id:'p',label:'Pause',codes:['KeyP']},{id:'r',label:'Roll dice',codes:['KeyR']},{id:'enter',label:'Continue / Play move',codes:['Enter']}],
  hud:[{id:'joystick-container',label:'Move',stick:true},{id:'jump-button',label:'Jump'},{id:'ability-button',label:'Ability'}],
- note:'Settings apply to every player taking a turn. The adventure pauses while settings are open.',onOpen:clearInput,onClose:clearInput,onRelease:clearInput
+ note:online ? 'Your controls are released while settings are open. The online race keeps running.' : 'Settings apply to every player taking a turn. The adventure pauses while settings are open.',onOpen:clearInput,onClose:clearInput,onRelease:clearInput
  });
  $('edit-hud').addEventListener('click',()=>controlSettings?.open('hud'));
  $('edit-keys').addEventListener('click',()=>controlSettings?.open('keys'));
@@ -93,7 +97,9 @@
   }
   function renderBoard() {
     const p = game.player;
-    $('race-label').textContent = game.mode === 'solo' ? 'SOLO ADVENTURE · REACH 100' : `${game.players.length} PLAYERS · PASS & PLAY`;
+    const focus=`${game.current}:${p.cell}`;
+    if(boardView.player!==focus){boardView.pan={x:0,y:0};boardView.player=focus;}
+    $('race-label').textContent = game.mode === 'online' ? `${game.players.length} PLAYERS · ONLINE` : game.mode === 'solo' ? 'SOLO ADVENTURE · REACH 100' : `${game.players.length} PLAYERS · PASS & PLAY`;
     $('turn-title').textContent = `${p.name}’s turn · Cell ${p.cell}`;
     $('active-name').textContent = p.name; $('active-role').textContent = roles[p.role];
     $('active-cell').textContent = `${roleNames[p.role]} · Cell ${p.cell} / 100`;
@@ -112,12 +118,13 @@
     game.players.forEach((player, i) => {
       const row = document.createElement('div'); row.className = `standing${i === game.current ? ' active' : ''}`;
       const icon = document.createElement('span'); icon.className = 'standing-role'; icon.textContent = roles[player.role];
-      const name = document.createElement('strong'); name.textContent = player.name;
+      const name = document.createElement('strong'); name.textContent = `${i+1}. ${player.name}`;
       const cell = document.createElement('span'); cell.textContent = `${player.cell} / 100`;
-      const coins = document.createElement('small'); coins.textContent = player.skipNext ? 'Skip next turn' : `● ${player.coins}`;
+      const coins = document.createElement('small'); coins.textContent = player.left ? 'Left race' : player.skipNext ? 'Skip next turn' : `● ${player.coins}`;
       row.append(icon, name, cell, coins); $('standings').append(row);
     });
     setDice(game.dice); drawBoard($('board-canvas'));
+    updateBoardView();
   }
   function stageCopy() {
     const s = game.stage, a = game.action;
@@ -140,9 +147,15 @@
   }
   function renderResult() {
     const finished = game.phase === 'finished';
-    if(finished&&game.competitiveID&&!game.competitiveRecorded){const result={id:game.competitiveID,game:'moving-stairs',challenge:Math.max(1,Math.ceil(Math.max(...game.players.map(p=>p.cell))/25)),players:game.players.map((p,i)=>({name:p.name,score:game.score(p),won:game.winner===i}))};game.competitiveRecorded=true;if(competitiveProfile.record(result)){competitive.save(competitiveProfile);competitive.sync(result).catch(()=>{});}}
+    if(!finished)window.Rewards?.clear($('result-stats').parentElement);
+    if(finished&&game.competitiveID&&!game.competitiveRecorded){
+      const result={id:game.competitiveID,game:'moving-stairs',challenge:Math.max(1,Math.ceil(Math.max(...game.players.map(p=>p.cell))/25)),players:game.players.map((p,i)=>({name:p.name,score:game.score(p),won:game.winner===i}))};
+      const name=game.players[0].name,before=window.Rewards?.stats(competitiveProfile.entries,name);
+      game.competitiveRecorded=true;
+      if(competitiveProfile.record(result)){competitive.save(competitiveProfile);competitive.sync(result).catch(()=>{});window.Rewards?.localResult($('result-stats').parentElement,before,competitiveProfile,name,game.competitiveID);}
+    }
     if (finished) recordBest();
-    $('result-tag').textContent = finished ? (game.winner === null ? 'ADVENTURE COMPLETE' : 'ALL THE WAY TO 100') : `${{move: 'MOVE', ladder: 'LADDER', snake: 'SNAKE', boss: 'GUARDIAN'}[game.result.kind]} · ${game.result.success ? 'CLEARED' : 'TRY AGAIN NEXT TURN'}`;
+    $('result-tag').textContent = finished ? (game.mode === 'online' ? 'ONLINE RACE COMPLETE' : game.winner === null ? 'ADVENTURE COMPLETE' : 'ALL THE WAY TO 100') : `${{move: 'MOVE', ladder: 'LADDER', snake: 'SNAKE', boss: 'GUARDIAN'}[game.result.kind]} · ${game.result.success ? 'CLEARED' : 'TRY AGAIN NEXT TURN'}`;
     $('result-title').textContent = game.result.title;
     $('result-detail').textContent = game.result.detail;
     $('result-stats').replaceChildren();
@@ -167,6 +180,7 @@
     if (!game) return;
     $('clock').textContent = `◷ ${clock(game.mode === 'solo' ? game.limit - game.elapsed : game.elapsed)}`;
     $('race-coins').textContent = `● ${game.player.coins}`; $('race-score').textContent = `${game.score().toLocaleString()} pts`;
+    online?.decorate();
     if (!game.stage) return;
     const s = game.stage;
     $('stage-health').textContent = '♥'.repeat(s.player.hp) + '♡'.repeat(3 - s.player.hp) + (s.shield ? ' ◈' : '');
@@ -176,53 +190,68 @@
     $('ability-button').textContent = s.role === 'dog' ? 'FIRE · E' : s.elapsed < s.boostUntil ? 'BOOSTING' : s.elapsed < s.nextPower ? `BOOST · ${Math.ceil(s.nextPower - s.elapsed)}s` : 'BOOST · E';
   }
   function startRoll(reroll = false) {
+    if (online) { if (!modalOpen()) online.command(reroll ? 'reroll' : 'roll'); return; }
     if (!game || rolling || modalOpen() || (reroll ? game.phase !== 'rolled' || game.player.role !== 'dog' || game.player.rerolled : game.phase !== 'board')) return;
     const duration = matchMedia('(prefers-reduced-motion: reduce)').matches ? .15 : .85;
     rolling = {elapsed: 0, duration, value: 1 + Math.floor(game.random() * 6), reroll, pip: -1};
     $('dice').classList.add('is-rolling'); renderBoard(); beep(360);
   }
   function playMove() {
+    if (online) { if (!modalOpen()) online.command('play'); return; }
     if (game?.phase !== 'rolled' || rolling || modalOpen()) return;
     game.startStage(); renderState(); $('action-canvas').focus({preventScroll: true});
   }
   function nextTurn() {
+    if (online) { if (!modalOpen()) online.command('continue'); return; }
     if (game?.phase !== 'result' || modalOpen()) return;
     game.next(); renderState(); handoff();
   }
   function setup() {
+    if (online) { online.leave(); return; }
     for (const dialog of document.querySelectorAll('dialog[open]')) dialog.close();
     rolling = null; game = null; $('dice').classList.remove('is-rolling'); renderState(); bestCopy();
     $('start-game').focus({preventScroll: true});
   }
   function fit() {
     if (screen === 'board') {
-      const box = $('board-wrap').getBoundingClientRect(), size = Math.max(1, Math.min(box.width, box.height));
-      $('board-canvas').style.width = `${size}px`; $('board-canvas').style.height = `${size}px`;
+      const box = $('board-wrap').getBoundingClientRect(), canvas=$('board-canvas'),dpr=Math.min(2,devicePixelRatio||1);
+      canvas.width=Math.max(1,Math.round(box.width*dpr));canvas.height=Math.max(1,Math.round(box.height*dpr));
+      canvas.style.width=`${box.width}px`;canvas.style.height=`${box.height}px`;
+      updateBoardView();
     }
     if (screen !== 'action' || !game?.stage) return;
     const s = game.stage, box = $('action-viewport').getBoundingClientRect();
     const canvas = $('action-canvas');
     // Fit a following camera instead of shrinking the whole level into the viewport.
-    canvas.width = Math.min(s.width, Math.max(1, Math.round(box.width / .9)));
-    canvas.height = Math.min(s.height, Math.max(1, Math.round(box.height / .9)));
+    const view=View.viewSize(box.width,box.height,s.kind);
+    canvas.width=view.width;canvas.height=view.height;
     const scale = Math.min(box.width / canvas.width, box.height / canvas.height);
     $('action-screen').style.width = `${Math.floor(canvas.width * scale)}px`;
     $('action-screen').style.height = `${Math.floor(canvas.height * scale)}px`;
   }
   function drawBoard(canvas, now = performance.now() / 1000) {
     const preview = {players: [{name: 'Rat', role: 'rat', cell: 4}, {name: 'Cat', role: 'cat', cell: 31}, {name: 'Dog', role: 'dog', cell: 67}], current: 0};
-    Art.board(canvas.getContext('2d'), canvas.width, game || preview, now);
+    Art.board(canvas.getContext('2d'), canvas.width, game || preview, now,canvas.id==='board-canvas'?boardView:null);
   }
-  function drawStage(now) {
+  function drawStage(now,dt) {
     const s = game.stage, canvas = $('action-canvas');
-    const cam = {width: canvas.width, height: canvas.height,
-      x: clamp(s.player.x + s.player.w / 2 - canvas.width * (s.player.face > 0 ? .36 : .64), 0, Math.max(0, s.width - canvas.width)),
-      y: clamp(s.player.y - canvas.height * (s.kind === 'ladder' ? .63 : .52), 0, Math.max(0, s.height - canvas.height))};
+    const rect=canvas.getBoundingClientRect(),hud=$('action').querySelector('.stage-hud').getBoundingClientRect();
+    const top=Math.max(18,hud.bottom>rect.top&&hud.top<rect.bottom?hud.bottom-rect.top+14:18)*canvas.height/Math.max(1,rect.height);
+    const axis=Math.abs(joystick)>.12?joystick:(keys.has('d')||keys.has('arrowright')?1:0)-(keys.has('a')||keys.has('arrowleft')?1:0);
+    const cam=camera.update(s,canvas,dt,axis,{top,bottom:24*canvas.height/Math.max(1,rect.height),left:canvas.width*.16,right:canvas.width*.16});
     Art.stage(canvas.getContext('2d'), canvas, s, cam, now);
   }
   function frame(now) {
     const dt = Math.min(.1, Math.max(0, (now - (last || now)) / 1000)); last = now;
-    if (active() && !document.hidden && !modalOpen()) {
+    if (online) {
+      const enabled = active() && !document.hidden && !modalOpen();
+      const keyboardX = (keys.has('d') || keys.has('arrowright') ? 1 : 0) - (keys.has('a') || keys.has('arrowleft') ? 1 : 0);
+      online.input(enabled ? {x:Math.abs(joystick)>.12?joystick:keyboardX,
+        jump:jumpPending||held.has('jump')||keys.has('w')||keys.has('arrowup')||keys.has(' '),
+        ability:abilityPending||held.has('ability')||keys.has('e'),shoot:keys.has('f')} : {});
+      if (online.sent) { jumpPending=false; abilityPending=false; }
+    }
+    if (!online && active() && !document.hidden && !modalOpen()) {
       const phase = game.phase; game.tick(dt);
       if (game.phase === 'finished' && phase !== 'finished') { rolling = null; $('dice').classList.remove('is-rolling'); renderState(); }
       else if (rolling) {
@@ -248,7 +277,7 @@
         if (s.done) { game.complete(s.outcome); renderState(); }
       }
     }
-    if (screen === 'action' && game?.stage) drawStage(now / 1000);
+    if (screen === 'action' && game?.stage) drawStage(now / 1000,dt);
     if (now - lastBoard > 50) {
       lastBoard = now;
       const canvas = screen === 'setup' ? $('preview-board') : screen === 'board' ? $('board-canvas') : screen === 'result' ? $('result-board') : null;
@@ -321,6 +350,38 @@
     rolling = null; renderState(); handoff(); beep(500);
   });
   $('roll').onclick = () => startRoll(); $('reroll').onclick = () => startRoll(true);
+  function updateBoardView(){
+    if(game&&boardView.zoom>1){
+      const canvas=$('board-canvas'),v=View.boardView(canvas.width,canvas.height,boardView.zoom,game.player.cell,boardView.pan);
+      const halfW=canvas.width/v.scale/2,halfH=canvas.height/v.scale/2;
+      boardView.pan.x=clamp(v.point.x+boardView.pan.x,Math.min(380,halfW),Math.max(380,760-halfW))-v.point.x;
+      boardView.pan.y=clamp(v.point.y+boardView.pan.y,Math.min(380,halfH),Math.max(380,760-halfH))-v.point.y;
+    }
+    $('board-overview').setAttribute('aria-pressed',String(boardView.zoom===1));
+    $('board-zoom-out').disabled=boardView.zoom<=1;$('board-zoom-in').disabled=boardView.zoom>=3;
+    if(game)drawBoard($('board-canvas'));
+  }
+  $('board-overview').onclick=()=>{boardView.zoom=boardView.zoom===1?2:1;boardView.pan={x:0,y:0};updateBoardView();};
+  $('board-center').onclick=()=>{boardView.zoom=Math.max(2,boardView.zoom);boardView.pan={x:0,y:0};updateBoardView();};
+  $('board-zoom-in').onclick=()=>{boardView.zoom=Math.min(3,boardView.zoom*1.25);updateBoardView();};
+  $('board-zoom-out').onclick=()=>{boardView.zoom=Math.max(1,boardView.zoom/1.25);updateBoardView();};
+  const boardCanvas=$('board-canvas');boardCanvas.tabIndex=0;
+  boardCanvas.addEventListener('pointerdown',event=>{
+    if(boardView.zoom===1||boardView.pointer!==null||event.button>0)return;
+    boardView.pointer=event.pointerId;boardView.drag={x:event.clientX,y:event.clientY};boardCanvas.setPointerCapture(event.pointerId);
+  });
+  boardCanvas.addEventListener('pointermove',event=>{
+    if(boardView.pointer!==event.pointerId||!game)return;
+    const r=boardCanvas.getBoundingClientRect(),v=View.boardView(boardCanvas.width,boardCanvas.height,boardView.zoom,game.player.cell,boardView.pan);
+    boardView.pan.x-=(event.clientX-boardView.drag.x)*boardCanvas.width/r.width/v.scale;
+    boardView.pan.y-=(event.clientY-boardView.drag.y)*boardCanvas.height/r.height/v.scale;
+    boardView.drag={x:event.clientX,y:event.clientY};updateBoardView();
+  });
+  for(const name of ['pointerup','pointercancel','lostpointercapture'])boardCanvas.addEventListener(name,()=>{boardView.pointer=null;});
+  boardCanvas.addEventListener('keydown',event=>{
+    const delta={ArrowLeft:[-100,0],ArrowRight:[100,0],ArrowUp:[0,-100],ArrowDown:[0,100]}[event.key];
+    if(delta&&boardView.zoom>1){event.preventDefault();event.stopPropagation();boardView.pan.x+=delta[0];boardView.pan.y+=delta[1];updateBoardView();}
+  });
   $('play-move').onclick = playMove; $('continue').onclick = nextTurn;
   $('new-game').onclick = () => openDialog('pause-dialog'); $('play-again').onclick = setup;
   $('pause').onclick = pause; $('resume').onclick = () => $('pause-dialog').close(); $('quit').onclick = setup;
@@ -329,6 +390,11 @@
   $('map-button').onclick = () => openDialog('map-dialog'); $('close-map').onclick = () => $('map-dialog').close();
   $('rankings').onclick = rankings; $('close-leaderboard').onclick = () => $('leaderboard-dialog').close();
   $('save-score').onclick = saveScore;
+  const onlineEntry = $('online-entry');
+  if (onlineEntry) {
+    onlineEntry.hidden = !!online;
+    onlineEntry.onclick = () => { if(window.BILLACHUHA_CONFIG?.offline){location.assign('https://appassets.androidplatform.net/online-snake-ladder');return;}const origin=backendOrigin(); if(origin)location.assign(origin+'/multiplayer/snake-ladder');else onlineEntry.textContent='Online play is unavailable. Try again later.'; };
+  }
   $('fullscreen').hidden = !document.documentElement.requestFullscreen;
   $('fullscreen').onclick = () => { const operation = document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); operation?.catch(() => {}); };
 
@@ -374,5 +440,13 @@
   window.addEventListener('resize', fit);
   new ResizeObserver(() => requestAnimationFrame(fit)).observe($('action-viewport'));
   new ResizeObserver(() => { if (screen === 'board') fit(); }).observe($('board-wrap'));
+  const launchMode=new URLSearchParams(location.search).get('mode');if(['solo','local'].includes(launchMode))document.querySelector('[name=mode][value='+launchMode+']').checked=true;
   choices(); bestCopy(); fit(); requestAnimationFrame(frame);
+  if (online) online.attach({clearInput,editHud:()=>controlSettings?.open('hud'),snapshot(state){
+    const changed = !game || game.matchId !== state.matchId || game.revision !== state.revision;
+    if (!changed && game.stage && state.stage) { Object.assign(game.stage,state.stage); state={...state,stage:game.stage}; }
+    game=Object.assign(game || Object.create(Core.Race.prototype),state);
+    game.score=(p=game.player)=>p.score || 0;
+    if(changed){for(const dialog of document.querySelectorAll('dialog[open]'))dialog.close();renderState();}
+  },home(){for(const dialog of document.querySelectorAll('dialog[open]'))dialog.close();game=null;rolling=null;renderState();},});
 })();

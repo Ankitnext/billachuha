@@ -1,6 +1,6 @@
-# Super Fighting Arena — offline phase
+# Super Fighting Arena
 
-`super-fight.html` replaces the Fighting Arena catalog launch. The existing `fighting-arena` ID and detail URL remain stable. The original `fight.html`, sword fighters and their assets remain playable and are linked from the move list. This implementation is Phase 1 of the supplied plan: Solo vs Bot and Local 2 Player. Online 1v1 is visibly disabled for the later backend phase. No Android, backend, APK or deployment changes are included.
+`super-fight.html` replaces the Fighting Arena catalog launch. The existing `fighting-arena` ID and detail URL remain stable. The original `fight.html`, sword fighters and their assets remain playable and are linked from the move list. Solo vs Bot, Local 2 Player and Online Match are available. Online Match uses the existing account session to find a random human opponent across browsers and Android. The queue waits for a second player; it never fills the opponent slot with a bot.
 
 ## Systems
 
@@ -41,4 +41,14 @@ The catalog uses Action, Fighting and Arcade tags and the local `img/brand/super
 
 Run `node --test tools/super-fight.test.cjs` for physics, energy, damage, guard/shield, charged input buffering, combos, escape, clashes, ground waves, KO/timeout/best-of-three, bot reactions and bounded full-match simulations. Run the other existing JavaScript tests for regressions and `node tools/render-catalog.mjs --check` for catalog consistency. No package/build/deployment is needed for source checks. Use a local static server for browser play.
 
-Online rooms, network prediction, rankings, progression, replays and tournaments belong to later phases and are not presented as working features here.
+Online matchmaking and shared combat are implemented; online ranking/progression, prediction, replays and tournaments are outside this update.
+
+## Online Match
+
+Choose Online Match, choose your fighter and click Find opponent. Existing browser login is reused; otherwise sign in from the game. Account creation and recovery use the existing multiplayer screen. Android exposes Super Fighting Arena Online in Online Arena; the local game’s Online Match button opens that native authenticated screen. No account token is placed in a URL or exposed to game JavaScript.
+
+POST /api/v1/matchmaking with game `super-fight` and fighter `blaze`, `shadow` or `titan` atomically pairs two humans. It reuses the room ticket/WebSocket transport and account validation. Each device controls its own fighter with Player 1 keys/touch controls. The Go server embeds the same trusted JavaScript combat rules through Goja, simulates at 60 Hz and broadcasts snapshots at 20 Hz. Clients render state; they cannot submit health, positions or winners. Rounds advance automatically after four seconds. Menus release controls while the match continues. Reconnect restores the current snapshot; 20 seconds without inputs forfeits the match, and leaving forfeits immediately. Abandoned waiting queues expire after 25 seconds without a heartbeat. A match has a 12-minute safety limit.
+
+Run `node tools/sync-fight-online.mjs` after changing the rules/presentation, then refresh the Android local and online bundles. Deploy matching website/backend sources. Android changes require a newly authorized APK build; this update does not build or publish one. Online results do not enter the existing browser-reported local rankings.
+
+Verification: `node --test tools/super-fight.test.cjs tools/control-settings.test.cjs`; `node tools/check-fight-online.cjs` (Node 24 and Chrome, optional CHROMIUM_PATH). The browser check uses two isolated clients against a loopback protocol fixture with the exact embedded combat engine. Go coverage is in internal/fightengine, internal/multiplayer/fight_test.go and internal/httpapi/fight_test.go.

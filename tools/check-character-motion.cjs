@@ -27,7 +27,7 @@ async function main(){
         ['Horde Cat',(c,p,t,pose)=>ModeArt.character(c,{...p,role:'cat',aimX:-1,aimY:0},'#ff987b',pose)],
         ['Blitz Dog',(c,p,t,pose)=>ModeArt.character(c,{...p,role:'dog',aimX:1,aimY:0,weapon:'rifle'},'#b9a087',pose,{platform:true})],
         ['Zombie',(c,p,t,pose)=>ModeArt.zombie(c,{...p,x:0,y:0,radius:18},'#8ea45c',pose)],
-        ['Chase Rat',(c,p,t,pose)=>{M.topLimbs(c,pose,{color:'#c5e66b'});c.fillStyle='#c5e66b';c.beginPath();c.ellipse(0,0,16,12,0,0,7);c.fill();}],
+        ['Chase Rat',(c,p,t,pose)=>ModeArt.character(c,{...p,role:'rat',aimX:1,aimY:0},'#c5e66b',pose)],
         ['Sky Rat',(c,p,t)=>{c.translate(-p.x,-p.y);SkySiegeArt.rat(c,p,t);}],
         ['Sky Cat',(c,p,t)=>{c.translate(-p.x,-p.y);SkySiegeArt.cat(c,p,t);}],
         ['Heist Cat',(c,p,t)=>{c.translate(-p.x,-p.y);KitchenHeist.HeistArt.cat(c,p,t);}],

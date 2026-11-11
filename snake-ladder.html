@@ -7,15 +7,16 @@
   <meta property="og:title" content="Moving Stairs: Snake & Ladder | Billa Chuha"><meta property="og:description" content="A little luck. A lot of leaping. Play your way to cell 100.">
   <meta property="og:image" content="https://osieq.online/og-image.png"><meta property="og:type" content="website">
   <link rel="canonical" href="https://osieq.online/snake-ladder.html"><link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="game-shell.css"><link rel="stylesheet" href="snake-ladder.css">
-  <script defer src="competitive.js"></script><script defer src="site-config.js"></script><script defer src="control-settings.js"></script><script defer src="game-audio.js"></script><script defer src="character-motion.js"></script><script defer src="game-shell.js"></script><script defer src="snake-ladder-core.js"></script><script defer src="snake-ladder-art.js"></script><script defer src="snake-ladder.js"></script>
-<link rel="stylesheet" href="control-settings.css"></head>
+  <link rel="stylesheet" href="game-shell.css"><link rel="stylesheet" href="snake-ladder.css"><script defer src="snake-ladder-view.js"></script>
+  <script defer src="competitive.js"></script><script defer src="rewards.js"></script><script defer src="site-config.js"></script><script defer src="control-settings.js"></script><script defer src="game-audio.js"></script><script defer src="character-motion.js"></script><script defer src="game-shell.js"></script><script defer src="snake-ladder-core.js"></script><script defer src="snake-ladder-art.js"></script><script defer src="snake-ladder.js"></script>
+<link rel="stylesheet" href="control-settings.css"><link rel="stylesheet" href="rewards.css"></head>
 <body>
 <main id="snake-shell" class="arcade-shell snake-shell">
   <header class="arcade-toolbar"><a href="games/moving-stairs/" aria-label="Back to Moving Stairs game page">‹ Games</a><h1 class="arcade-title">MOVING STAIRS<small class="arcade-credit">Snake & Ladder · By Osieq</small></h1><div class="toolbar-actions"><a href="rankings.html?game=moving-stairs&source=device">Player rankings</a><button id="rankings" title="Solo leaderboard">Scores</button><button id="sound" aria-pressed="true" title="Toggle sound">Sound on</button><button id="edit-hud">Customize HUD</button><button id="edit-keys">Choose keys</button><button id="help">Help</button><button id="pause" hidden>Pause</button><button id="fullscreen" aria-label="Full screen">⛶</button></div></header>
   <section id="setup" class="setup-screen">
     <div class="setup-copy"><p class="eyebrow">A LITTLE LUCK. A LOT OF LEAPING.</p><h2>Roll the dice.<br>Take the <em>long way up.</em></h2><p class="intro">The board is only the beginning. Jump through moving stairs, climb ladders and turn a snake’s fall into a comeback.</p>
       <form id="setup-form"><fieldset class="mode-choice"><legend>Choose your adventure</legend><label><input type="radio" name="mode" value="solo" checked><strong>Solo adventure</strong><span>You, the board and a 10-minute clock.</span></label><label><input type="radio" name="mode" value="local"><strong>Pass & play</strong><span>2–4 friends. One device. First to 100.</span></label></fieldset>
+        <button id="online-entry" type="button" class="secondary">Play online · 2–4 players ↗</button>
         <label id="count-label" class="count-label" hidden>Players<select id="player-count"><option value="2">2 players</option><option value="3">3 players</option><option value="4">4 players</option></select></label>
         <div id="player-choices" class="player-choices"></div><button id="start-game" class="primary" type="submit">Start adventure →</button><p id="best-copy" class="muted">No account needed to play. Your solo best stays on this device.</p>
       </form>
@@ -27,6 +28,7 @@
     <div class="board-layout"><div id="board-wrap" class="board-wrap"><canvas id="board-canvas" width="760" height="760" aria-label="Snake and Ladder board. Current positions are listed alongside it."></canvas></div>
       <aside class="turn-panel"><div class="turn-head"><span id="active-role" aria-hidden="true"></span><div><p class="eyebrow">YOUR TURN</p><h2 id="active-name"></h2><p id="active-cell"></p></div></div>
         <div class="roll-area"><div id="dice" class="dice" role="img" aria-label="Die ready to roll"><div class="dice-pips" aria-hidden="true"></div></div><div class="roll-buttons"><button id="roll" class="primary">Roll dice</button><button id="reroll" class="secondary" hidden>Use Dog reroll</button><button id="play-move" class="primary" hidden>Play this move →</button></div></div>
+        <div class="board-tools" role="group" aria-label="Board view"><button id="board-overview" aria-pressed="false">Full board</button><button id="board-zoom-out" aria-label="Zoom board out">−</button><button id="board-zoom-in" aria-label="Zoom board in">+</button><button id="board-center" aria-label="Center board on current player">◎</button></div><p class="board-view-note">Drag the board to explore. ◎ finds your player.</p>
         <p id="turn-message" class="turn-message" role="status" aria-live="polite"></p><div id="power-badges" class="power-badges"></div><div id="standings" class="standings" aria-label="Player positions"></div><div class="board-legend"><span><i class="ladder-dot"></i>Climb a ladder</span><span><i class="snake-dot"></i>Survive a snake</span><span><i class="power-dot"></i>Power cell</span><span><i class="boss-dot"></i>Guardian</span></div>
       </aside>
     </div>
