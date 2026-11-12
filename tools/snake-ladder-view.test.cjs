@@ -17,12 +17,12 @@ test('a move opens near the left quarter and stays there until the character mov
   for(const [width,height]of [[568,320],[844,390],[390,844],[1600,900]]){
     const s=new Stage('move',{steps:2}),camera=new View.Camera(),size=View.viewSize(width,height,'move');
     const safe={left:size.width*.16,right:size.width*.16};
-    const first=camera.update(s,size,0,0,safe);
+    const first=camera.update(s,size,0,safe);
     const fraction=(s.player.x+s.player.w/2-first.x)/size.width;
     assert.ok(fraction>=.23&&fraction<=.29,`Left start at ${width}x${height}: ${fraction}`);
     assert.ok(s.platforms[1].x+s.platforms[1].w<first.x+size.width,'Next stairs fit in the opening view');
     for(let frame=0;frame<8;frame++){
-      assert.ok(Math.abs(camera.update(s,size,1/60,0,safe).x-first.x)<.01,'The opening frame stays steady');
+      assert.ok(Math.abs(camera.update(s,size,1/60,safe).x-first.x)<.01,'The opening frame stays steady');
     }
   }
 });
@@ -35,7 +35,7 @@ test('camera keeps real move, ladder, falling and boss actors in view throughout
     for(let i=0;i<240&&!s.done;i++){
       const x=i<120?1:-1;
       s.update({x,jump:i===1||i===22||i===100},1/60);
-      const c=camera.update(s,size,1/60,x,safe),p=s.player;
+      const c=camera.update(s,size,1/60,safe),p=s.player;
       assert.ok(p.x-c.x>=safe.left-1&&p.x+p.w-c.x<=c.width-safe.right+1,`${kind}/${role}: horizontal`);
       assert.ok(p.y-c.y>=safe.top-1&&p.y+p.h-c.y<=c.height-safe.bottom+1,`${kind}/${role}: vertical`);
     }
@@ -45,10 +45,10 @@ test('camera keeps real move, ladder, falling and boss actors in view throughout
 test('a double jump above the level top stays visible and changing facing alone never snaps the camera',()=>{
   const s=new Stage('ladder',{role:'rat'}),camera=new View.Camera(),size=View.viewSize(568,320,'ladder');
   s.player.x=250;s.player.y=5;s.player.standing=null;s.player.vy=-750;
-  const a=camera.update(s,size,1/60,0,{top:150});
+  const a=camera.update(s,size,1/60,{top:150});
   assert.ok(a.y<0);assert.ok(s.player.y-a.y>=150);
   s.player.face=-1;
-  const b=camera.update(s,size,1/60,0,{top:150});
+  const b=camera.update(s,size,1/60,{top:150});
   assert.ok(Math.abs(a.x-b.x)<1,'Facing changes without movement keep the same framing');
 });
 
@@ -56,54 +56,25 @@ test('normal jumps keep the world steady instead of making the camera bob',()=>{
   const s=new Stage('move',{role:'rat',steps:7,seed:8}),camera=new View.Camera();
   const size=View.viewSize(568,320,'move'),safe={top:150,bottom:40,left:150,right:150};
   s.enemies=[];s.bombAt=999;
-  const initial=camera.update(s,size,1/60,0,safe);
+  const initial=camera.update(s,size,1/60,safe);
   let airborne=false;
   for(let i=0;i<110;i++){
     s.update({jump:i===1||i===22},1/60);
     airborne||=s.player.standing===null;
-    const c=camera.update(s,size,1/60,0,safe);
+    const c=camera.update(s,size,1/60,safe);
     assert.ok(Math.abs(c.x-initial.x)<.01&&Math.abs(c.y-initial.y)<.01,'A jump that fits the screen does not move the camera');
   }
   assert.ok(airborne);assert.equal(s.player.standing,0);
 });
 
-test('steering previews and velocity changes cannot pull the camera away from a stationary player',()=>{
-  const s=new Stage('move',{role:'rat',steps:7,seed:8}),camera=new View.Camera();
+test('changes in velocity alone do not reframe a stationary player',()=>{
+  const s=new Stage('move',{role:'rat'}),camera=new View.Camera();
   const size=View.viewSize(844,390,'move');
   Object.assign(s.player,{x:400,y:330,vy:50,standing:null});
-  const initial=camera.update(s,size,1/60,0);
-  const previews=new Set();
-  for(let i=0;i<120;i++){
-    const axis=i%3-1;s.player.face=axis||1;s.player.vx=axis*120;
-    const c=camera.update(s,size,1/60,axis);
-    previews.add(c.landing?`${c.landing.platform}:${Math.round(c.landing.x)}`:'none');
-    assert.ok(Math.abs(c.x-initial.x)<.01&&Math.abs(c.y-initial.y)<.01,'Prediction changes do not move the world');
-  }
-  assert.ok(previews.size>1,'The test actually changes the projected landing');
-});
-
-test('landing preview matches an actual unsteered jump onto a stationary platform',()=>{
-  const s=new Stage('boss',{role:'dog'});s.enemies=[];s.bombAt=999;
-  s.update({jump:true},1/60);
-  const predicted=View.landing(s,0);
-  assert.ok(predicted&&predicted.path.length>2);
-  for(let i=0;i<180&&s.player.standing===null;i++)s.update({},1/120);
-  assert.equal(s.player.standing,predicted.platform);
-  assert.ok(Math.abs(s.player.y+s.player.h-predicted.y)<1);
-  assert.ok(Math.abs(s.player.x+s.player.w/2-predicted.x)<2);
-});
-
-test('steered landing previews track moving stair platforms without changing stage state',()=>{
-  for(const seed of [1,15,62])for(const role of ['rat','cat','dog']){
-    const s=new Stage('move',{role,steps:6,seed});s.enemies=[];s.bombAt=999;
-    for(let i=0;i<10;i++)s.update({x:1},1/60);
-    s.update({x:1,jump:true},1/60);
-    const before=JSON.stringify(s),prediction=View.landing(s,1);
-    assert.equal(JSON.stringify(s),before,'Preview must not advance the game');
-    assert.ok(prediction);
-    for(let i=0;i<240&&s.player.standing===null;i++)s.update({x:1},1/120);
-    assert.equal(s.player.standing,prediction.platform);
-    assert.ok(Math.abs(s.player.x+s.player.w/2-prediction.x)<10);
-    assert.ok(Math.abs(s.player.y+s.player.h-prediction.y)<3);
+  const initial=camera.update(s,size);
+  for(const velocity of [-s.speed,0,s.speed]){
+    s.player.vx=velocity;
+    const frame=camera.update(s,size);
+    assert.ok(Math.abs(frame.x-initial.x)<.01&&Math.abs(frame.y-initial.y)<.01);
   }
 });

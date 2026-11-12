@@ -39,17 +39,41 @@ test('solo timeout and finishing at 100 stop the race and preserve turn ownershi
 });
 
 function runNormal(stage){
-  stage.enemies=[];stage.bombAt=999;let release=false;
+  stage.enemies=[];stage.bombAt=999;let target=1,release=false;
   for(let i=0;i<2400&&!stage.done;i++){
-    const p=stage.player,f=p.standing!==null?stage.platforms[p.standing]:null;
-    const jump=!!f&&p.x+p.w>f.x+f.w-65&&!release;
-    stage.update({x:1,jump},1/60);release=jump;
+    const p=stage.player,center=p.x+p.w/2;
+    let x=1,jump=false;
+    if(p.standing===null){
+      const next=stage.platforms[target],delta=next.x+next.w/2-center;
+      x=Math.abs(delta)<12?0:Math.sign(delta);
+    }else if(p.standing===stage.platforms.length-1){
+      x=Math.sign(stage.goal.x+stage.goal.w/2-center);
+    }else{
+      target=p.standing+1;
+      const floor=stage.platforms[p.standing];
+      jump=p.x+p.w>floor.x+floor.w-65&&!release;
+    }
+    stage.update({x,jump},1/60);release=jump;
   }
   return stage.outcome;
 }
-test('normal moves of every dice length are physically reachable for all characters',()=>{
-  for(const role of ['rat','cat','dog'])for(let steps=1;steps<=7;steps++)for(const seed of [1,15,62]){
-    const s=new Stage('move',{role,steps,seed});const result=runNormal(s);assert.equal(result?.success,true,`${role}, ${steps} platforms, seed ${seed}: ${JSON.stringify(result)}`);
+test('steering clears every dice length for all characters with and without a speed power',()=>{
+  for(const role of ['rat','cat','dog'])for(let steps=1;steps<=7;steps++)for(const seed of [1,15,62])for(const speed of [0,1]){
+    const s=new Stage('move',{role,steps,seed,powers:{speed}});const result=runNormal(s);assert.equal(result?.success,true,`${role}, ${steps} platforms, seed ${seed}, speed power ${speed}: ${JSON.stringify(result)}`);
+  }
+});
+test('reversing mid-jump changes the landing platform within the same jump',()=>{
+  for(const role of ['rat','cat','dog'])for(const steer of [1,-1]){
+    const s=new Stage('move',{role,steps:2,seed:15});
+    s.enemies=[];s.player.x=145;s.platforms[1].ampX=0;
+    for(let i=0;i<18;i++)s.update({x:1,jump:i===0},1/60);
+    assert.equal(s.player.standing,null);
+    assert.ok(s.player.vx>=360,'Rightward jump reaches running speed');
+    s.update({x:steer},.1);
+    assert.equal(s.player.standing,null);
+    assert.ok(s.player.vx*steer>=360,'Reversal reaches running speed within 100 ms');
+    for(let i=0;i<60&&s.player.standing===null&&!s.done;i++)s.update({x:steer},1/60);
+    assert.equal(s.player.standing,steer===1?1:0,'Input in the air picks a different platform');
   }
 });
 test('ladder platforms are reachable using a single jump',()=>{

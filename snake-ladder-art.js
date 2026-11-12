@@ -78,15 +78,7 @@
       const g=s.goal;ctx.strokeStyle='#47654b';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(g.x+5,g.y);ctx.lineTo(g.x+5,g.y+g.h);ctx.stroke();ctx.fillStyle='#d8ed85';ctx.beginPath();ctx.moveTo(g.x+7,g.y);ctx.lineTo(g.x+45,g.y+9);ctx.lineTo(g.x+7,g.y+25);ctx.closePath();ctx.fill();label(ctx,s.kind==='ladder'?'TOP':'FINISH',g.x+10,g.y-16,11,palette.ink);
     }
     for(const b of s.bombs){if(b.warning>0)continue;disc(ctx,b.x+13,b.y+13,13,'#3e4242');ctx.strokeStyle='#d4b77b';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(b.x+16,b.y+2);ctx.quadraticCurveTo(b.x+24,b.y-9,b.x+27,b.y-5);ctx.stroke();disc(ctx,b.x+27,b.y-5,3,'#f1ac58');}
-    const p=s.player,landing=cam.landing;
-    if(p.standing===null&&landing){
-      ctx.save();ctx.strokeStyle='#193b35bb';ctx.lineWidth=4;ctx.setLineDash([7,8]);ctx.beginPath();
-      landing.path.forEach((point,i)=>i?ctx.lineTo(point.x,point.y):ctx.moveTo(point.x,point.y));ctx.stroke();
-      ctx.strokeStyle='#f5ffca';ctx.lineWidth=2;ctx.stroke();ctx.setLineDash([]);
-      ctx.strokeStyle='#f5ffbf';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(Math.max(landing.platformX,landing.x-36),landing.y);ctx.lineTo(Math.min(landing.platformX+landing.platformWidth,landing.x+36),landing.y);ctx.stroke();
-      ctx.fillStyle='#b9f18588';ctx.beginPath();ctx.ellipse(landing.x,landing.y-3,23,7,0,0,Math.PI*2);ctx.fill();
-      ctx.restore();
-    }
+    const p=s.player;
     ctx.save();if(s.elapsed<p.invulnerable&&Math.floor(now*12)%2)ctx.globalAlpha=.4;
     const pose=M.forActor(p,s.elapsed,{grounded:p.standing!==null,vy:p.vy,motion:!reducedMotion.matches});
     if(p.standing!==null){ctx.fillStyle='#0002';ctx.beginPath();ctx.ellipse(p.x+15,p.y+44,20,5,0,0,Math.PI*2);ctx.fill();}

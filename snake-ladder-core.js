@@ -6,6 +6,7 @@
   const POWERS=Object.freeze({7:'shield',22:'double',35:'speed',58:'shield',69:'double',83:'speed'});
   const BOSSES=Object.freeze([25,50,75,90]);
   const ROLES=Object.freeze(['rat','cat','dog']);
+  const RUN_SPEED=360,CAT_RUN_SPEED=390,GROUND_ACCEL=6000,AIR_ACCEL=10000;
   const clamp=(n,lo,hi)=>Math.max(lo,Math.min(hi,n));
   const overlap=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
   function random(seed){let state=seed>>>0;return()=>{state+=0x6D2B79F5;let n=state;n=Math.imul(n^n>>>15,n|1);n^=n+Math.imul(n^n>>>7,n|61);return((n^n>>>14)>>>0)/4294967296;};}
@@ -100,7 +101,7 @@
       this.width=kind==='move'?540+this.steps*210:kind==='boss'?900:620;this.height=kind==='ladder'?1460:kind==='snake'?1500:650;
       this.timeLimit=kind==='move'?20+this.steps*4:kind==='ladder'?42:kind==='snake'?18:45;
       this.elapsed=0;this.coins=0;this.kills=0;this.done=false;this.outcome=null;this.platforms=[];this.pickups=[];this.enemies=[];this.bombs=[];this.bullets=[];this.hazards=[];
-      this.maxJumps=role==='rat'||powers.double>0?2:1;this.speed=role==='cat'?285:260;this.speed*=powers.speed>0?1.22:1;
+      this.maxJumps=role==='rat'||powers.double>0?2:1;this.speed=role==='cat'?CAT_RUN_SPEED:RUN_SPEED;this.speed*=powers.speed>0?1.22:1;
       this.shield=powers.shield>0&&shieldAvailable;this.shieldUsed=false;this.jumpHeld=false;this.nextShot=0;this.nextPower=0;this.boostUntil=0;this.bombAt=2.5;this.bestY=this.height;
       this.makeWorld();const floor=this.platforms[0];
       this.player={x:kind==='move'||kind==='boss'?80:290,y:kind==='snake'?60:floor.y-44,w:30,h:44,vx:0,vy:kind==='snake'?140:0,hp:3,jumps:this.maxJumps,face:1,invulnerable:0,standing:kind==='snake'?null:0};
@@ -167,11 +168,12 @@
       const axis=clamp(Number(input.x)||0,-1,1);if(axis)p.face=Math.sign(axis);
       if(this.role==='cat'&&input.ability&&this.elapsed>=this.nextPower){this.nextPower=this.elapsed+5;this.boostUntil=this.elapsed+2.5;}
       const speed=this.speed*(this.elapsed<this.boostUntil?1.65:1),target=axis*speed;
-      p.vx+=clamp(target-p.vx,-2000*dt,2000*dt);
+      const velocityChange=(p.standing===null?AIR_ACCEL:GROUND_ACCEL)*dt;
+      p.vx+=clamp(target-p.vx,-velocityChange,velocityChange);
       const wall=p.x<=.1||p.x+p.w>=this.width-.1;
       if(this.kind!=='snake'&&jump&&(p.jumps>0||this.role==='rat'&&wall)){
         p.vy=-750;p.jumps=Math.max(0,p.jumps-1);p.standing=null;
-        if(wall&&this.role==='rat'){p.vx=p.x<1?260:-260;p.jumps=1;}
+        if(wall&&this.role==='rat'){p.vx=p.x<1?RUN_SPEED:-RUN_SPEED;p.jumps=1;}
       }
       if(this.role==='dog'&&(input.fire||input.ability)&&this.elapsed>=this.nextShot&&this.bullets.length<12){
         this.nextShot=this.elapsed+.28;this.bullets.push({x:p.x+p.w/2+p.face*20,y:p.y+20,w:12,h:6,vx:p.face*850,life:1.25});

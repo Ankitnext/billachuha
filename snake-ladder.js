@@ -249,8 +249,7 @@
   }
   function drawStage(now,dt) {
     const s = game.stage, canvas = $('action-canvas');
-    const axis=Math.abs(joystick)>.12?joystick:(keys.has('d')||keys.has('arrowright')?1:0)-(keys.has('a')||keys.has('arrowleft')?1:0);
-    const cam=camera.update(s,canvas,dt,axis,stageInsets);
+    const cam=camera.update(s,canvas,dt,stageInsets);
     Art.stage(canvas.getContext('2d'), canvas, s, cam, now);
   }
   function frame(now,dt) {
