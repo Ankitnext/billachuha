@@ -169,7 +169,7 @@ button:hover {
   </style>
 <link rel="stylesheet" href="game-shell.css">
 <script src="long-run-movement.js"></script><script src="character-motion.js"></script><script src="game-audio.js"></script><script defer src="game-shell.js"></script>
-</head>
+<script src="game-runtime.js"></script></head>
 <body>
   <div id="mobile-tilt-stage">
   <h1>CATCH THE JERRY</h1>
@@ -245,7 +245,6 @@ window.onload = function() {
 
   let score    = 0;
   let gameOver = false;
-  let lastTime = performance.now();
 
 const sfx=window.GameAudio?.legacy();
   const characterMotion=new CharacterMotion.Tracker(),reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
@@ -361,13 +360,11 @@ const sfx=window.GameAudio?.legacy();
     for(let i=0;i<2;i++) chasingBombs.push(spawnChasingBomb());
     healthPickups=[spawnHealthPickup(),spawnHealthPickup()];
     restartBtn.style.display='none';
-    lastTime=performance.now();
-    requestAnimationFrame(draw);
+    loop.resetClock();
+    loop.refresh();
   };
 
-  function draw(now=performance.now()){
-    const dt=Math.max(0,Math.min(.05,(now-lastTime)/1000));
-    lastTime=now;
+  function draw(now,dt){
     if(!gameOver){
       update(dt);
       coinBombTimer+=dt;
@@ -386,7 +383,12 @@ const sfx=window.GameAudio?.legacy();
     // Background & grid
     ctx.fillStyle='#ddf';
     ctx.fillRect(0,0,worldW,worldH);
-    drawGrid();
+    drawGrid(camX,camY);
+    const bounds={left:camX,top:camY,right:camX+viewW,bottom:camY+viewH};
+    function drawBomb(b,color){
+      if(!GameRuntime.visible(bounds,b.x,b.y,b.size,b.size))return;
+      ctx.fillStyle=color;ctx.beginPath();ctx.arc(b.x+b.size/2,b.y+b.size/2,b.size/2,0,Math.PI*2);ctx.fill();
+    }
 
     // Coin (resets health to 100% on pickup)
     updateCoin(dt);
@@ -404,10 +406,7 @@ const sfx=window.GameAudio?.legacy();
       if(b.x<-b.size*2||b.x>worldW+b.size*2||b.y<-b.size*2||b.y>worldH+b.size*2){
         Object.assign(b,spawnWorldBomb());
       }
-      ctx.fillStyle='purple';
-      ctx.beginPath();
-      ctx.arc(b.x+b.size/2,b.y+b.size/2,b.size/2,0,Math.PI*2);
-      ctx.fill();
+      drawBomb(b,'purple');
       if(z===0 && overlap(b.x,b.y,b.size,b.size, x,y,playerSize,playerSize)){
         applyDamage(75);
       }
@@ -415,10 +414,7 @@ const sfx=window.GameAudio?.legacy();
 
     // Static bombs (type4: red)
     staticBombs.forEach(sb=>{
-      ctx.fillStyle='red';
-      ctx.beginPath();
-      ctx.arc(sb.x+sb.size/2,sb.y+sb.size/2,sb.size/2,0,Math.PI*2);
-      ctx.fill();
+      drawBomb(sb,'red');
       if(z===0 && overlap(sb.x,sb.y,sb.size,sb.size, x,y,playerSize,playerSize)){
         applyDamage(100);
       }
@@ -430,10 +426,7 @@ const sfx=window.GameAudio?.legacy();
       let dx=px-(cb.x+cb.size/2), dy=py-(cb.y+cb.size/2), m=Math.hypot(dx,dy);
       if(m>0){ dx/=m; dy/=m; }
       cb.x+=dx*chaseSpeed*dt; cb.y+=dy*chaseSpeed*dt;
-      ctx.fillStyle='blue';
-      ctx.beginPath();
-      ctx.arc(cb.x+cb.size/2,cb.y+cb.size/2,cb.size/2,0,Math.PI*2);
-      ctx.fill();
+      drawBomb(cb,'blue');
       if(overlap(cb.x,cb.y,cb.size,cb.size, x,y,playerSize,playerSize)){
         applyDamage(dtDamage*dt);
       }
@@ -443,10 +436,7 @@ const sfx=window.GameAudio?.legacy();
     coinBombs.forEach((cb,i)=>{
       cb.x+=cb.vx*dt; cb.y+=cb.vy*dt;
       const col=cb.type===1?'orange':'yellow';
-      ctx.fillStyle=col;
-      ctx.beginPath();
-      ctx.arc(cb.x+cb.size/2,cb.y+cb.size/2,cb.size/2,0,Math.PI*2);
-      ctx.fill();
+      drawBomb(cb,col);
       if(cb.x<-cb.size*2||cb.x>worldW+cb.size*2||cb.y<-cb.size*2||cb.y>worldH+cb.size*2){
         coinBombs.splice(i,1);
       } else if(z===0 && overlap(cb.x,cb.y,cb.size,cb.size, x,y,playerSize,playerSize)){
@@ -496,8 +486,7 @@ const sfx=window.GameAudio?.legacy();
     ctx.strokeStyle='#000';
     ctx.strokeRect(barX,barY,barW,barH);
 
-    if(!gameOver) requestAnimationFrame(draw);
-    else {
+    if(gameOver){
       ctx.fillStyle='rgba(0,0,0,0.7)';
       ctx.fillRect(0,0,viewW,viewH);
       ctx.fillStyle='white';
@@ -534,15 +523,15 @@ const sfx=window.GameAudio?.legacy();
     if(coin.y<0||coin.y>worldH-coinSize) coin.vy*=-1;
   }
 
-  function drawGrid(){
-    const g=200;
+  function drawGrid(camX,camY){
+    const g=200,startX=Math.floor(camX/g)*g,startY=Math.floor(camY/g)*g,endX=Math.min(worldW,camX+viewW),endY=Math.min(worldH,camY+viewH);
     ctx.strokeStyle='#555'; ctx.lineWidth=1; ctx.beginPath();
-    for(let i=0;i<=worldW;i+=g){ ctx.moveTo(i,0);ctx.lineTo(i,worldH); }
-    for(let j=0;j<=worldH;j+=g){ ctx.moveTo(0,j);ctx.lineTo(worldW,j); }
+    for(let i=startX;i<=endX;i+=g){ ctx.moveTo(i,camY);ctx.lineTo(i,endY); }
+    for(let j=startY;j<=endY;j+=g){ ctx.moveTo(camX,j);ctx.lineTo(endX,j); }
     ctx.stroke();
     ctx.fillStyle='#555'; ctx.font='12px Arial';
-    for(let i=0;i<=worldW;i+=g) ctx.fillText(i,i+4,12);
-    for(let j=0;j<=worldH;j+=g) ctx.fillText(j,4,j-4);
+    if(camY<=14)for(let i=startX;i<=endX;i+=g)ctx.fillText(i,i+4,12);
+    if(camX<=35)for(let j=startY;j<=endY;j+=g)ctx.fillText(j,4,j-4);
   }
 
   function drawShadow(){
@@ -620,7 +609,8 @@ const sfx=window.GameAudio?.legacy();
     return x1<=x2+w2 && x2<=x1+w1 && y1<=y2+h2 && y2<=y1+h1;
   }
 
-  requestAnimationFrame(draw);
+  const loop=GameRuntime.createFrameLoop(draw,()=>gameOver?null:0,.05);
+  loop.refresh();
 };
 </script>
 

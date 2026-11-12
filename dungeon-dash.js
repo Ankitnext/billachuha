@@ -4,7 +4,7 @@
   const C=window.DungeonDash,Art=window.DungeonArt,$=id=>document.getElementById(id),SAVE='dungeon-dash.save.v1';
   const clock=n=>`${Math.floor(n/60)}:${String(Math.floor(n)%60).padStart(2,'0')}`;
   const keys=new Set(),held=new Map();let joy=0,pending={jump:false,fire:false,swap:false};
-  let run=null,screen='title',last=0,hudAt=0,saveAt=0,oldRoom=0,bestBefore=0;
+  let run=null,screen='title',hudAt=0,saveAt=0,oldRoom=0,bestBefore=0;
   let motion=!matchMedia('(prefers-reduced-motion: reduce)').matches,storageOK=true,savingScore=false;
   let raw={};try{raw=JSON.parse(localStorage.getItem(SAVE))||{};}catch{storageOK=false;}
   let profile=new C.Profile(raw);const recovered=profile.recover();
@@ -18,7 +18,7 @@
   const paused=()=>document.hidden||!!document.querySelector('dialog[open]');
   function dialog(id){clearInput();if(!$(id).open)$(id).showModal();}
   function pause(){if(run&&!['dead','dying'].includes(run.phase)&&!paused())dialog('pause-dialog');}
-  function show(next){screen=next;for(const name of ['title','game','upgrade','shop','death'])$(`${name}-screen`).hidden=name!==next;$('pause').hidden=!run||run.phase==='dead'||['title','upgrade','death'].includes(next);clearInput();requestAnimationFrame(fit);}
+  function show(next){screen=next;loop.refresh();for(const name of ['title','game','upgrade','shop','death'])$(`${name}-screen`).hidden=name!==next;$('pause').hidden=!run||run.phase==='dead'||['title','upgrade','death'].includes(next);clearInput();requestAnimationFrame(fit);}
   function title(){show('title');renderLifetime();}
   function renderLifetime(){
     $('lifetime-stats').replaceChildren();
@@ -39,7 +39,7 @@
   function fit(){
     if(screen!=='game'||!run)return;
     const box=$('viewport').getBoundingClientRect(),scale=Math.min(box.width/run.width,box.height/run.height);
-    $('game').width=run.width;$('game').height=run.height;
+    GameRuntime.setCanvasSize($('game'),run.width,run.height);
     $('arena').style.width=`${Math.max(1,Math.floor(run.width*scale))}px`;$('arena').style.height=`${Math.max(1,Math.floor(run.height*scale))}px`;
   }
   function card(icon,name,description,buttonLabel,disabled,onBuy,levels){
@@ -96,8 +96,7 @@
   }
   const dungeonSfx=window.GameAudio?.create({key:'dungeon-dash.sound.v1'}).bind([$('sound'),$('help-sound')]);
   function beep(event){dungeonSfx?.play(event==='fire'?(run.lastWeaponFired||run.weapon.type):({'boss-win':'round',kill:'confirm',slam:'impact'}[event]||event));}
-  function frame(now){
-    const dt=Math.min(.1,Math.max(0,(now-(last||now))/1000));last=now;
+  function frame(now,dt){
     if(run&&screen==='game'&&!paused()){
       const phase=run.phase;
       const x=(keys.has('d')||keys.has('arrowright')?1:0)-(keys.has('a')||keys.has('arrowleft')?1:0);
@@ -111,7 +110,6 @@
     if(screen==='game'&&run)Art.draw($('game').getContext('2d'),$('game'),run,now/1000,motion);
     if(screen==='title')Art.draw($('preview').getContext('2d'),$('preview'),preview,now/1000,motion);
     if(now-hudAt>100){hudAt=now;if(screen==='game')updateHud();}
-    requestAnimationFrame(frame);
   }
   function origin(){try{const u=new URL(window.BILLACHUHA_CONFIG?.backendUrl),local=['localhost','127.0.0.1','10.0.2.2','[::1]'].includes(u.hostname);return !u.username&&!u.password&&!u.search&&!u.hash&&u.pathname==='/'&&(u.protocol==='https:'||local&&u.protocol==='http:')?u.origin:null;}catch{return null;}}
   async function api(path,body){
@@ -165,5 +163,6 @@
   let landscape=innerWidth>innerHeight;
   window.addEventListener('pagehide',checkpoint);window.addEventListener('resize',()=>{const next=innerWidth>innerHeight;if(next!==landscape)clearInput();landscape=next;if(run&&run.phase!=='dead'){const size=dimensions();run.resize(size.width,size.height);}fit();});new ResizeObserver(()=>requestAnimationFrame(fit)).observe($('viewport'));
   persist();if(recovered)$('storage-note').textContent=`Recovered ${profile.last.gems} saved gems from your interrupted run. Your wallet is ready.`;
-  title();requestAnimationFrame(frame);
+  const loop=GameRuntime.createFrameLoop(frame,()=>screen==='game'?0:screen==='title'?33:null);
+  title();loop.refresh();
 })();

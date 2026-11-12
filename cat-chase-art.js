@@ -55,7 +55,7 @@
  }
  class ChaseArt{
   constructor(canvas,map){this.canvas=canvas;this.map=map;this.ctx=canvas.getContext('2d');this.w=800;this.h=400;this.dpr=1;}
-  resize(){const b=this.canvas.getBoundingClientRect();this.w=Math.max(1,b.width);this.h=Math.max(1,b.height);this.dpr=Math.min(devicePixelRatio||1,2);this.canvas.width=Math.round(this.w*this.dpr);this.canvas.height=Math.round(this.h*this.dpr);}
+  resize(){const b=this.canvas.getBoundingClientRect();this.w=Math.max(1,b.width);this.h=Math.max(1,b.height);this.dpr=GameRuntime.fitCanvas(this.canvas,this.w,this.h);}
   draw(g,time,effects=true){
    const c=this.ctx,l=g.level,p=g.player,r=g.rat,[floor,edge,ink]=THEMES[l.theme],s=Math.max(.8,Math.min(1.35,this.h/420));
    const camX=C.clamp(p.x-this.w/s*.36,0,Math.max(0,l.width-this.w/s)),camY=C.clamp(p.y-this.h/s*.52,0,Math.max(0,480-this.h/s));

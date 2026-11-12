@@ -13,6 +13,20 @@ test('zoomed board keeps the active cell on screen, including edge cells',()=>{
   }
 });
 
+test('a move opens near the left quarter and stays there until the character moves',()=>{
+  for(const [width,height]of [[568,320],[844,390],[390,844],[1600,900]]){
+    const s=new Stage('move',{steps:2}),camera=new View.Camera(),size=View.viewSize(width,height,'move');
+    const safe={left:size.width*.16,right:size.width*.16};
+    const first=camera.update(s,size,0,0,safe);
+    const fraction=(s.player.x+s.player.w/2-first.x)/size.width;
+    assert.ok(fraction>=.23&&fraction<=.29,`Left start at ${width}x${height}: ${fraction}`);
+    assert.ok(s.platforms[1].x+s.platforms[1].w<first.x+size.width,'Next stairs fit in the opening view');
+    for(let frame=0;frame<8;frame++){
+      assert.ok(Math.abs(camera.update(s,size,1/60,0,safe).x-first.x)<.01,'The opening frame stays steady');
+    }
+  }
+});
+
 test('camera keeps real move, ladder, falling and boss actors in view throughout jumps and reversals',()=>{
   for(const kind of ['move','ladder','snake','boss'])for(const role of ['rat','cat','dog'])for(const [width,height]of [[568,320],[844,390],[390,844]]){
     const s=new Stage(kind,{role,steps:7,seed:8}),camera=new View.Camera(),size=View.viewSize(width,height,kind);

@@ -105,7 +105,7 @@
  }
  class EscapeArt{
   constructor(canvas){this.canvas=canvas;this.ctx=canvas.getContext('2d');this.w=800;this.h=400;this.scale=1;this.camX=0;this.camY=0;}
-  resize(){const b=this.canvas.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);this.w=Math.max(1,b.width);this.h=Math.max(1,b.height);this.canvas.width=Math.round(this.w*d);this.canvas.height=Math.round(this.h*d);this.dpr=d;}
+  resize(){const b=this.canvas.getBoundingClientRect();this.w=Math.max(1,b.width);this.h=Math.max(1,b.height);this.dpr=GameRuntime.fitCanvas(this.canvas,this.w,this.h);}
   draw(g,time=0,effects=true){const c=this.ctx;c.setTransform(this.dpr||1,0,0,this.dpr||1,0,0);const s=Math.max(.75,Math.min(1.25,this.h/450));this.scale=s;this.camX=T.clamp(g.player.x-this.w/s*.38,0,Math.max(0,g.level.width-this.w/s));this.camY=T.clamp(g.player.y-this.h/s*.54,0,Math.max(0,480-this.h/s));drawScene(c,g,this.camX,this.camY,this.w,this.h,s,time,effects);
    if(g.cat.stunned&&(g.cat.x<this.camX-30||g.cat.x>this.camX+this.w/s)){const iw=130,ih=102,x=this.w-iw-12,y=12;c.fillStyle='#e8eeddee';c.beginPath();c.roundRect(x,y,iw,ih,10);c.fill();label(c,'MEANWHILE, THE CAT…',x+iw/2,y+16,'#3e6355',8);c.save();c.beginPath();c.rect(x,y+20,iw,ih-20);c.clip();c.translate(x+iw/2-(g.cat.x+g.cat.w/2),y+91-(g.cat.y+g.cat.h));cat(c,g.cat,time);c.restore();}
    if(g.phase==='ready'){const x=this.w/2,y=Math.max(28,this.h*.15);c.fillStyle='#fff9e6ed';c.beginPath();c.roundRect(x-Math.min(180,this.w/2-12),y-20,Math.min(360,this.w-24),55,9);c.fill();label(c,'A HEAD START. A FEW GOOD TRICKS.',x,y,'#355e51',Math.min(12,this.w/30));label(c,'Move to start the chase.',x,y+19,'#56796a',11);}

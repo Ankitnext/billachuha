@@ -5,7 +5,7 @@ import {dirname,resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 const target=resolve(root,'../billachuha_backend/internal/playweb');
-const files=['snake-ladder.js','snake-ladder.css','snake-ladder-core.js','snake-ladder-art.js','snake-ladder-view.js','snake-ladder-online.js','snake-ladder-online.css','game-shell.js','game-shell.css'];
+const files=['snake-ladder.js','snake-ladder.css','snake-ladder-core.js','snake-ladder-art.js','snake-ladder-view.js','snake-ladder-online.js','snake-ladder-online.css','game-shell.js','game-shell.css','game-runtime.js'];
 function write(file,data){const path=resolve(target,file);if(!existsSync(path)||readFileSync(path,'utf8')!==data)writeFileSync(path,data);}
 for(const file of files)write(file,readFileSync(resolve(root,file),'utf8'));
 const html=readFileSync(resolve(root,'snake-ladder.html'),'utf8')

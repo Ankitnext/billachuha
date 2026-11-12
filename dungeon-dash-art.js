@@ -86,7 +86,12 @@
     for(const wave of run.waves){rect(c,wave.x,wave.y,wave.w,wave.h,6,'#e8b26d');}
     const a=run.player;
     const pose=M.forActor(a,run.elapsed,{grounded:a.standing!==null,vy:a.vy,motion,dead:run.phase==='dying'});
-    const target=room.enemies.filter(e=>e.hp>0&&!run.generalShield(e)).sort((b,d)=>Math.hypot(a.x-b.x,a.y-b.y)-Math.hypot(a.x-d.x,a.y-d.y))[0];
+    let target, nearest=Infinity;
+    for(const e of room.enemies){
+      if(e.hp<=0||run.generalShield(e))continue;
+      const dx=a.x-e.x,dy=a.y-e.y,distance=dx*dx+dy*dy;
+      if(distance<nearest){target=e;nearest=distance;}
+    }
     const angle=target?Math.atan2(target.y+target.h/2-a.y-26,target.x+target.w/2-a.x-17):a.face>0?0:Math.PI;
     c.save();if(run.elapsed<a.invulnerable&&motion&&Math.floor(now*12)%2)c.globalAlpha=.4;
     if(a.standing!==null){c.fillStyle='#263c3433';c.beginPath();c.ellipse(a.x+17,a.y+51,22,5,0,0,Math.PI*2);c.fill();}

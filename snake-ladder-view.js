@@ -54,10 +54,12 @@
       const predicted=landing(stage,axis),usable=h-top-bottom;
       // Keep the world still inside a comfortable movement window. In particular,
       // a changing landing prediction or releasing the stick must not reframe it.
-      const horizontal=(w-left-right)*.28;
-      const startX=left+horizontal,endX=w-right-horizontal;
+      const followWidth=w-left-right,forward=stage.kind==='move';
+      // A forward run opens at the left edge of its follow window so players
+      // can see the next stairs immediately. Vertical stages open centered.
+      const startX=left+followWidth*(forward ? .14 : .28),endX=w-right-followWidth*.28;
       const startY=top+Math.min(8,usable*.025),endY=h-bottom-8;
-      let targetX=reset?p.x+p.w/2-w/2:this.x;
+      let targetX=reset?p.x+p.w/2-(forward?startX:w/2):this.x;
       let targetY=reset?p.y+p.h-endY:this.y;
       if(!reset){
         const x=p.x+p.w/2-this.x,y=p.y-this.y,feet=y+p.h;

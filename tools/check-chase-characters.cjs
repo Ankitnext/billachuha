@@ -10,19 +10,48 @@ window.ChaseArtFixture={
   const roles=[...Array(7).fill('rat'),...Array(5).fill('cat'),...Array(3).fill('dog')];
   me={id:'p7'};
   const players=roles.map((role,i)=>({id:'p'+i,name:i===7?'Your Cat':'Player '+(i+1),role,x:600+i%5*90,y:620+Math.floor(i/5)*90,z:0,aimX:i%2?-.8:.8,aimY:.6,health:i===10?24:100,protected:i===4}));
-  const draw=window.ModeArt.character,limbs=window.CharacterMotion.sideLimbs;this.calls={};this.poses={};
-  this.originalDraw=draw;
-  window.ModeArt.character=(c,p,color,pose,options)=>{this.lastDrawn=p.id;this.calls[p.id]={role:p.role,weapon:p.weapon,color,fullBody:options.fullBody};draw(c,p,color,pose,options);};
-  window.CharacterMotion.sideLimbs=(c,pose,options)=>{this.lastPose=pose;limbs(c,pose,options);};
+  const draw=window.ModeArt.character,rat=window.ModeArt.chaseRat,drawAnimal=animal;
+  this.calls={};this.originalDraw=draw;this.originalRat=rat;
+  animal=p=>{this.lastDrawn=p.id;drawAnimal(p);};
+  window.ModeArt.character=(c,p,color,pose,options)=>{this.calls[p.id]={role:p.role,weapon:p.weapon,fullBody:options.fullBody,scale:c.getTransform().a};draw(c,p,color,pose,options);};
+  window.ModeArt.chaseRat=(c,color,pose,heading)=>{this.calls[this.lastDrawn]={role:'rat',heading,scale:c.getTransform().a};rat(c,color,pose,heading);};
   this.show(players);screen('arena');fitArena();window.ChaseConnection?.ready();
  },
- show(players){receiveWorld({matchId:'character-fixture',width:2400,height:1600,remainingMs:300000,ended:false,players:players.map(Object.freeze),props:[],cheese:[{x:540,y:610,available:true}],ammo:[],healthBags:[],shots:[],bombs:[],scores:{rat:0,cat:0,dog:0},self:{id:me.id,role:'cat',health:100,ammo:0,moveSpeed:220,primaryReadyInMs:0,secondaryReadyInMs:0}});},
+ show(players){receiveWorld({matchId:'character-fixture',width:3000,height:2000,remainingMs:300000,ended:false,players:players.map(Object.freeze),props:[{x:475,y:300,width:110,height:65,kind:'table'},{x:912.5,y:737.5,width:110,height:65,kind:'table'},{x:475,y:737.5,width:44,height:44,kind:'chair'}],cheese:[{x:540,y:610,available:true}],ammo:[],healthBags:[],shots:[],bombs:[],scores:{rat:0,cat:0,dog:0},self:{id:me.id,role:'cat',health:100,ammo:0,moveSpeed:220,primaryReadyInMs:0,secondaryReadyInMs:0}});},
  walk(){this.show(world.players.map(p=>({...p,x:p.x+4})));},
  jump(){this.show(world.players.map(p=>({...p,z:p.id===me.id?65:0})));},
  invisible(){this.show(world.players.map(p=>({...p,z:0,invisible:p.id===me.id})));},
- inspect(){return{calls:this.calls,lastDrawn:this.lastDrawn,actors:JSON.stringify(world.players),canvas:{width:canvas.width,height:canvas.height}};},
+ placeAt(role,x,y,z){
+  this.show([{id:me.id,name:'Your '+role,role,x,y,z,health:100,aimX:0,aimY:-1}]);
+  world.self.role=role;
+  world.self.ammo=10;
+  drawHUD();
+  fitArena();
+ },
+ visibleBounds(role){
+  const [r,g,b]=roles[role].color.slice(1).match(/../g).map(hex=>parseInt(hex,16));
+  const pixels=ctx.getImageData(0,0,canvas.width,canvas.height).data;
+  let left=canvas.width,top=canvas.height,right=-1,bottom=-1,count=0;
+  for(let y=0;y<canvas.height;y++)for(let x=0;x<canvas.width;x++){
+   const i=(y*canvas.width+x)*4;
+   if(pixels[i]!==r||pixels[i+1]!==g||pixels[i+2]!==b)continue;
+   left=Math.min(left,x);top=Math.min(top,y);right=Math.max(right,x);bottom=Math.max(bottom,y);count++;
+  }
+  const box=canvas.getBoundingClientRect(),hud=$('match-hud').getBoundingClientRect();
+  return{left,top,right,bottom,count,hudBottom:Math.max(0,hud.bottom-box.top)*canvas.height/box.height,width:canvas.width,height:canvas.height};
+ },
+ inspect(){return{calls:this.calls,lastDrawn:this.lastDrawn,actors:JSON.stringify(world.players),canvas:{width:canvas.width,height:canvas.height,clientWidth:canvas.clientWidth}};},
+ ratBodiesVisible(){
+  return world.players.filter(p=>p.role==='rat').every(p=>{
+   const heading=this.calls[p.id].heading,size=chaseSpriteSize(p);
+   const x=Math.round(p.x-camera.x-6*size*Math.cos(heading));
+   const y=Math.round(p.y-camera.y-6*size*Math.sin(heading));
+   const [r,g,b]=ctx.getImageData(x,y,1,1).data;
+   return r===197&&g===230&&b===107;
+  });
+ },
  anatomy(){
-  return ['rat','cat','dog'].map((role,index)=>{
+  return ['cat','dog'].map(role=>{
    const c=document.createElement('canvas');c.width=160;c.height=160;const context=c.getContext('2d');
    const actor={role,aimX:1,aimY:0,weapon:role==='dog'?'pistol':null};
    const draw=fullBody=>{context.clearRect(0,0,160,160);context.save();context.translate(80,80);this.originalDraw(context,actor,roles[role].color,CharacterMotion.pose(),{fullBody});context.restore();return context.getImageData(0,0,160,160).data;};
@@ -32,10 +61,18 @@ window.ChaseArtFixture={
    return{role,height:bounds(full),classicHeight:bounds(classic),head:count(full,50,20,60,36),torso:count(full,68,56,24,34),arms:count(full,51,57,17,36)+count(full,92,57,17,36),legs:count(full,50,90,60,27),leftFoot:count(full,65,105,14,13),rightFoot:count(full,81,105,16,13)};
   });
  },
+ ratGait(){
+  const c=document.createElement('canvas');c.width=160;c.height=160;
+  const context=c.getContext('2d');
+  const draw=(phase,speed)=>{context.clearRect(0,0,160,160);context.save();context.translate(80,80);this.originalRat(context,roles.rat.color,CharacterMotion.pose({phase,speed}),0);context.restore();return context.getImageData(0,0,160,160).data;};
+  const idle=draw(0,0),left=draw(Math.PI/2,220),right=draw(-Math.PI/2,220);
+  const paws=[[70,65],[70,95],[89,64],[89,96]].map(([x,y])=>idle[(y*160+x)*4+3]);
+  return{paws,alternating:left.some((value,index)=>value!==right[index])};
+ },
  atlas(){
   const sheet=document.createElement('canvas');sheet.id='character-atlas';sheet.width=780;sheet.height=420;
   const c=sheet.getContext('2d');c.fillStyle='#14291e';c.fillRect(0,0,780,420);
-  ['rat','cat','dog'].forEach((role,index)=>{c.save();c.translate(130+index*260,288);c.scale(2.5,2.5);this.originalDraw(c,{role,aimX:index===1?-1:1,aimY:0,weapon:role==='dog'?'pistol':null},roles[role].color,CharacterMotion.pose(),{fullBody:true});c.restore();c.fillStyle='#f2f3d9';c.textAlign='center';c.font='bold 20px system-ui';c.fillText(role.toUpperCase(),130+index*260,395);});
+  ['rat','cat','dog'].forEach((role,index)=>{c.save();c.translate(130+index*260,288);c.scale(2.5,2.5);if(role==='rat')this.originalRat(c,roles.rat.color,CharacterMotion.pose(),0);else this.originalDraw(c,{role,aimX:index===1?-1:1,aimY:0,weapon:role==='dog'?'pistol':null},roles[role].color,CharacterMotion.pose(),{fullBody:true});c.restore();c.fillStyle='#f2f3d9';c.textAlign='center';c.font='bold 20px system-ui';c.fillText(role.toUpperCase(),130+index*260,395);});
   return sheet.toDataURL('image/png');
  },
  pose(){return characterMotion.sample(me.id,world.players.find(p=>p.id===me.id),performance.now()/1000,{topDown:true,grounded:!world.players.find(p=>p.id===me.id).z,motion:!reducedMotion.matches});}
@@ -68,11 +105,15 @@ async function main(){
    await call('Network.setCookie',{name:'apk',value:apk?'1':'0',url:origin});await call('Emulation.setDeviceMetricsOverride',{...size,deviceScaleFactor:1,mobile:size.width<1000});
    await call('Page.navigate',{url:origin+(apk?'/multiplayer/app':'/multiplayer')});await until("document.readyState==='complete'&&!!window.ChaseArtFixture&&Object.keys(ChaseArtFixture.calls).length===15");
    const initial=await evaluate('ChaseArtFixture.inspect()');assert.equal(Object.keys(initial.calls).length,15);assert.equal(Object.values(initial.calls).filter(p=>p.weapon==='pistol').length,3);assert.equal(Object.values(initial.calls).filter(p=>p.role==='rat').length,7);
-   assert.ok(Object.values(initial.calls).every(p=>p.fullBody===true),'Every Chase player must use the full-body profile');assert.equal(initial.lastDrawn,'p7','Your full body must remain visible in a crowd');
+   assert.ok(Object.values(initial.calls).filter(p=>p.role!=='rat').every(p=>p.fullBody===true&&p.scale<1),'Cats and dogs must use compact full-body art');assert.equal(initial.lastDrawn,'p7','Your full body must remain visible in a crowd');
+   const gait=await evaluate('ChaseArtFixture.ratGait()');
+   assert.ok(gait.paws.every(alpha=>alpha>100)&&gait.alternating,'The rat has four visible paws that alternate during running');
+   assert.ok(await evaluate('ChaseArtFixture.ratBodiesVisible()'),'Nameplates must leave all seven rat bodies visible in the crowded fixture');
    for(const parts of await evaluate('ChaseArtFixture.anatomy()')){
     assert.ok(parts.height>=80&&parts.height>parts.classicHeight*1.5,parts.role+' must have a full-length silhouette');
     assert.ok(parts.torso>500&&parts.arms>40&&parts.legs>100&&parts.leftFoot>15&&parts.rightFoot>15,parts.role+' must visibly draw torso, arms, legs and both feet');
     assert.ok(parts.torso+parts.legs>parts.head*1.4,parts.role+' must not be dominated by its head');
+    if(size.width===844){const sprite=Object.values(initial.calls).find(p=>p.role===parts.role);const pixels=parts.height*sprite.scale*initial.canvas.clientWidth/initial.canvas.width;assert.ok(pixels>=26&&pixels<=52,parts.role+' must fit the phone arena at a readable size: '+JSON.stringify({pixels,canvas:initial.canvas,apk}));}
    }
    const actors=initial.actors;await sleep(100);assert.equal(await evaluate('ChaseArtFixture.inspect().actors'),actors,'Rendering must not alter server positions');
    for(let i=0;i<6;i++){await evaluate('ChaseArtFixture.walk()');await sleep(60);}assert.ok(await evaluate('ChaseArtFixture.pose().speed>0'),'Horde gait follows Chase walking');
@@ -82,8 +123,18 @@ async function main(){
    await evaluate('ChaseArtFixture.show(world.players.map(p=>({...p,invisible:false,z:0})))');await sleep(100);
    const screenshot=await call('Page.captureScreenshot',{format:'png'});fs.writeFileSync(path.join(shots,`chase-horde-${apk?'app':'web'}-${size.width}.png`),Buffer.from(screenshot.data,'base64'));
    if(apk&&size.width===844){const atlas=await evaluate('ChaseArtFixture.atlas()');fs.writeFileSync(path.join(shots,'chase-full-body-characters.png'),Buffer.from(atlas.split(',')[1],'base64'));}
+   for(const [role,x,y,z] of [['cat',2982,18,0],['dog',18,1982,0],['rat',18,18,110]]){
+    await evaluate(`ChaseArtFixture.placeAt('${role}',1500,1000,${z})`);await sleep(50);
+    const center=await evaluate(`ChaseArtFixture.visibleBounds('${role}')`);
+    await evaluate(`ChaseArtFixture.placeAt('${role}',${x},${y},${z})`);await sleep(50);
+    const edge=await evaluate(`ChaseArtFixture.visibleBounds('${role}')`);
+    assert.ok(center.count>100&&edge.count>=center.count*.9,role+' loses pixels at the arena corner');
+    assert.ok(edge.left>1&&edge.top>edge.hudBottom&&edge.right<edge.width-2&&edge.bottom<edge.height-2,
+     role+' must fit inside the canvas and below the HUD: '+JSON.stringify({edge,apk,size}));
+    if(role==='cat'&&apk&&size.width===844){const shot=await call('Page.captureScreenshot',{format:'png'});fs.writeFileSync(path.join(shots,'chase-edge-app-844.png'),Buffer.from(shot.data,'base64'));}
+   }
   }
-  assert.deepEqual(errors,[]);console.log('PASS shared Horde artwork for 7 rats/5 cats/3 dogs, walking/jumping/invisibility/reduced motion, immutable server actors, browser and Android source at three viewport sizes.');
+  assert.deepEqual(errors,[]);console.log('PASS Chase character art, animation, corner camera clearance, and immutable server actors in browser and Android source at three viewport sizes.');
  }finally{if(cdp?.readyState===1){cdp.send(JSON.stringify({id:999999,method:'Browser.close'}));await sleep(500);cdp.close();}chrome.kill();server.closeAllConnections();server.close();}
 }
 main().catch(e=>{console.error(e);process.exitCode=1;server.close();});

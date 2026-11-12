@@ -14,7 +14,7 @@
   const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
   const keys = new Set(), held = new Map();
   let game = null, rolling = null, joystick = 0, jumpPending = false, abilityPending = false;
-  let last = 0, lastHud = 0, lastBoard = 0;
+  let lastHud = 0, lastBoard = 0;
   let savedGame = null, scoreRequest = false, screen = 'setup';
   const bestKey = 'moving-stairs.snake-ladder.best.v1';
   let best = null;
@@ -86,9 +86,11 @@
   }
   function setScreen(next) {
     screen = next;
+    loop.refresh();
     for (const name of ['setup', 'board', 'action', 'result']) $(name).hidden = name !== next;
     $('pause').hidden = !active();
-    clearInput(); requestAnimationFrame(fit);
+    clearInput();
+    if (next === 'board') requestAnimationFrame(fit);
   }
   function setDice(value) {
     const indices = {0: [], 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8]}[value];
@@ -175,6 +177,7 @@
     else if (game.phase === 'action') { setScreen('action'); stageCopy(); }
     else { setScreen('result'); renderResult(); beep(game.winner !== null ? 700 : 280, .18); }
     updateHud();
+    if (screen === 'action') fit();
   }
   function updateHud() {
     if (!game) return;
@@ -214,8 +217,8 @@
   }
   function fit() {
     if (screen === 'board') {
-      const box = $('board-wrap').getBoundingClientRect(), canvas=$('board-canvas'),dpr=Math.min(2,devicePixelRatio||1);
-      canvas.width=Math.max(1,Math.round(box.width*dpr));canvas.height=Math.max(1,Math.round(box.height*dpr));
+      const box = $('board-wrap').getBoundingClientRect(), canvas=$('board-canvas');
+      if(box.width>0&&box.height>0)GameRuntime.fitCanvas(canvas,box.width,box.height);
       canvas.style.width=`${box.width}px`;canvas.style.height=`${box.height}px`;
       updateBoardView();
     }
@@ -224,25 +227,33 @@
     const canvas = $('action-canvas');
     // Fit a following camera instead of shrinking the whole level into the viewport.
     const view=View.viewSize(box.width,box.height,s.kind);
-    canvas.width=view.width;canvas.height=view.height;
+    GameRuntime.setCanvasSize(canvas,view.width,view.height);
     const scale = Math.min(box.width / canvas.width, box.height / canvas.height);
     $('action-screen').style.width = `${Math.floor(canvas.width * scale)}px`;
     $('action-screen').style.height = `${Math.floor(canvas.height * scale)}px`;
+    measureStageInsets();
   }
   function drawBoard(canvas, now = performance.now() / 1000) {
     const preview = {players: [{name: 'Rat', role: 'rat', cell: 4}, {name: 'Cat', role: 'cat', cell: 31}, {name: 'Dog', role: 'dog', cell: 67}], current: 0};
     Art.board(canvas.getContext('2d'), canvas.width, game || preview, now,canvas.id==='board-canvas'?boardView:null);
   }
+  const stageInsets={top:18,bottom:24,left:0,right:0};
+  const stageHud=$('action').querySelector('.stage-hud');
+  function measureStageInsets(){
+    if(screen!=='action')return;
+    const canvas=$('action-canvas'),rect=canvas.getBoundingClientRect(),hud=stageHud.getBoundingClientRect();
+    const scale=canvas.height/Math.max(1,rect.height);
+    stageInsets.top=Math.max(18,hud.bottom>rect.top&&hud.top<rect.bottom?hud.bottom-rect.top+14:18)*scale;
+    stageInsets.bottom=24*scale;
+    stageInsets.left=stageInsets.right=canvas.width*.16;
+  }
   function drawStage(now,dt) {
     const s = game.stage, canvas = $('action-canvas');
-    const rect=canvas.getBoundingClientRect(),hud=$('action').querySelector('.stage-hud').getBoundingClientRect();
-    const top=Math.max(18,hud.bottom>rect.top&&hud.top<rect.bottom?hud.bottom-rect.top+14:18)*canvas.height/Math.max(1,rect.height);
     const axis=Math.abs(joystick)>.12?joystick:(keys.has('d')||keys.has('arrowright')?1:0)-(keys.has('a')||keys.has('arrowleft')?1:0);
-    const cam=camera.update(s,canvas,dt,axis,{top,bottom:24*canvas.height/Math.max(1,rect.height),left:canvas.width*.16,right:canvas.width*.16});
+    const cam=camera.update(s,canvas,dt,axis,stageInsets);
     Art.stage(canvas.getContext('2d'), canvas, s, cam, now);
   }
-  function frame(now) {
-    const dt = Math.min(.1, Math.max(0, (now - (last || now)) / 1000)); last = now;
+  function frame(now,dt) {
     if (online) {
       const enabled = active() && !document.hidden && !modalOpen();
       const keyboardX = (keys.has('d') || keys.has('arrowright') ? 1 : 0) - (keys.has('a') || keys.has('arrowleft') ? 1 : 0);
@@ -284,7 +295,6 @@
       if (canvas) drawBoard(canvas, now / 1000);
     }
     if (now - lastHud > 100) { lastHud = now; updateHud(); }
-    requestAnimationFrame(frame);
   }
 
   function backendOrigin() {
@@ -441,7 +451,9 @@
   new ResizeObserver(() => requestAnimationFrame(fit)).observe($('action-viewport'));
   new ResizeObserver(() => { if (screen === 'board') fit(); }).observe($('board-wrap'));
   const launchMode=new URLSearchParams(location.search).get('mode');if(['solo','local'].includes(launchMode))document.querySelector('[name=mode][value='+launchMode+']').checked=true;
-  choices(); bestCopy(); fit(); requestAnimationFrame(frame);
+  new ResizeObserver(measureStageInsets).observe(stageHud);
+  const loop=GameRuntime.createFrameLoop(frame,()=>screen==='setup'||screen==='result'?50:0);
+  choices(); bestCopy(); fit(); loop.refresh();
   if (online) online.attach({clearInput,editHud:()=>controlSettings?.open('hud'),snapshot(state){
     const changed = !game || game.matchId !== state.matchId || game.revision !== state.revision;
     if (!changed && game.stage && state.stage) { Object.assign(game.stage,state.stage); state={...state,stage:game.stage}; }

@@ -4,7 +4,7 @@ const fightCompetition=window.Competitive,fightProfile=fightCompetition.load(),f
 const opponent = new FightBot(Math.random,fightLevel);
 window.FightCompetition={finished:false,finish(a,b){if(this.finished)return;this.finished=true;const won=a.health>b.health,score=Math.min(1000000,Math.round(((100-b.health)*10+Math.max(0,a.health)*5+(won?2000:0))*(1+(fightLevel-1)*.08))),result={id:fightID,game:'sword-arena',challenge:fightLevel,players:[{name:fightName,score,won}]};fightProfile.record(result);const saved=fightCompetition.save(fightProfile);const copy=document.createElement('small');copy.textContent=`${score} points · Level ${fightLevel} · ${saved?'Saved on this device':'Storage unavailable'}`;copy.style.fontSize='14px';const next=document.createElement('button');next.textContent=won?'Next level →':'Try again';next.onclick=()=>location.reload();const board=document.createElement('a');board.href='rankings.html?game=sword-arena&source=device';board.textContent='Player rankings';board.style.fontSize='14px';document.getElementById('displayText').append(copy,next,board);fightCompetition.sync(result).catch(()=>{});}};
 document.addEventListener('DOMContentLoaded',()=>{const header=document.querySelector('.arcade-toolbar');if(header){const board=document.createElement('a');board.href='rankings.html?game=sword-arena&source=device';board.textContent=`Rankings · Lv ${fightLevel}`;header.append(board);}});
-let roundOver=false, lastFrame=0, accumulated=0;
+let roundOver=false, accumulated=0;
 enemy.facing=-1;
 function jumpPlayer(){if(!roundOver&&player.velocity.y===0)player.velocity.y=-18;}
 function pressFightKey(key){
@@ -34,7 +34,7 @@ for(const type of ['pointerup','pointercancel','lostpointercapture'])document.ad
  const key=touchKeys.get(event.pointerId);touchKeys.delete(event.pointerId);if(key)releaseFightKey(key);
 });
 window.addEventListener('blur',clearFightControls);
-document.addEventListener('visibilitychange',()=>{if(document.hidden){clearFightControls();lastFrame=0;accumulated=0;}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){clearFightControls();accumulated=0;}});
 function fightStep(now){
  if(roundOver)return;
  if(timer===0||player.health<=0||enemy.health<=0){roundOver=true;clearFightControls();determineWinner({player,enemy,timerId});return;}
@@ -58,15 +58,12 @@ function fightStep(now){
  }
  if(player.health<=0||enemy.health<=0){roundOver=true;clearFightControls();determineWinner({player,enemy,timerId});}
 }
-function animateFight(now){
- requestAnimationFrame(animateFight);
- if(document.hidden)return;
- if(!lastFrame)lastFrame=now;
- accumulated+=Math.min(100,now-lastFrame);lastFrame=now;
+function animateFight(now,dt){
+ accumulated+=dt*1000;
  c.fillStyle='black';c.fillRect(0,0,canvas.width,canvas.height);
  background.update();shop.update();
  // Fixed simulation rate prevents 120Hz phones from running combat twice as fast.
  while(accumulated>=1000/60){fightStep(now);accumulated-=1000/60;}
  player.draw();enemy.draw();
 }
-decreaseTimer();requestAnimationFrame(animateFight);
+decreaseTimer();GameRuntime.createFrameLoop(animateFight,()=>0).refresh();
