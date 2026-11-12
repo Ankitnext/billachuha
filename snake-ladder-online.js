@@ -103,7 +103,14 @@
       try{const current=await api('/api/v1/rooms/current');acceptRoom(current.room);await connect();}
       catch(error){if(error.status!==404)throw error;}
       if(invite&&!room){$('online-room-code').value=invite;status('Your friend’s room code is filled in. Tap Join room.');}else status();
-    }catch(error){if(![401,403].includes(error.status))status(error.message);else status('Sign in to create or join a room.');$('online-login').hidden=appMode;}
+    }catch(error){
+      if(![401,403].includes(error.status))status(error.message);
+      else{
+        status('Sign in to create or join a room.');
+        if(!appMode)import('/multiplayer/google-sign-in.js').then(({showGoogleSignIn})=>showGoogleSignIn($('google-sign-in'),boot)).catch(()=>{});
+      }
+      $('online-login').hidden=appMode;
+    }
     renderRoom();
   }
   async function closeApp(){
@@ -116,7 +123,7 @@
     const lobby=document.createElement('section');lobby.id='online-lobby';lobby.innerHTML=`
       <div class="online-card"><p class="eyebrow">SNAKE & LADDER · 2–4 ONLINE PLAYERS</p><h2>Race your friends to 100.</h2>
       <p id="online-identity"></p><p>Take turns rolling and playing a platform challenge. Everyone sees the same board and watches the active player live.</p>
-      <div id="online-auth"><form id="online-login"><label>Email<input id="online-email" type="email" required autocomplete="email" maxlength="254"></label><label>Password<input id="online-password" type="password" required autocomplete="current-password" maxlength="256"></label><button class="primary">Sign in</button></form><a href="/multiplayer" target="_blank" rel="noopener">Create account or use email sign-in ↗</a><button id="online-retry" class="secondary">I’m signed in · reconnect</button></div>
+      <div id="online-auth"><form id="online-login"><label>Email<input id="online-email" type="email" required autocomplete="email" maxlength="254"></label><label>Password<input id="online-password" type="password" required autocomplete="current-password" maxlength="256"></label><button class="primary">Sign in</button></form><div id="google-sign-in" hidden></div><a href="/multiplayer" target="_blank" rel="noopener">Create account or use email sign-in ↗</a><button id="online-retry" class="secondary">I’m signed in · reconnect</button></div>
       <div id="online-home" hidden><button id="online-create" class="primary">Create a room · up to 4 players</button><form id="online-join"><label>Friend’s room code<input id="online-room-code" required pattern="[a-fA-F0-9]{8}" maxlength="8" placeholder="8-character code" autocomplete="off" autocapitalize="characters"></label><button class="secondary">Join room →</button></form></div>
       <div id="online-room" hidden><h3 id="online-room-title"></h3><p id="online-room-note"></p><p id="online-code"></p><div id="online-invite"><button id="online-copy" class="secondary">Copy invitation</button><p id="online-link"></p></div><div id="online-roles" role="group" aria-label="Choose character"><button data-role="rat">🐭 Rat · Double jump</button><button data-role="cat">🐱 Cat · Speed boost</button><button data-role="dog">🐶 Dog · Shoot & reroll</button></div><ol id="online-players"></ol><div id="online-actions" class="online-room-actions" hidden><button id="online-ready" class="primary">I’m ready</button><button id="online-start" class="primary">Start race →</button><button id="online-leave" class="quiet">Leave room</button></div></div>
       <p class="online-rules">30 seconds to roll or start a move. Results advance after 8 seconds. A lost connection can rejoin; missed turns pass automatically. Leaving forfeits your place. The race ends at cell 100 or after 45 minutes.</p></div>`;

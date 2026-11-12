@@ -13,9 +13,9 @@ function renderer(){
  context.window.ModeArt.chaseRat=(c,color,pose,heading)=>{characters.push({p:{role:'rat',weapon:null},pose,heading});drawRat(c,color,pose,heading);};
  const game=fs.readFileSync(path.join(source,'game.js'),'utf8');
  vm.runInContext(game.slice(game.indexOf('const roles ='),game.indexOf('const appMode =')),context);
- vm.runInContext("const me={id:'self'},camera={x:0,y:0},world={ended:false},reducedMotion={matches:false};const characterMotion=new window.CharacterMotion.Tracker();",context);
+ vm.runInContext("const me={id:'self'},camera={x:0,y:0},world={ended:false},reducedMotion={matches:false};const characterMotion=new window.CharacterMotion.Tracker();let canvasScale=1;",context);
  vm.runInContext(game.slice(game.indexOf('function chaseSpriteSize(player)'),game.indexOf('\nfunction frame()')),context);
- return{draw:player=>{context.nameplate(player);context.animal(player);},characters,commands,time:value=>now=value,reduce:()=>vm.runInContext('reducedMotion.matches=true',context),phone:()=>vm.runInContext('canvas.clientWidth=390',context)};
+ return{draw:player=>{context.nameplate(player);context.animal(player);},characters,commands,time:value=>now=value,reduce:()=>vm.runInContext('reducedMotion.matches=true',context),phone:()=>vm.runInContext('canvas.clientWidth=390;canvasScale=canvas.width/canvas.clientWidth',context)};
 }
 test('Chase uses a four-paw rat and upright Horde cats and dogs without changing server actors',()=>{
  const r=renderer();
