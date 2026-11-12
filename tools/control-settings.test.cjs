@@ -34,7 +34,7 @@ test('local and embedded settings assets match across checkout line endings',()=
 });
 test('native overlay defaults keep touch controls separate and leave the middle clear',()=>{
   const online=[{id:'move',stick:true},...Array.from({length:9},(_,i)=>({id:'action-'+i}))];
-  const local=[0,1].flatMap(group=>[{id:'stick-'+group,stick:true,group},...Array.from({length:4},(_,i)=>({id:group+'-'+i,group}))]);
+  const local=[0,1].flatMap(group=>[{id:'stick-'+group,stick:true,group},...Array.from({length:5},(_,i)=>({id:group+'-'+i,group}))]);
   for(const bounds of [{width:544,height:184},{width:820,height:254},{width:366,height:708}])for(const controls of [online,local]){
     const layout=C.overlayHud(controls,bounds);
     assert.equal(C.hudOverlaps(layout,controls,bounds),false);

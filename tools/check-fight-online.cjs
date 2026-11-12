@@ -60,7 +60,26 @@ async function main(){
   await a.eval("document.querySelector('[name=mode][value=online]').click()");await a.click('start');await a.until("document.getElementById('online-status').textContent.includes('Searching')");assert.equal(room.state,'waiting');assert.equal(room.players.length,1);
   await a.click('cancel-online');await a.until("!document.getElementById('start').disabled");assert.equal(room,null,'Cancel removes queue membership');
   await a.click('start');await a.until("document.getElementById('online-status').textContent.includes('Searching')");await b.click('start');for(const c of clients)await c.until("!document.getElementById('battle').hidden&&document.getElementById('match-mode').textContent==='ONLINE 1v1'");
-  await sleep(1400);await a.send('Input.dispatchKeyEvent',{type:'keyDown',code:'KeyD',key:'d',windowsVirtualKeyCode:68});await b.send('Input.dispatchKeyEvent',{type:'keyDown',code:'KeyA',key:'a',windowsVirtualKeyCode:65});await sleep(500);await a.send('Input.dispatchKeyEvent',{type:'keyUp',code:'KeyD',key:'d',windowsVirtualKeyCode:68});await b.send('Input.dispatchKeyEvent',{type:'keyUp',code:'KeyA',key:'a',windowsVirtualKeyCode:65});
+  await sleep(1400);
+  const touchPoint=async(c,selector,fraction=.5)=>c.eval(`(()=>{const r=document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect();return {id:1,x:r.left+r.width/2,y:r.top+r.height*${fraction}};})()`);
+  for(const [index,action]of [[0,'punch'],[1,'kick']]){
+   const c=clients[index];await c.send('Page.bringToFront');
+   await c.send('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:5});
+   const point=await touchPoint(c,'#fight-0-'+action);
+   await c.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[point]});
+   for(let i=0;i<20&&!lastInputs[index][action];i++)await sleep(25);
+   assert.equal(lastInputs[index][action],true,`The ${action} button sends its own input`);
+   assert.ok(!lastInputs[index][action==='punch'?'kick':'punch']);
+   await c.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  }
+  const duck=await touchPoint(b,'#stick-one',.85);
+  await b.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[duck]});
+  for(let i=0;i<20&&!vm.runInContext('fightGame.fighters[1].crouching',engine);i++)await sleep(25);
+  assert.equal(vm.runInContext('fightGame.fighters[1].crouching',engine),true,'Joystick Down crouches in the online simulation');
+  await b.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  for(let i=0;i<20&&vm.runInContext('fightGame.fighters[1].crouching',engine);i++)await sleep(25);
+  assert.equal(vm.runInContext('fightGame.fighters[1].crouching',engine),false,'Releasing the stick stands up');
+  await a.send('Input.dispatchKeyEvent',{type:'keyDown',code:'KeyD',key:'d',windowsVirtualKeyCode:68});await b.send('Input.dispatchKeyEvent',{type:'keyDown',code:'KeyA',key:'a',windowsVirtualKeyCode:65});await sleep(500);await a.send('Input.dispatchKeyEvent',{type:'keyUp',code:'KeyD',key:'d',windowsVirtualKeyCode:68});await b.send('Input.dispatchKeyEvent',{type:'keyUp',code:'KeyA',key:'a',windowsVirtualKeyCode:65});
   const positions=vm.runInContext('fightGame.fighters.map(f=>f.x)',engine);assert.ok(positions[0]>340&&positions[1]<1010,'Both players move their own fighter using P1 keys');
   await a.send('Input.dispatchKeyEvent',{type:'keyDown',code:'KeyG',key:'g',windowsVirtualKeyCode:71});await sleep(100);await a.send('Input.dispatchKeyEvent',{type:'keyUp',code:'KeyG',key:'g',windowsVirtualKeyCode:71});await sleep(650);assert.ok(vm.runInContext('fightGame.fighters[1].hp<100',engine),'An online blast damages the opponent');
   await b.eval('ChaseApp.pause()');await sleep(100);await b.eval('ChaseApp.resume()');await b.until("document.getElementById('online-connection').textContent.includes('LIVE')");

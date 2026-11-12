@@ -4,7 +4,7 @@
   const multiplier=combo=>combo>=10?1.5:combo>=6?1.2:combo>=3?1.1:1;
   function hit(game,a,d,spec){
     if(d.ko||d.invulnerable>0)return false;
-    const src=spec.origin||S.center(a),target=S.center(d),front=(src.x-target.x)*d.face>=0;
+    const src=spec.origin||S.center(a),target=S.center(S.hurtbox(d)),front=(src.x-target.x)*d.face>=0;
     if(d.shield&&d.energy>0){game.impact(target.x,target.y,'#a4e5d7',12);game.emit('shield-hit',d);return false;}
     const blocked=d.block&&front&&d.energy>=6;
     if(d.block&&front&&!blocked){d.block=false;d.stun=.3;game.text('GUARD BREAK',target.x,target.y-95,'#f3ca90');}
@@ -15,7 +15,7 @@
     if(blocked)d.energy=Math.max(0,d.energy-6);
     else{d.stun=Math.max(d.stun,.15);d.state='stun';d.attack=null;d.charging=false;d.charge=0;d.sp1Consumed=true;}
     const dir=spec.dir||Math.sign(target.x-src.x)||a.face;
-    d.vx=dir*(spec.kx||260)*(blocked?.18:1);d.vy=(spec.ky||-70)*(blocked?.2:1);d.knockTime=blocked?.05:.17;d.grounded=false;d.hurtFlash=.1;
+    d.vx=dir*(spec.kx||260)*(blocked?.18:1);d.vy=(spec.ky||-70)*(blocked?.2:1);d.knockTime=blocked?.05:.17;d.grounded=false;d.crouching=false;d.hurtFlash=.1;
     game.impact(target.x,target.y,a.color,blocked?10:28);game.emit(blocked?'block-hit':spec.heavy?'heavy-hit':'hit',a);
     if(spec.heavy&&!blocked){game.hitstop=Math.max(game.hitstop,.05);game.shake=Math.max(game.shake,.25);game.flash=Math.max(game.flash,.12);}
     else game.shake=Math.max(game.shake,.08);
@@ -24,8 +24,13 @@
     return true;
   }
   function melee(game,f,input){
-    if(!input.attack||!f.canAct()||f.attackCooldown>0)return;
-    const kind=input.y<-.45?'uppercut':input.y>.45?(f.grounded?'kick':'slam'):'punch',spec=ATTACKS[kind];
+    if(!(input.punch||input.kick||input.attack)||!f.canAct()||f.attackCooldown>0)return;
+    let kind;
+    if(input.kick)kind=!f.grounded&&input.y>.45?'slam':'kick';
+    else if(input.punch)kind=input.y<-.45?'uppercut':'punch';
+    // Older online clients and the bot still send the combined attack input.
+    else kind=input.y<-.45?'uppercut':input.y>.45?(f.grounded?'kick':'slam'):'punch';
+    const spec=ATTACKS[kind];
     f.attack={kind,elapsed:0,duration:spec.duration,start:spec.start,hit:false,spec};f.attackCooldown=spec.cooldown;f.state='attack';f.block=false;
     if(kind==='slam')f.vy=800;
     game.emit('swing',f);
@@ -37,7 +42,7 @@
   }
   function resolveMelee(game,dt){
     for(const f of game.fighters){const a=f.attack;if(!a||a.power||a.kind==='pound')continue;a.elapsed+=dt;
-      if(!a.hit&&a.elapsed>=a.start){const d=game.fighters[1-f.id];if(S.overlap(meleeBox(f,a),d)){a.hit=true;hit(game,f,d,{...a.spec,dir:f.face,heavy:a.kind!=='punch'});}}
+      if(!a.hit&&a.elapsed>=a.start){const d=game.fighters[1-f.id];if(S.overlap(meleeBox(f,a),S.hurtbox(d))){a.hit=true;hit(game,f,d,{...a.spec,dir:f.face,heavy:a.kind!=='punch'});}}
       if(a.elapsed>=a.duration){f.attack=null;if(!f.ko)f.state=f.grounded?'idle':'fall';}
     }
   }

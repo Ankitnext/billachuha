@@ -10,7 +10,7 @@
       if(!CHARACTERS[character])throw Error('Choose Blaze, Shadow or Titan.');
       const c=CHARACTERS[character];this.id=id;this.character=character;this.name=c.name;this.color=id===0?c.color:'#f08d83';this.tint=c.color;
       this.w=46;this.h=106;this.x=id===0?330:1024;this.y=S.RULES.floor-this.h;this.vx=0;this.vy=0;this.face=id===0?1:-1;
-      this.maxHp=c.hp;this.hp=c.hp;this.maxEnergy=c.energy;this.energy=c.energy;this.speed=c.speed;this.grounded=true;this.state='idle';
+      this.maxHp=c.hp;this.hp=c.hp;this.maxEnergy=c.energy;this.energy=c.energy;this.speed=c.speed;this.grounded=true;this.crouching=false;this.state='idle';
       this.stun=0;this.invulnerable=0;this.knockTime=0;this.dashTime=0;this.dashCooldown=0;this.teleportCooldown=0;this.attackCooldown=0;this.powerCooldown=0;
       this.attack=null;this.block=false;this.shield=false;this.charging=false;this.charge=0;this.sp1Consumed=false;this.sp2Time=0;this.sp2Consumed=false;
       this.prevSp1=false;this.prevSp2=false;this.prevUp=false;this.upTime=0;this.flying=false;this.ko=false;

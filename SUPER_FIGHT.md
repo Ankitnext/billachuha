@@ -12,18 +12,19 @@ Blaze has 100 HP, 120 energy, fast movement and a 0.7-second beam charge. Shadow
 
 | Action | Player 1 | Player 2 |
 |---|---|---|
-| Move, jump/fly, fast fall | WASD | Arrows |
-| Attack | F | L |
+| Move, jump/fly, crouch/fast fall | WASD | Arrows |
+| Punch | F | L |
+| Kick | R | ; |
 | Special 1 | G | K |
 | Special 2 | H | J |
 | Physical block | Left Shift | Right Shift |
 | Pause | P / Escape | P / Escape |
 
-Tap Up to jump; hold to fly. Double-tap any movement direction within 250ms for an approximately 200px dash costing 20 energy. High-speed wall impacts bounce the fighter. Attacks use the stick's Up/Down direction too: Attack alone punches (8), Down+Attack kicks on ground (12) or slams in air (18), and Up+Attack uppercuts (15).
+Tap Up to jump or hold it to fly. Hold Down while grounded to crouch under horizontal blasts and beams. Down in the air makes you fall faster. Double-tap a direction within 250ms to dash about 200px for 20 energy. High-speed wall impacts bounce the fighter. Punch deals 8 damage, Kick deals 12, Up + Punch uppercuts for 15, and Down + Kick in the air slams for 18.
 
 Tap Special 1 for a horizontal blast (20 energy, 15 damage); hold it for a beam (50 energy, 35 damage, 1s charge, or 0.7s for Blaze). Holding Special 1 buffers its charge through an existing attack or cooldown, then fires once until released. Up+Special 1 activates Rising Dragon (30 energy, 22 damage). Tap Special 2 to teleport behind the opponent (25 energy), hold it for Energy Shield, or use Down+Special 2 in the air for Ground Pound (35 energy, 28 damage). Shielding stops ground recharge. Releasing/canceling controls, switching tabs or opening a dialog cancels an uncommitted charge rather than releasing a blast/teleport.
 
-Solo touch has a movement stick and four action buttons. Local two-player has independent sticks/action pads and supports simultaneous touches. Narrow portrait phones stack the two pads to retain usable target sizes; landscape or a larger screen gives more room. Keyboard and touch can be mixed. Browser modifiers and text/select fields keep their normal shortcuts.
+Solo touch has a movement stick and five action buttons. Local two-player has independent sticks and action pads and supports simultaneous touches. Narrow portrait phones stack the two pads to retain usable target sizes. Keyboard and touch can be mixed. Browser modifiers and text/select fields keep their normal shortcuts.
 
 ## Combat and rounds
 

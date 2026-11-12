@@ -27,6 +27,34 @@ test('combo multipliers, 800 ms window and 150 ms stun produce bounded damage',(
   assert.ok(Math.abs(a.damageDealt-sum)<.001);assert.equal(a.combo,10);assert.equal(a.maxCombo,10);assert.equal(S.multiplier(10),1.5);
   g.time+=.81;S.hit(g,a,b,{damage:8});assert.equal(a.combo,1);ticks(g,10);assert.equal(b.stun,0);
 });
+test('Punch and Kick select distinct attacks with a neutral stick',()=>{
+  for(const [input,kind,damage]of [[{punch:true},'punch',8],[{kick:true},'kick',12]]){
+    const g=game(),[a,b]=g.fighters;b.x=a.x+60;
+    g.step([input,{}]);assert.equal(a.attack.kind,kind);
+    ticks(g,10);assert.equal(b.hp,b.maxHp-damage);
+  }
+  for(const [input,kind]of [[{punch:true,y:-1},'uppercut'],[{kick:true,y:1},'slam']]){
+    const g=game(),a=g.fighters[0];a.y-=130;a.grounded=false;
+    g.step([input,{}]);assert.equal(a.attack.kind,kind);assert.equal(a.crouching,false);
+  }
+});
+test('holding down ducks under standing blasts and beams, and releasing restores the hitbox',()=>{
+  for(const power of [S.blast,S.beam]){
+    const g=game(),[a,b]=g.fighters;b.x=a.x+200;
+    g.step([{}, {y:1}]);assert.equal(b.state,'crouch');assert.equal(b.crouching,true);
+    assert.equal(S.hurtbox(b).y+S.hurtbox(b).h,S.RULES.floor);
+    assert.equal(power(g,a),true);ticks(g,24,{}, {y:1});assert.equal(b.hp,b.maxHp);
+    g.step();assert.equal(b.crouching,false);assert.equal(S.hurtbox(b).h,106);
+    a.attack=null;a.powerCooldown=0;
+    assert.equal(power(g,a),true);ticks(g,24);assert.ok(b.hp<b.maxHp);
+  }
+});
+test('a crouching fighter can still be hit by a kick and Down fast-falls in the air',()=>{
+  const g=game(),[a,b]=g.fighters;b.x=a.x+70;
+  ticks(g,10,{kick:true},{y:1});assert.equal(b.hp,b.maxHp-12);assert.equal(b.crouching,false);
+  const h=game(),f=h.fighters[0];f.y-=180;f.grounded=false;
+  h.step([{y:1},{}]);assert.equal(f.crouching,false);assert.ok(f.vy>S.RULES.gravity*S.RULES.dt);
+});
 test('physical guard chips from the front while shield blocks all damage and drains energy',()=>{
   const g=game(),[a,b]=g.fighters;b.block=true;S.hit(g,a,b,{damage:8});assert.equal(b.hp,b.maxHp-2);
   a.x=1200;b.block=true;S.hit(g,a,b,{damage:8});assert.equal(b.hp,b.maxHp-10);

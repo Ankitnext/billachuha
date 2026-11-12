@@ -16,8 +16,8 @@ const cases=[
  {name:'Snake & Ladder',url:'/snake-ladder.html',stick:'joystick-container',buttons:['jump-button','ability-button']},
  {name:'Trap Escape',url:'/trap-escape.html',stick:'move-stick',buttons:['jump-button','drop-button']},
  {name:'Cat Chase',url:'/cat-chase.html',stick:'move-stick',buttons:['jump-button','pounce-button']},
- {name:'Fighting Arena',url:'/super-fight.html',stick:'stick-one',buttons:['fight-0-attack','fight-0-sp1','fight-0-block']},
- {name:'Fighting Arena local P2',url:'/super-fight.html?local',stick:'stick-two',buttons:['fight-1-attack','fight-1-sp1','fight-1-block']},
+ {name:'Fighting Arena',url:'/super-fight.html',stick:'stick-one',buttons:['fight-0-punch','fight-0-kick','fight-0-sp1','fight-0-block']},
+ {name:'Fighting Arena local P2',url:'/super-fight.html?local',stick:'stick-two',buttons:['fight-1-punch','fight-1-kick','fight-1-sp1','fight-1-block']},
  {name:'Dungeon Dash',url:'/dungeon-dash.html',stick:'joystick-container',buttons:['jump','fire','swap']}
 ].filter(c=>!process.argv[2]||c.name.toLowerCase().includes(process.argv[2].toLowerCase()));
 async function main(){

@@ -1,7 +1,7 @@
 ((root,factory)=>{const api=factory(typeof module==='object'&&module.exports?{...require('./physics.js'),...require('./combat.js')}:root.SuperFight);if(typeof module==='object'&&module.exports)module.exports=api;else Object.assign(root.SuperFight,api);})(globalThis,S=>{
   'use strict';
   const pay=(f,cost)=>{if(f.energy+1e-6<cost)return false;f.energy=Math.max(0,f.energy-cost);f.block=false;return true;};
-  function cancelCharge(f){f.charging=false;f.charge=0;f.sp1Consumed=false;f.sp2Time=0;f.sp2Consumed=false;f.prevSp1=false;f.prevSp2=false;f.prevUp=false;f.upTime=0;f.shield=false;f.block=false;}
+  function cancelCharge(f){f.charging=false;f.charge=0;f.sp1Consumed=false;f.sp2Time=0;f.sp2Consumed=false;f.prevSp1=false;f.prevSp2=false;f.prevUp=false;f.upTime=0;f.shield=false;f.block=false;f.crouching=false;if(f.state==='crouch')f.state='idle';}
   function blast(game,f){if(!f.canAct()||f.powerCooldown>0||!pay(f,20)||game.projectiles.length>=32)return false;
     const c=S.center(f);game.projectiles.push({owner:f.id,x:c.x+f.face*45,y:f.y+36,w:25,h:25,vx:f.face*800,life:1.8});f.powerCooldown=.4;f.state='blast';f.attack={kind:'blast',power:true,elapsed:0,duration:.2};game.emit('blast',f);return true;
   }
@@ -46,17 +46,17 @@
   function beamBox(b){return{x:b.face>0?b.x:0,y:b.y-20,w:b.face>0?S.RULES.width-b.x:b.x,h:40};}
   function resolvePowers(game,dt){
     for(const f of game.fighters){const a=f.attack;if(!a?.power)continue;a.elapsed+=dt;
-      if(a.kind==='dragon'&&!a.hit){const d=game.fighters[1-f.id],box={x:f.face>0?f.x:f.x-80,y:f.y-45,w:f.w+80,h:f.h+65};if(S.overlap(box,d)){a.hit=true;S.hit(game,f,d,{damage:22,kx:160,ky:-850,dir:f.face,heavy:true});}}
+      if(a.kind==='dragon'&&!a.hit){const d=game.fighters[1-f.id],box={x:f.face>0?f.x:f.x-80,y:f.y-45,w:f.w+80,h:f.h+65};if(S.overlap(box,S.hurtbox(d))){a.hit=true;S.hit(game,f,d,{damage:22,kx:160,ky:-850,dir:f.face,heavy:true});}}
       if(a.kind==='pound'&&f.grounded){const c=S.center(f),enemy=game.fighters[1-f.id];game.waves.push({x:c.x,y:S.RULES.floor,radius:f.spec.poundRadius,life:.45,color:f.color});game.impact(c.x,S.RULES.floor,f.color,40);game.shake=.3;game.emit('slam',f);
         if(Math.abs(S.center(enemy).x-c.x)<=f.spec.poundRadius&&enemy.y+enemy.h>S.RULES.floor-100)S.hit(game,f,enemy,{damage:28,kx:450,ky:-430,heavy:true});f.attack=null;
       }else if(a.elapsed>=a.duration)f.attack=null;
     }
-    for(const shot of game.projectiles){shot.x+=shot.vx*dt;shot.life-=dt;const a=game.fighters[shot.owner],d=game.fighters[1-shot.owner];if(shot.life>0&&S.overlap(shot,d)){S.hit(game,a,d,{damage:15,kx:330,ky:-100,origin:{x:shot.x-shot.vx*.05,y:shot.y}});shot.life=0;}if(shot.x<-40||shot.x>S.RULES.width+40)shot.life=0;}
+    for(const shot of game.projectiles){shot.x+=shot.vx*dt;shot.life-=dt;const a=game.fighters[shot.owner],d=game.fighters[1-shot.owner];if(shot.life>0&&S.overlap(shot,S.hurtbox(d))){S.hit(game,a,d,{damage:15,kx:330,ky:-100,origin:{x:shot.x-shot.vx*.05,y:shot.y}});shot.life=0;}if(shot.x<-40||shot.x>S.RULES.width+40)shot.life=0;}
     game.projectiles=game.projectiles.filter(s=>s.life>0);
     for(const b of game.beams){b.life-=dt;b.warmup=Math.max(0,b.warmup-dt);}
     const active=game.beams.filter(b=>b.life>0);
     if(active.length>=2){for(const a of active)for(const b of active)if(a.owner!==b.owner&&!a.clashed&&!b.clashed&&a.face!==b.face&&S.overlap(beamBox(a),beamBox(b))){a.clashed=b.clashed=true;a.clashX=b.clashX=(a.x+b.x)/2;game.clash={x:a.clashX,y:(a.y+b.y)/2,life:.6};game.hitstop=.05;game.flash=.15;game.shake=.3;game.emit('clash');}}
-    for(const b of active)if(!b.hit&&!b.clashed&&b.warmup<=0){const a=game.fighters[b.owner],d=game.fighters[1-b.owner];if(S.overlap(beamBox(b),d)){S.hit(game,a,d,{damage:35,kx:700,ky:-160,dir:b.face,heavy:true});b.hit=true;}}
+    for(const b of active)if(!b.hit&&!b.clashed&&b.warmup<=0){const a=game.fighters[b.owner],d=game.fighters[1-b.owner];if(S.overlap(beamBox(b),S.hurtbox(d))){S.hit(game,a,d,{damage:35,kx:700,ky:-160,dir:b.face,heavy:true});b.hit=true;}}
     game.beams=active;
   }
   return{pay,cancelCharge,blast,beam,teleport,dragon,pound,dash,powers,beamBox,resolvePowers};

@@ -1,13 +1,13 @@
 (() => {
   'use strict';
-  const maps=[{left:'KeyA',right:'KeyD',up:'KeyW',down:'KeyS',attack:'KeyF',sp1:'KeyG',sp2:'KeyH',block:'ShiftLeft'},{left:'ArrowLeft',right:'ArrowRight',up:'ArrowUp',down:'ArrowDown',attack:'KeyL',sp1:'KeyK',sp2:'KeyJ',block:'ShiftRight'}];
+  const maps=[{left:'KeyA',right:'KeyD',up:'KeyW',down:'KeyS',punch:'KeyF',kick:'KeyR',sp1:'KeyG',sp2:'KeyH',block:'ShiftLeft'},{left:'ArrowLeft',right:'ArrowRight',up:'ArrowUp',down:'ArrowDown',punch:'KeyL',kick:'Semicolon',sp1:'KeyK',sp2:'KeyJ',block:'ShiftRight'}];
   class FightInput{
     constructor({enabled,onPause,onCancel}){
       this.enabled=enabled;this.onCancel=onCancel;this.keys=new Set();this.touch=[{},{}];this.latch=[{},{}];this.axes=[{x:0,y:0},{x:0,y:0}];this.dashes=[{x:0,y:0},{x:0,y:0}];this.lastTap=[{},{}];this.sticks=[];
 
  this.settings=window.ControlSettings?.create({key:'super-fight.controls.v1',title:'Super Fighting Arena',
  overlayHud:!!window.BILLACHUHA_CONFIG?.offline,hudProfile:()=>document.querySelector('[name="mode"]:checked')?.value||'solo',hudVisible:item=>item.group!==1||document.querySelector('[name="mode"]:checked')?.value==='local',
- actions:[...maps.flatMap((map,id)=>Object.entries(map).map(([action,code])=>({id:code,label:'Player '+(id+1)+' · '+({up:'Jump / Fly',down:'Fast fall',left:'Left',right:'Right',attack:'Attack',sp1:'Special 1',sp2:'Special 2',block:'Block'}[action]),codes:[code]}))),{id:'pause',label:'Pause',codes:['KeyP']}],
+ actions:[...maps.flatMap((map,id)=>Object.entries(map).map(([action,code])=>({id:code,label:'Player '+(id+1)+' · '+({up:'Jump / Fly',down:'Crouch / Fast fall',left:'Left',right:'Right',punch:'Punch',kick:'Kick',sp1:'Special 1',sp2:'Special 2',block:'Block'}[action]),codes:[code]}))),{id:'pause',label:'Pause',codes:['KeyP']}],
  hud:[...['one','two'].map((name,id)=>({id:'stick-'+name,label:'P'+(id+1)+' Move',stick:true,group:id})),...Array.from(document.querySelectorAll('[data-player][data-action]')).map(button=>{button.id='fight-'+button.dataset.player+'-'+button.dataset.action;return{id:button.id,label:'P'+(Number(button.dataset.player)+1)+' '+button.dataset.action,group:Number(button.dataset.player)};})],
  note:'Both players share this keyboard. Each key can control one action. Combat pauses while settings are open.',
  onOpen:()=>this.reset(),onClose:()=>this.reset(),onRelease:()=>this.reset()
@@ -43,7 +43,7 @@
       for(const type of ['pointerup','pointercancel','lostpointercapture'])base.addEventListener(type,e=>{if(e.pointerId===pointer){reset();this.dashes[id]={x:0,y:0};this.lastTap[id]={};}});
       this.sticks.push(reset);reset();
     }
-    sample(){return maps.map((map,id)=>{const a=this.axes[id],press=key=>this.keys.has(map[key])||this.touch[id][key]!==undefined||!!this.latch[id][key];const value={x:Math.abs(a.x)>.16?a.x:(this.keys.has(map.right)?1:0)-(this.keys.has(map.left)?1:0),y:Math.abs(a.y)>.3?a.y:(this.keys.has(map.down)?1:0)-(this.keys.has(map.up)?1:0),attack:press('attack'),sp1:press('sp1'),sp2:press('sp2'),block:press('block'),dashX:this.dashes[id].x,dashY:this.dashes[id].y};this.latch[id]={};this.dashes[id]={x:0,y:0};return value;});}
+    sample(){return maps.map((map,id)=>{const a=this.axes[id],press=key=>this.keys.has(map[key])||this.touch[id][key]!==undefined||!!this.latch[id][key];const value={x:Math.abs(a.x)>.16?a.x:(this.keys.has(map.right)?1:0)-(this.keys.has(map.left)?1:0),y:Math.abs(a.y)>.3?a.y:(this.keys.has(map.down)?1:0)-(this.keys.has(map.up)?1:0),punch:press('punch'),kick:press('kick'),sp1:press('sp1'),sp2:press('sp2'),block:press('block'),dashX:this.dashes[id].x,dashY:this.dashes[id].y};this.latch[id]={};this.dashes[id]={x:0,y:0};return value;});}
     reset(){this.settings?.release();this.keys.clear();this.touch=[{},{}];this.latch=[{},{}];this.axes=[{x:0,y:0},{x:0,y:0}];this.dashes=[{x:0,y:0},{x:0,y:0}];this.lastTap=[{},{}];for(const reset of this.sticks)reset();this.onCancel?.();}
   }
   window.SuperFight.FightInput=FightInput;

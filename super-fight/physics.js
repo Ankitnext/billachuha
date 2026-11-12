@@ -4,12 +4,15 @@
   const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
   const overlap=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
   const center=f=>({x:f.x+f.w/2,y:f.y+f.h/2});
+  const crouchHeight=42;
+  const hurtbox=f=>f.crouching?{x:f.x,y:f.y+f.h-crouchHeight,w:f.w,h:crouchHeight}:f;
   const random=seed=>{let state=seed>>>0;return()=>{state+=0x6D2B79F5;let n=state;n=Math.imul(n^n>>>15,n|1);n^=n+Math.imul(n^n>>>7,n|61);return((n^n>>>14)>>>0)/4294967296;};};
-  const neutral=()=>({x:0,y:0,attack:false,sp1:false,sp2:false,block:false,dashX:0,dashY:0,tap1:false,tap2:false});
+  const neutral=()=>({x:0,y:0,attack:false,punch:false,kick:false,sp1:false,sp2:false,block:false,dashX:0,dashY:0,tap1:false,tap2:false});
   function physics(game,f,input,dt){
     if(f.ko)return;
     const locked=f.stun>0||f.attack?.root||f.charging||f.shield;
-    const axis=locked?0:clamp(input.x||0,-1,1);
+    const crouch=input.y>.45&&!locked&&!f.attack&&!f.block&&f.dashTime<=0;
+    const axis=locked||crouch&&f.grounded?0:clamp(input.x||0,-1,1);
     const target=axis*f.speed*(f.block?.42:1),accel=f.grounded?2600:1500;
     let endDash=false;
     if(f.dashTime>0){f.dashTime=Math.max(0,f.dashTime-dt);endDash=f.dashTime<=1e-6;}
@@ -29,9 +32,10 @@
     if(wall){f.x=clamp(f.x,0,RULES.width-f.w);if(Math.abs(f.vx)>750){f.vx*=-.6;f.knockTime=.2;f.dashTime=0;game.impact(f.x+f.w/2,f.y+f.h/2,f.color,14);game.emit('wall',f);}else f.vx=0;}
     if(f.y<8){f.y=8;if(f.vy<0)f.vy=Math.abs(f.vy)*.25;}
     f.grounded=f.y+f.h>=RULES.floor;
+    f.crouching=crouch&&f.grounded;
     if(f.grounded){f.y=RULES.floor-f.h;f.vy=0;if(!f.shield&&!f.charging&&!f.attack?.power)f.energy=Math.min(f.maxEnergy,f.energy+RULES.groundRegen*dt);}
     f.energy=clamp(f.energy,0,f.maxEnergy);
-    if(!f.stun&&!f.attack&&!f.charging&&!f.shield)f.state=f.block?'block':flying?'fly':!f.grounded?(f.vy<0?'jump':'fall'):Math.abs(f.vx)>40?'run':'idle';
+    if(!f.stun&&!f.attack&&!f.charging&&!f.shield)f.state=f.crouching?'crouch':f.block?'block':flying?'fly':!f.grounded?(f.vy<0?'jump':'fall'):Math.abs(f.vx)>40?'run':'idle';
   }
-  return{RULES,clamp,overlap,center,random,neutral,physics};
+  return{RULES,clamp,overlap,center,hurtbox,random,neutral,physics};
 });

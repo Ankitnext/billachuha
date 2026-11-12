@@ -67,12 +67,21 @@
     const put=(item,left,top,size)=>{const c={x:0,y:0,size,opacity:.55},b=box(c,item,bounds);c.x=clamp(left/Math.max(1,bounds.width-b.size),0,1);c.y=clamp(top/Math.max(1,bounds.height-b.size),0,1);out[item.id]=c;};
     for(const group of groups){
       const items=controls.filter(c=>(c.group??0)===group),stick=items.find(c=>c.stick),buttons=items.filter(c=>!c.stick);
-      const gap=8,buttonSize=clamp(Math.min(bounds.width/(paired?7:7),bounds.height/(paired?5:4)),42,52),size=buttonSize/56*100;
-      const cols=paired?2:Math.min(3,Math.max(1,buttons.length)),rows=Math.ceil(buttons.length/cols),band=cols*buttonSize+(cols-1)*gap;
-      const right=paired&&group===groups[1],stickSize=Math.min(86,bounds.width/(paired?4:3),bounds.height/2);
+      const gap=8,cols=paired?(buttons.length>4?3:2):Math.min(3,Math.max(1,buttons.length));
+      const rows=Math.ceil(buttons.length/cols);
+      const preferred=clamp(Math.min(bounds.width/7,bounds.height/(paired?5:4)),42,52);
+      // Paired pads leave room for both sticks on short landscape screens.
+      const buttonSize=paired&&rows?Math.max(1,Math.min(preferred,
+        ((bounds.width-gap)/2-(cols-1)*gap)/cols,
+        (bounds.height-Math.min(68,bounds.height/2)-rows*gap)/rows)):preferred;
+      const size=buttonSize/56*100,band=cols*buttonSize+(cols-1)*gap;
+      const buttonHeight=rows*buttonSize+Math.max(0,rows-1)*gap;
+      const right=paired&&group===groups[1];
+      const stickRoom=paired?bounds.height-buttonHeight-gap:bounds.height/2;
+      const stickSize=Math.max(1,Math.min(86,bounds.width/(paired?4:3),bounds.height/2,stickRoom));
       if(stick)put(stick,right?bounds.width-stickSize:0,bounds.height-stickSize,stickSize/86*100);
       const startX=paired?(right?bounds.width-band:0):bounds.width-band;
-      const startY=bounds.height-(rows*buttonSize+(rows-1)*gap)-(paired?stickSize+gap:0);
+      const startY=bounds.height-buttonHeight-(paired?stickSize+gap:0);
       buttons.forEach((item,i)=>put(item,startX+(i%cols)*(buttonSize+gap),startY+Math.floor(i/cols)*(buttonSize+gap),size));
     }
     return out;
